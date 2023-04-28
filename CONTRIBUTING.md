@@ -146,10 +146,17 @@ Updating, improving and correcting the documentation
 -->
 
 ## Styleguides
-### Commit Messages
-<!-- TODO
 
--->
+### Source Code Style
+
+Coding convention rules are described in our [code style page](CODE_STYLE.md).
+
+Guidelines for configuring the IntelliJ IDEA IDE to follow this Code Style are explained in [Spring IntelliJ IDEA Editor Settings](https://github.com/spring-projects/spring-framework/wiki/IntelliJ-IDEA-Editor-Settings).
+
+### Commit Messages
+
+Guidelines are to follow on the content of the message when committing Git. This allows for more readable and easy-to-follow messages when browsing the project's change history. Additionally, we use these messages to generate the changelog.
+Please follow these guidelines which are taken from Chris Beams blog post: [How to Write a Git Commit Message](https://cbea.ms/git-commit/).
 
 ## Join The Project Team
 <!-- TODO -->
