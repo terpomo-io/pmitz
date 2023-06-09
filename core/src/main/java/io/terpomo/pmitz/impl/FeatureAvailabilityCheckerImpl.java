@@ -24,7 +24,9 @@ public class FeatureAvailabilityCheckerImpl implements FeatureAvailabilityChecke
         if (!subscriptionVerifier.isFeatureAllowed(feature, userGrouping) ){
             status = FeatureStatus.NOT_ALLOWED;
         } else {
-            status = usageLimitVerifier.isLimitExceeded(feature, userGrouping) ? FeatureStatus.LIMIT_EXCEEDED : FeatureStatus.AVAILABLE;
+            boolean limitExceeded = feature.getLimitsIds().stream()
+                    .anyMatch(limitId -> usageLimitVerifier.isLimitExceeded(feature, limitId, userGrouping));
+            status = limitExceeded ? FeatureStatus.LIMIT_EXCEEDED : FeatureStatus.AVAILABLE;
         }
         return status;
     }

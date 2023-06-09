@@ -12,6 +12,7 @@ dependencies {
     implementation project (':core')
     //implementation project (':subscriptions')
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.2.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
 

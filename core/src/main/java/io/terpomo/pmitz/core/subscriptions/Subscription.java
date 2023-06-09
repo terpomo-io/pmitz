@@ -13,6 +13,10 @@ public class Subscription extends UserGrouping {
 
     private Plan plan;
 
+    public Subscription(String subscriptionId) {
+        this.subscriptionId = subscriptionId;
+    }
+
     public boolean isActive() {
         return SubscriptionStatus.ACTIVE == status;
     }

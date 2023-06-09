@@ -11,6 +11,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -32,11 +34,13 @@ public class FeatureAvailabilityCheckerImplTest {
     @Test
     void givenFeatureAllowedAndLimitNotExceededWhenIsFeatureAvailableThenReturnTrue(){
 
+        String limitId = "file uploads";
         Feature feature = new Feature();
+        feature.setLimitsIds(Collections.singletonList(limitId));
         UserGrouping userGrouping = new IndividualUser("user001");
 
         when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(true);
-        when(usageLimitVerifier.isLimitExceeded(feature, userGrouping)).thenReturn(false);
+        when(usageLimitVerifier.isLimitExceeded(feature, limitId, userGrouping)).thenReturn(false);
 
         assertTrue (featureAvailabilityChecker.isFeatureAvailable(feature, userGrouping));
     }
