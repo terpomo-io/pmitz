@@ -6,7 +6,8 @@ public class Plan {
 
     private String planId;
 
-    public Plan(Plan plan, String planId) {
+    public Plan(Product product, String planId) {
         this.planId = planId;
+        this.product = product;
     }
 }

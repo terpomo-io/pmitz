@@ -3,10 +3,13 @@ package io.terpomo.pmitz.core.limits;
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 
+import java.util.Map;
+
 public interface UsageLimitVerifier {
 
-    boolean isLimitExceeded(Feature feature, String limitId, UserGrouping userGrouping);
+    boolean isWithinLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
 
-    boolean isWithinLimit(Feature feature, String limitId, UserGrouping userGrouping, int additionalUnits);
+    void recordFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
 
+    void reduceFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> reducedUnits);
 }

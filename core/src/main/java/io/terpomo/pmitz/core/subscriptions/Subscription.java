@@ -11,6 +11,8 @@ public class Subscription extends UserGrouping {
     private SubscriptionStatus status;
     private ZonedDateTime expirationDate;
 
+
+
     private Plan plan;
 
     public Subscription(String subscriptionId) {
@@ -28,5 +30,9 @@ public class Subscription extends UserGrouping {
     @Override
     public String getId() {
         return subscriptionId;
+    }
+
+    public Plan getPlan() {
+        return plan;
     }
 }

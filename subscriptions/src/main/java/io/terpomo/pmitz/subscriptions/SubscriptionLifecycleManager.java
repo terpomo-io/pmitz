@@ -3,11 +3,13 @@ package io.terpomo.pmitz.subscriptions;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
 
+import java.util.Optional;
+
 public interface SubscriptionLifecycleManager {
 
     void create(Subscription subscription);
 
-    void find(String subscriptionId);
+    Optional<Subscription> find(String subscriptionId);
 
     void updateStatus(Subscription subscription, SubscriptionStatus newStatus);
 
