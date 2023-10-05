@@ -12,4 +12,6 @@ public interface UsageLimitVerifier {
     void recordFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
 
     void reduceFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> reducedUnits);
+
+    Map<String, Long> getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping);
 }

@@ -36,6 +36,11 @@ public class UsageLimitVerifierImpl implements UsageLimitVerifier {
         recordOrReduce(feature, userGrouping, reducedUnits, true);
     }
 
+    @Override
+    public Map<String, Long> getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping) {
+        return null;
+    }
+
     private void recordOrReduce (Feature feature, UserGrouping userGrouping, Map<String, Long> units, boolean isRecord){
 
         var limitVerificationStrategiesMap = feature.getLimitsIds().stream()

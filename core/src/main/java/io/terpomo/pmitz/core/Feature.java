@@ -1,6 +1,10 @@
 package io.terpomo.pmitz.core;
 
+import io.terpomo.pmitz.core.limits.UsageLimit;
+
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Feature {
 
@@ -8,7 +12,7 @@ public class Feature {
 
     private Product product;
 
-    private List<String> limitsIds;
+    private List<UsageLimit> limits;
 
     public String getFeatureId() {
         return featureId;
@@ -18,11 +22,17 @@ public class Feature {
         this.featureId = featureId;
     }
 
-    public List<String> getLimitsIds() {
-        return limitsIds;
+    public List<UsageLimit> getLimits() {
+        return limits;
     }
 
-    public void setLimitsIds(List<String> limitsIds) {
-        this.limitsIds = limitsIds;
+    public void setLimits(List<UsageLimit> limits) {
+        this.limits = limits;
     }
+
+    public List<String> getLimitsIds() {
+        return limits == null ? Collections.emptyList() :
+                limits.stream().map(UsageLimit::getId).collect(Collectors.toList());
+    }
+
 }

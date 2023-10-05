@@ -1,7 +1,7 @@
 package io.terpomo.pmitz;
 
 import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.FeatureStatus;
+import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 
 import java.util.Map;
@@ -12,6 +12,8 @@ public interface FeatureUsageTracker {
 
     void reduceFeatureUsage (Feature feature, UserGrouping userGrouping, Map<String, Long> reducedUnits);
 
-    FeatureStatus getFeatureStatus (Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
+    FeatureUsageInfo verifyLimits (Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
+
+    FeatureUsageInfo getUsageInfo (Feature feature, UserGrouping userGrouping);
 
 }
