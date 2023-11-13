@@ -20,19 +20,34 @@ public class UsageLimitVerifierImpl implements UsageLimitVerifier {
     private LimitVerificationStrategyResolver limitVerifierStrategyResolver;
     private UsageRepository usageRepository;
 
-    public UsageLimitVerifierImpl(UsageLimitResolver usageLimitResolver, UsageRepository usageRepository) {
+    public UsageLimitVerifierImpl(UsageLimitResolver usageLimitResolver,
+                                  LimitVerificationStrategyResolver limitVerifierStrategyResolver,
+                                  UsageRepository usageRepository) {
         this.usageLimitResolver = usageLimitResolver;
         this.usageRepository = usageRepository;
+        this.limitVerifierStrategyResolver = limitVerifierStrategyResolver;
     }
 
     @Override
     public void recordFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
+        if (additionalUnits == null || additionalUnits.isEmpty()){
+            throw new IllegalArgumentException("Additional units cannot be empty");
+        }
+        if (additionalUnits.values().stream().anyMatch(v -> v == null || v <=0)){
+            throw new IllegalArgumentException("Additional units must be positive numbers");
+        }
         recordOrReduce(feature, userGrouping, additionalUnits, true);
 
     }
 
     @Override
     public void reduceFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> reducedUnits) {
+        if (reducedUnits == null || reducedUnits.isEmpty()){
+            throw new IllegalArgumentException("Reduced units cannot be empty");
+        }
+        if (reducedUnits.values().stream().anyMatch(v -> v == null || v <=0)){
+            throw new IllegalArgumentException("Reduced units must be positive numbers");
+        }
         recordOrReduce(feature, userGrouping, reducedUnits, true);
     }
 

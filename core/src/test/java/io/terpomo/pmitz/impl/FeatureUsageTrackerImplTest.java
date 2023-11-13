@@ -2,6 +2,7 @@ package io.terpomo.pmitz.impl;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureStatus;
+import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.exception.FeatureNotAllowedException;
 import io.terpomo.pmitz.core.limits.UsageLimitVerifier;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
@@ -92,12 +93,30 @@ class FeatureUsageTrackerImplTest {
         assertEquals(-1, featureInfo.remainingUsageUnits().get(limitId));
     }
 
-//    @Test
-//    void givenNoAdditionalUnitsWhenRecordFeatureUsageThenThrowIllegalArgumentException() {
-//        when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(true);
-//
-//        assertThrows(IllegalArgumentException.class,
-//                () ->  featureUsageTracker.recordFeatureUsage(feature, userGrouping, Collections.emptyMap()));
-//    }
+    @Test
+    void givenFeatureNotAllowedWhenGetUsageInfoThenReturnUsageInfo() {
+        when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(false);
+
+        FeatureUsageInfo featureUsageInfo = featureUsageTracker.getUsageInfo(feature, userGrouping);
+        assertEquals(FeatureStatus.NOT_ALLOWED, featureUsageInfo.featureStatus());
+        assertTrue(featureUsageInfo.remainingUsageUnits().isEmpty());
+    }
+
+    @Test
+    void givenFeatureAllowedWhenGetUsageInfoThenReturnRemainingUnits() {
+        String limitId = "ADD_USER";
+        when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(true);
+        when(limitVerifier.getLimitsRemainingUnits(feature, userGrouping)).thenReturn(Collections.singletonMap(limitId, 1L));
+
+        var featureInfo = featureUsageTracker.getUsageInfo(feature, userGrouping);
+
+        assertEquals(FeatureStatus.AVAILABLE, featureInfo.featureStatus());
+        assertEquals(1L, featureInfo.remainingUsageUnits().get(limitId));
+
+        //TODO question : What if there is no remaining units available. Should status be still Available?
+        // shall we introduce a new status : LIMIT_REACHED, that is : limit is not exceeded but no more room for additional units
+        //
+
+    }
 
 }

@@ -6,11 +6,11 @@ import io.terpomo.pmitz.core.subscriptions.Subscription;
 
 public class SubscriptionFeatureManagerImpl implements SubscriptionFeatureManager{
 
-    private PlanRepository planStore;
+    private PlanRepository planRepository;
     @Override
     public boolean isFeatureIncluded(Subscription subscription, Feature feature) {
         var plan = subscription.getPlan();
 
-        return planStore.isIncluded(plan, feature);
+        return planRepository.isIncluded(plan, feature);
     }
 }

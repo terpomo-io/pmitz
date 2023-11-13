@@ -60,18 +60,15 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 
     @Override
     public FeatureUsageInfo getUsageInfo(Feature feature, UserGrouping userGrouping) {
-        return null;
+        if (!subscriptionVerifier.isFeatureAllowed(feature, userGrouping)) {
+            return new FeatureUsageInfo(FeatureStatus.NOT_ALLOWED, Collections.emptyMap());
+        }
+
+        var remainingUnits = usageLimitVerifier.getLimitsRemainingUnits(feature, userGrouping);
+
+        var anyLimitExceeded = remainingUnits.entrySet().stream().anyMatch(mapEntry -> mapEntry.getValue() < 0);
+
+        return new FeatureUsageInfo(anyLimitExceeded ? FeatureStatus.LIMIT_EXCEEDED : FeatureStatus.AVAILABLE, remainingUnits);
     }
 
-    //@Override
-    public FeatureStatus getFeatureStatus(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
-        FeatureStatus status;
-        if (!subscriptionVerifier.isFeatureAllowed(feature, userGrouping) ){
-            status = FeatureStatus.NOT_ALLOWED;
-        } else {
-            boolean withinLimits = usageLimitVerifier.isWithinLimits(feature, userGrouping, additionalUnits);
-            status = withinLimits ? FeatureStatus.AVAILABLE : FeatureStatus.LIMIT_EXCEEDED ;
-        }
-        return status;
-    }
 }

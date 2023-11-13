@@ -5,7 +5,6 @@ import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.UsageRecord;
 
 import java.util.List;
-import java.util.Optional;
 
 public class LimitTrackingContext {
 

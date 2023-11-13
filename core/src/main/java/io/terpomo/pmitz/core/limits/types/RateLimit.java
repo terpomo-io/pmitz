@@ -19,7 +19,7 @@ public class RateLimit extends UsageLimit {
     }
 
     @Override
-    public int getValue() {
+    public long getValue() {
         return quota;
     }
 

@@ -35,4 +35,11 @@ public class Feature {
                 limits.stream().map(UsageLimit::getId).collect(Collectors.toList());
     }
 
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
+    }
 }

@@ -5,7 +5,7 @@ public abstract class UsageLimit {
     private String unit;
     private String id;
 
-    public abstract int getValue();
+    public abstract long getValue();
 
     public String getUnit() {
         return unit;
