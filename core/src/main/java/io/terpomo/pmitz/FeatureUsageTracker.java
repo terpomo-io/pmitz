@@ -5,7 +5,7 @@ import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 
 import java.util.Map;
-
+ 
 public interface FeatureUsageTracker {
 
     void recordFeatureUsage (Feature feature, UserGrouping userGrouping, Map<String, Long> requestedUnits);
