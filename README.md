@@ -2,6 +2,7 @@
 
 ![Licence](https://img.shields.io/badge/License-Apache%202.0-green.svg)
 
+
 Pmitz is a tool to control users' access to application features based on users' subscriptions and / or configured usage limits.
 
 Pmitz encapsulates the complexity related to the management of subscriptions, plans and limits, allowing development teams to effectively implement a subscription model within their software solutions. Pmitz allows development teams to implement usage limits in a configurable and flexible (per user) way.
