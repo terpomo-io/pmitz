@@ -12,10 +12,18 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.repository.feature.inmemory;
+package io.terpomo.pmitz.core.repository.product.inmemory;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Target;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-@Target({ElementType.TYPE, ElementType.METHOD})
-public @interface ExcludeFromJacocoGeneratedReport {}
+@ExcludeFromJacocoGeneratedReport
+public class ProductMixIn {
+
+	@JsonProperty("productId")
+	String productId;
+
+	@JsonCreator
+	public ProductMixIn(
+			@JsonProperty("productId") String productId) {}
+}

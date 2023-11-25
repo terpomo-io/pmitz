@@ -36,8 +36,7 @@ class FeatureUsageTrackerImplTest {
 
     @BeforeEach
     void init (){
-        feature = new Feature();
-        feature.setFeatureId("FILE_UPLOAD");
+        feature = new Feature(null, "FILE_UPLOAD");
 
         featureUsageTracker = new FeatureUsageTrackerImpl(limitVerifier, subscriptionVerifier);
     }

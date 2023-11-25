@@ -14,31 +14,58 @@
 
 package io.terpomo.pmitz.core.repository.product.inmemory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
+import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.RepositoryException;
+import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.types.CountLimit;
+import io.terpomo.pmitz.core.limits.types.RateLimit;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
 
 public class InMemoryProductRepository implements ProductRepository {
 
-	private final Map<String, Product> products = new ConcurrentHashMap<>();
+	private Map<String, Product> products = new HashMap<>();
+
+	private final ObjectMapper mapper;
+
+	public InMemoryProductRepository() {
+
+		mapper = new ObjectMapper()
+				.setSerializationInclusion(JsonInclude.Include.NON_NULL)
+				.enable(SerializationFeature.INDENT_OUTPUT)
+				.addMixIn(Product.class, ProductMixIn.class)
+				.addMixIn(Feature.class, FeatureMixIn.class)
+				.addMixIn(UsageLimit.class, UsageLimitMixIn.class)
+				.addMixIn(RateLimit.class, RateLimitMixIn.class)
+				.addMixIn(CountLimit.class, CountLimitMixIn.class);
+	}
 
 	@Override
 	public List<String> getProductIds() {
 
-		return products.keySet().stream().toList();
+		return products.values().stream()
+				.map(Product::getProductId)
+				.collect(Collectors.toList());
 	}
 
 	@Override
 	public Optional<Product> getProductById(String productId) {
 
-		if (productId == null) {
-			throw new RepositoryException(("ProductId must not be 'null'"));
-		}
+		validateProductId(productId);
 
 		return Optional.ofNullable(products.get(productId));
 	}
@@ -48,23 +75,12 @@ public class InMemoryProductRepository implements ProductRepository {
 
 		validateProduct(product);
 
-		if (products.containsKey(product.getProductId())) {
-			throw new RepositoryException((String.format("Product '%s' already exist", product.getProductId())));
-		}
-
-		products.put(product.getProductId(), product);
-	}
-
-	@Override
-	public void updateProduct(Product product) {
-
-		validateProduct(product);
-
-		if (!products.containsKey(product.getProductId())) {
-			throw new RepositoryException((String.format("Product '%s' not found", product.getProductId())));
-		}
-
-		products.put(product.getProductId(), product);
+		products.compute(product.getProductId(), (productId, existingProduct) -> {
+			if (existingProduct != null) {
+				throw new RepositoryException(String.format("Product '%s' already exists", productId));
+			}
+			return product;
+		});
 	}
 
 	@Override
@@ -72,18 +88,162 @@ public class InMemoryProductRepository implements ProductRepository {
 
 		validateProduct(product);
 
-		if (!products.containsKey(product.getProductId())) {
-			throw new RepositoryException((String.format("Product '%s' not found", product.getProductId())));
+		this.getProductById(product.getProductId())
+				.ifPresentOrElse(
+						existingProduct -> products.remove(product.getProductId()),
+						() -> {
+							throw new RepositoryException(String.format("Product '%s' not found", product.getProductId()));
+						}
+				);
+	}
+
+	@Override
+	public List<Feature> getFeatures(Product product) {
+
+		validateProduct(product);
+
+		return this.getProductById(product.getProductId())
+				.map(Product::getFeatures)
+				.orElseThrow(() -> new RepositoryException(String.format("Product '%s' not found", product.getProductId())));
+	}
+
+	@Override
+	public Optional<Feature> getFeature(Product product, String featureId) {
+
+		validateProduct(product);
+		validateFeatureId(featureId);
+
+		return this.getProductById(product.getProductId())
+				.flatMap(p -> p.getFeatures().stream()
+						.filter(f -> f.getFeatureId().equals(featureId))
+						.findFirst());
+	}
+
+	@Override
+	public Optional<UsageLimit> getGlobalLimit(Feature feature, String usageLimitId) {
+
+		validateFeature(feature);
+
+		return Optional.ofNullable(feature.getProduct())
+				.map(Product::getProductId)
+				.flatMap(productId -> Optional.ofNullable(products.get(productId)))
+				.flatMap(p -> p.getFeatures().stream()
+						.filter(feature::equals)
+						.findFirst())
+				.flatMap(f -> Optional.ofNullable(f.getLimits())
+						.flatMap(ll -> ll.stream()
+						.filter(l -> l.getId().equals(usageLimitId))
+						.findFirst()));
+	}
+
+	@Override
+	public void addFeature(Feature feature) {
+
+		validateFeature(feature);
+
+		String productId = feature.getProduct().getProductId();
+		Product existingProduct = products.get(productId);
+
+		if (existingProduct == null) {
+			throw new RepositoryException(String.format("Product '%s' not found", productId));
 		}
 
-		products.remove(product.getProductId());
+		if (existingProduct.getFeatures().contains(feature)) {
+			throw new RepositoryException(String.format("Feature '%s' already exists", feature.getFeatureId()));
+		}
+
+		existingProduct.getFeatures().add(feature);
 	}
+
+	@Override
+	public void updateFeature(Feature feature) {
+
+		validateFeature(feature);
+
+		String productId = feature.getProduct().getProductId();
+
+		products.compute(productId, (key, existingProduct) -> {
+			if (existingProduct == null) {
+				throw new RepositoryException(String.format("Product '%s' not found", productId));
+			}
+
+			List<Feature> updatedFeatures = existingProduct.getFeatures().stream()
+					.map(f -> f.getFeatureId().equals(feature.getFeatureId()) ? feature : f)
+					.collect(Collectors.toList());
+
+			if (updatedFeatures.stream().noneMatch(f -> f.getFeatureId().equals(feature.getFeatureId()))) {
+				throw new RepositoryException(String.format("Feature '%s' not found for product '%s'", feature.getFeatureId(), productId));
+			}
+
+			existingProduct.setFeatures(updatedFeatures);
+			return existingProduct;
+		});
+	}
+
+	@Override
+	public void removeFeature(Feature feature) {
+
+		validateFeature(feature);
+
+		String productId = feature.getProduct().getProductId();
+
+		if (!products.containsKey(productId)) {
+			throw new RepositoryException(String.format("Product '%s' not found", productId));
+		}
+
+		products.computeIfPresent(productId, (key, existingProduct) -> {
+			List<Feature> updatedFeatures = existingProduct.getFeatures().stream()
+					.filter(f -> !f.getFeatureId().equals(feature.getFeatureId()))
+					.collect(Collectors.toList());
+
+			if (updatedFeatures.size() == existingProduct.getFeatures().size()) {
+				throw new RepositoryException(String.format("Feature '%s' not found for product '%s'", feature.getFeatureId(), productId));
+			}
+
+			existingProduct.setFeatures(updatedFeatures);
+			return existingProduct;
+		});
+	}
+
+
+	public void clear() {
+		products.clear();
+	}
+
+	public void load(InputStream inputStream) throws IOException {
+
+		TypeReference<List<Product>> typeRef = new TypeReference<>() {};
+		List<Product> loadedProducts = mapper.readValue(inputStream, typeRef);
+
+		loadedProducts.forEach(product -> {
+			List<Feature> updatedFeatures = product.getFeatures().stream()
+					.map(f -> {
+						Feature newFeature = new Feature(product, f.getFeatureId());
+						newFeature.getLimits().addAll(f.getLimits());
+						return newFeature;
+					})
+					.toList();
+
+			product.getFeatures().clear();
+			product.getFeatures().addAll(updatedFeatures);
+		});
+
+		this.products = loadedProducts.stream()
+							.collect(Collectors.toMap(Product::getProductId, product -> product));
+	}
+
+	public void store(OutputStream outputStream) throws IOException {
+
+		mapper.writeValue(outputStream, products.values());
+	}
+
 
 	private void validateProduct(Product product) {
 
 		if (product == null) {
 			throw new RepositoryException(("Product must not be 'null'"));
 		}
+
 		validateProductId(product.getProductId());
 	}
 
@@ -91,6 +251,22 @@ public class InMemoryProductRepository implements ProductRepository {
 
 		if (productId == null) {
 			throw new RepositoryException(("ProductId must not be 'null'"));
+		}
+	}
+
+	private void validateFeature(Feature feature) {
+
+		if (feature == null) {
+			throw new RepositoryException(("Feature must not be 'null'"));
+		}
+		validateFeatureId(feature.getFeatureId());
+		validateProduct(feature.getProduct());
+	}
+
+	private void validateFeatureId(String featureId) {
+
+		if (featureId == null) {
+			throw new RepositoryException(("FeatureId must not be 'null'"));
 		}
 	}
 }

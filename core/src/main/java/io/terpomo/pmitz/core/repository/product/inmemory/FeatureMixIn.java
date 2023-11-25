@@ -12,19 +12,30 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.repository.feature.inmemory;
+package io.terpomo.pmitz.core.repository.product.inmemory;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.terpomo.pmitz.core.Product;
 
 @ExcludeFromJacocoGeneratedReport
 public class FeatureMixIn {
 
-	@JsonUnwrapped
+	@JsonProperty("featureId")
+	String featureId;
+	@JsonIgnore
 	Product product;
 
+	@JsonCreator
+	public FeatureMixIn(
+			@JsonProperty("product") Product product,
+			@JsonProperty("featureId") String featureId) {}
+
 	@JsonIgnore
-	public void getLimitsIds() {};
+	public void getLimitsIds() {}
+
+	@JsonIgnore
+	public Product getProduct() { return null; }
 }

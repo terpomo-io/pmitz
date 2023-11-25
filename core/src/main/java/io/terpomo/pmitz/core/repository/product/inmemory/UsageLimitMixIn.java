@@ -1,4 +1,4 @@
-package io.terpomo.pmitz.core.repository.feature.inmemory;
+package io.terpomo.pmitz.core.repository.product.inmemory;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

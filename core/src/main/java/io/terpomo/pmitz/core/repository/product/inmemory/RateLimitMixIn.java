@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.repository.feature.inmemory;
+package io.terpomo.pmitz.core.repository.product.inmemory;
 
 import java.util.concurrent.TimeUnit;
 
@@ -34,7 +34,7 @@ public abstract class RateLimitMixIn {
 	public RateLimitMixIn(
 			@JsonProperty("quota") int quota,
 			@JsonProperty("interval") TimeUnit interval,
-			@JsonProperty("duration") int duration) {};
+			@JsonProperty("duration") int duration) { }
 
 	@JsonIgnore
 	public long getValue() {

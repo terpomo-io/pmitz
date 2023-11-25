@@ -12,27 +12,10 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.repository.feature.inmemory;
+package io.terpomo.pmitz.core.repository.product.inmemory;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-@ExcludeFromJacocoGeneratedReport
-public abstract class CountLimitMixIn {
-
-	@JsonProperty("id")
-	private String id;
-	@JsonProperty("count")
-	private long count;
-
-	@JsonCreator
-	public CountLimitMixIn(
-			@JsonProperty("id") String id,
-			@JsonProperty("count") long count) {};
-
-	@JsonIgnore
-	public long getValue() {
-		return 0;
-	}
-}
+@Target({ElementType.TYPE, ElementType.METHOD})
+public @interface ExcludeFromJacocoGeneratedReport {}

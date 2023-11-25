@@ -17,7 +17,9 @@ package io.terpomo.pmitz.core.repository.product;
 import java.util.List;
 import java.util.Optional;
 
+import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
+import io.terpomo.pmitz.core.limits.UsageLimit;
 
 public interface ProductRepository {
 
@@ -27,9 +29,17 @@ public interface ProductRepository {
 
     void addProduct (Product product);
 
-    void updateProduct (Product product);
-    
-    //TODO remove product
     void removeProduct (Product product);
 
+    List<Feature> getFeatures (Product product);
+
+    Optional<Feature> getFeature (Product product, String featureId);
+
+    Optional<UsageLimit> getGlobalLimit (Feature feature, String usageLimitId);
+
+    void addFeature (Feature feature);
+
+    void updateFeature (Feature feature);
+
+    void removeFeature (Feature feature);
 }

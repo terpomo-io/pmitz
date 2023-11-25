@@ -1,6 +1,7 @@
 package io.terpomo.pmitz.limits.impl;
 
 import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
@@ -58,9 +59,9 @@ class UsageLimitVerifierImplTest {
 
     @BeforeEach
     void init() {
-        feature = new Feature();
-        feature.setFeatureId("ADD_FILE");
-        feature.setLimits(Collections.singletonList(usageLimit));
+        Product product = new Product("FILE_SHARING");
+        feature = new Feature(product, "ADD_FILE");
+        feature.getLimits().add(usageLimit);
 
         usageLimitVerifier = new UsageLimitVerifierImpl(usageLimitResolver, limitVerificationStrategyResolver, usageRepo);
     }
