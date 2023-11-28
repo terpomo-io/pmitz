@@ -425,18 +425,22 @@ public class InMemoryProductRepositoryTest {
 
 		Product p1 = new Product("p1");
 		repository.addProduct(p1);
+
 		Feature f1 = new Feature(p1, "f1");
 		repository.addFeature(f1);
-
 		CountLimit l1 = new CountLimit("l1", 10);
 		f1.getLimits().add(l1);
 
-		repository.updateFeature(f1);
+		Feature f2 = new Feature(p1, "f2");
+		repository.addFeature(f2);
 
-		Optional<Feature> f = repository.getFeature(f1.getProduct(), f1.getFeatureId());
+
+		repository.updateFeature(f2);
+
+		Optional<Feature> f = repository.getFeature(f2.getProduct(), f2.getFeatureId());
 
 		assertTrue(f.isPresent());
-		assertEquals(1, f.get().getLimits().size());
+		assertEquals(0, f.get().getLimits().size());
 	}
 
 	@Test
@@ -446,12 +450,20 @@ public class InMemoryProductRepositoryTest {
 		repository.addProduct(p1);
 		Feature f1 = new Feature(p1, "f1");
 		repository.addFeature(f1);
+		Feature f2 = new Feature(p1, "f2");
+		repository.addFeature(f2);
 
 		repository.removeFeature(f1);
 
 		Optional<Feature> f = repository.getFeature(f1.getProduct(), f1.getFeatureId());
 
 		assertTrue(f.isEmpty());
+
+		Optional<Product> op = repository.getProductById("p1");
+		assertTrue(op.isPresent());
+
+		p1 = op.get();
+		assertEquals(1, p1.getFeatures().size());
 	}
 
 	@Test

@@ -23,8 +23,6 @@ public class Product {
 
     private List<Feature> features = new ArrayList<>();
 
-    private Product() { }
-
     public Product(String productId) {
 
         this.productId = productId;
@@ -36,9 +34,5 @@ public class Product {
 
     public List<Feature> getFeatures() {
         return features;
-    }
-
-    public void setFeatures(List<Feature> features) {
-        this.features = features;
     }
 }

@@ -27,15 +27,12 @@ public class Feature {
 
     private Product product;
 
-    private List<UsageLimit> limits;
-
-    private Feature() {}
+    private List<UsageLimit> limits = new ArrayList<>();
 
     public Feature(Product product, String featureId) {
 
         this.product = product;
         this.featureId = featureId;
-        this.limits = new ArrayList<>();
     }
 
     public String getFeatureId() {

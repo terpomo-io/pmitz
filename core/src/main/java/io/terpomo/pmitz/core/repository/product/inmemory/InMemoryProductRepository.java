@@ -21,7 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -163,19 +165,21 @@ public class InMemoryProductRepository implements ProductRepository {
 		String productId = feature.getProduct().getProductId();
 
 		products.compute(productId, (key, existingProduct) -> {
+
 			if (existingProduct == null) {
 				throw new RepositoryException(String.format("Product '%s' not found", productId));
 			}
 
-			List<Feature> updatedFeatures = existingProduct.getFeatures().stream()
-					.map(f -> f.getFeatureId().equals(feature.getFeatureId()) ? feature : f)
-					.collect(Collectors.toList());
+			OptionalInt indexOpt = IntStream.range(0, existingProduct.getFeatures().size())
+					.filter(i -> feature.getFeatureId().equals(existingProduct.getFeatures().get(i).getFeatureId()))
+					.findFirst();
 
-			if (updatedFeatures.stream().noneMatch(f -> f.getFeatureId().equals(feature.getFeatureId()))) {
+			if (indexOpt.isEmpty()) {
 				throw new RepositoryException(String.format("Feature '%s' not found for product '%s'", feature.getFeatureId(), productId));
 			}
 
-			existingProduct.setFeatures(updatedFeatures);
+			existingProduct.getFeatures().set(indexOpt.getAsInt(), feature);
+
 			return existingProduct;
 		});
 	}
@@ -192,15 +196,17 @@ public class InMemoryProductRepository implements ProductRepository {
 		}
 
 		products.computeIfPresent(productId, (key, existingProduct) -> {
-			List<Feature> updatedFeatures = existingProduct.getFeatures().stream()
-					.filter(f -> !f.getFeatureId().equals(feature.getFeatureId()))
-					.collect(Collectors.toList());
 
-			if (updatedFeatures.size() == existingProduct.getFeatures().size()) {
+			OptionalInt indexOpt = IntStream.range(0, existingProduct.getFeatures().size())
+					.filter(i -> feature.getFeatureId().equals(existingProduct.getFeatures().get(i).getFeatureId()))
+					.findFirst();
+
+			if (indexOpt.isEmpty()) {
 				throw new RepositoryException(String.format("Feature '%s' not found for product '%s'", feature.getFeatureId(), productId));
 			}
 
-			existingProduct.setFeatures(updatedFeatures);
+			existingProduct.getFeatures().remove(indexOpt.getAsInt());
+
 			return existingProduct;
 		});
 	}
