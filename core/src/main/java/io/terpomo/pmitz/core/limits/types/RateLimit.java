@@ -16,17 +16,17 @@ package io.terpomo.pmitz.core.limits.types;
 
 import io.terpomo.pmitz.core.limits.UsageLimit;
 
-import java.util.concurrent.TimeUnit;
+import java.time.temporal.ChronoUnit;
 
-public class RateLimit extends UsageLimit {
+public abstract class RateLimit extends UsageLimit {
 
-    private long quota;
+    private final long quota;
 
-    private TimeUnit interval;
+    private final ChronoUnit interval;
 
-    private int duration;
+    private final int duration;
 
-    public RateLimit(int quota, TimeUnit interval, int duration) {
+    RateLimit(int quota, ChronoUnit interval, int duration) {
         this.quota = quota;
         this.interval = interval;
         this.duration = duration;
@@ -37,7 +37,7 @@ public class RateLimit extends UsageLimit {
         return quota;
     }
 
-    public TimeUnit getInterval() {
+    public ChronoUnit getInterval() {
         return interval;
     }
 

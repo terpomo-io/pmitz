@@ -1,5 +1,8 @@
 package io.terpomo.pmitz.core.limits;
 
+import java.time.ZonedDateTime;
+import java.util.Optional;
+
 public abstract class UsageLimit {
 
     private String unit;
@@ -22,4 +25,8 @@ public abstract class UsageLimit {
     public void setId(String id) {
         this.id = id;
     }
+
+    public abstract Optional<ZonedDateTime> getWindowStart(ZonedDateTime referenceDate);
+
+    public abstract Optional<ZonedDateTime> getWindowEnd(ZonedDateTime referenceDate);
 }

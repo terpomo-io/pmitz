@@ -17,10 +17,11 @@ package io.terpomo.pmitz.core.repository.product.inmemory;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
+import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -555,7 +556,7 @@ public class InMemoryProductRepositoryTest {
 		uploadingPicture.getLimits().add(maximumPictureSize);
 
 		// R A T E L I M I T
-		RateLimit maximumPicturesUploadedByHour = new RateLimit(10, TimeUnit.HOURS, 1);
+		SlidingWindowRateLimit maximumPicturesUploadedByHour = new SlidingWindowRateLimit(10, ChronoUnit.HOURS, 1);
 		maximumPicturesUploadedByHour.setId("Maximum of pictures uploaded by hour");
 		uploadingPicture.getLimits().add(maximumPicturesUploadedByHour);
 
@@ -564,7 +565,7 @@ public class InMemoryProductRepositoryTest {
 		repository.addFeature(downloadingPicture);
 
 		// R A T E L I M I T
-		RateLimit maximumPicturesDownloadedByHour = new RateLimit(8, TimeUnit.MINUTES, 60);
+		SlidingWindowRateLimit maximumPicturesDownloadedByHour = new SlidingWindowRateLimit(8, ChronoUnit.MINUTES, 60);
 		maximumPicturesDownloadedByHour.setId("Maximum of pictures downloaded by hour");
 		downloadingPicture.getLimits().add(maximumPicturesDownloadedByHour);
 
@@ -617,7 +618,7 @@ public class InMemoryProductRepositoryTest {
 		RateLimit maximumPicturesInMonth = (RateLimit)uploadingPicture.get().getLimits().get(1);
 		assertEquals("Maximum of pictures uploaded by hour", maximumPicturesInMonth.getId());
 		assertEquals(10, maximumPicturesInMonth.getValue());
-		assertEquals(TimeUnit.HOURS, maximumPicturesInMonth.getInterval());
+		assertEquals(ChronoUnit.HOURS, maximumPicturesInMonth.getInterval());
 		assertEquals(1, maximumPicturesInMonth.getDuration());
 
 		// F E A T U R E :  U P L O A D I N G   P I C T U R E S
@@ -632,7 +633,7 @@ public class InMemoryProductRepositoryTest {
 		maximumPicturesInMonth = (RateLimit)downloadingPicture.get().getLimits().get(0);
 		assertEquals("Maximum of pictures downloaded by hour", maximumPicturesInMonth.getId());
 		assertEquals(8, maximumPicturesInMonth.getValue());
-		assertEquals(TimeUnit.MINUTES, maximumPicturesInMonth.getInterval());
+		assertEquals(ChronoUnit.MINUTES, maximumPicturesInMonth.getInterval());
 		assertEquals(60, maximumPicturesInMonth.getDuration());
 
 

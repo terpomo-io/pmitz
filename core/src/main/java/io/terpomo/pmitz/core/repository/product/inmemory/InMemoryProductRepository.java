@@ -35,7 +35,7 @@ import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
-import io.terpomo.pmitz.core.limits.types.RateLimit;
+import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
 
 public class InMemoryProductRepository implements ProductRepository {
@@ -52,7 +52,7 @@ public class InMemoryProductRepository implements ProductRepository {
 				.addMixIn(Product.class, ProductMixIn.class)
 				.addMixIn(Feature.class, FeatureMixIn.class)
 				.addMixIn(UsageLimit.class, UsageLimitMixIn.class)
-				.addMixIn(RateLimit.class, RateLimitMixIn.class)
+				.addMixIn(SlidingWindowRateLimit.class, SlidingWindowRateLimitMixIn.class)
 				.addMixIn(CountLimit.class, CountLimitMixIn.class);
 	}
 

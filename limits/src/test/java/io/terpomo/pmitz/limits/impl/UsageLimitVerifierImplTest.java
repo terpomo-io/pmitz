@@ -6,8 +6,8 @@ import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
-import io.terpomo.pmitz.limits.LimitVerificationStrategy;
-import io.terpomo.pmitz.limits.LimitVerificationStrategyResolver;
+import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
+import io.terpomo.pmitz.limits.UsageLimitVerificationStrategyResolver;
 import io.terpomo.pmitz.limits.UsageLimitResolver;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
@@ -39,10 +39,10 @@ class UsageLimitVerifierImplTest {
     UsageRepository usageRepo;
 
     @Mock
-    LimitVerificationStrategy limitVerificationStrategy;
+    UsageLimitVerificationStrategy limitVerificationStrategy;
 
     @Mock
-    LimitVerificationStrategyResolver limitVerificationStrategyResolver;
+    UsageLimitVerificationStrategyResolver limitVerificationStrategyResolver;
 
     @Mock
     LimitTrackingContext limitTrackingContext;

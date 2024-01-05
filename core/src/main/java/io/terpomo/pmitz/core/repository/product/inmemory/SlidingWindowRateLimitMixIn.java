@@ -14,26 +14,26 @@
 
 package io.terpomo.pmitz.core.repository.product.inmemory;
 
-import java.util.concurrent.TimeUnit;
+import java.time.temporal.ChronoUnit;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @ExcludeFromJacocoGeneratedReport
-public abstract class RateLimitMixIn {
+public abstract class SlidingWindowRateLimitMixIn {
 
 	@JsonProperty("quota")
 	private int quota;
 	@JsonProperty("interval")
-	private TimeUnit interval;
+	private ChronoUnit interval;
 	@JsonProperty("duration")
 	private int duration;
 
 	@JsonCreator
-	public RateLimitMixIn(
+	public SlidingWindowRateLimitMixIn(
 			@JsonProperty("quota") int quota,
-			@JsonProperty("interval") TimeUnit interval,
+			@JsonProperty("interval") ChronoUnit interval,
 			@JsonProperty("duration") int duration) { }
 
 	@JsonIgnore

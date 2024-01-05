@@ -9,19 +9,20 @@ import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
 import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class UsageLimitVerifierImpl implements UsageLimitVerifier {
-    private UsageLimitResolver usageLimitResolver;
+    private final UsageLimitResolver usageLimitResolver;
 
-    private LimitVerificationStrategyResolver limitVerifierStrategyResolver;
-    private UsageRepository usageRepository;
+    private final UsageLimitVerificationStrategyResolver limitVerifierStrategyResolver;
+    private final UsageRepository usageRepository;
 
     public UsageLimitVerifierImpl(UsageLimitResolver usageLimitResolver,
-                                  LimitVerificationStrategyResolver limitVerifierStrategyResolver,
+                                  UsageLimitVerificationStrategyResolver limitVerifierStrategyResolver,
                                   UsageRepository usageRepository) {
         this.usageLimitResolver = usageLimitResolver;
         this.usageRepository = usageRepository;
@@ -53,44 +54,42 @@ public class UsageLimitVerifierImpl implements UsageLimitVerifier {
 
     @Override
     public Map<String, Long> getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping) {
-        return null;
+        var limitVerificationStrategiesMap = findVerificationStrategiesByLimit(feature, userGrouping);
+
+        var limitSearchCriteriaList = gatherSearchCriteria(limitVerificationStrategiesMap);
+
+        var context = usageRepository.loadUsageData(feature, userGrouping, limitSearchCriteriaList);
+
+        return limitVerificationStrategiesMap.entrySet().stream()
+                .collect(Collectors.toMap(entry -> entry.getKey().getId(), entry -> entry.getValue().getRemainingUnits(context, entry.getKey())));
+
     }
 
     private void recordOrReduce (Feature feature, UserGrouping userGrouping, Map<String, Long> units, boolean isRecord){
 
-        var limitVerificationStrategiesMap = feature.getLimitsIds().stream()
-                .map(limitId -> usageLimitResolver.resolveUsageLimit(feature, limitId, userGrouping))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toMap(Function.identity(), limitVerifierStrategyResolver::resolveLimitVerificationStrategy));
+        var limitVerificationStrategiesMap = findVerificationStrategiesByLimit(feature, userGrouping);
 
-        var limitSearchCriteriaList = limitVerificationStrategiesMap.entrySet().stream()
-                .map(entry -> getLimitSearchCriteria(entry.getValue(), entry.getKey()))
-                .collect(Collectors.toList());
+        var limitSearchCriteriaList = gatherSearchCriteria(limitVerificationStrategiesMap);
 
         var context = usageRepository.loadUsageData(feature, userGrouping, limitSearchCriteriaList);
 
         if (isRecord) {
-            limitVerificationStrategiesMap.entrySet().stream()
+            limitVerificationStrategiesMap.entrySet()
                     .forEach(entry -> entry.getValue().recordFeatureUsage(context, entry.getKey(), units.get(entry.getKey().getId())));
         } else {
-            limitVerificationStrategiesMap.entrySet().stream()
+            limitVerificationStrategiesMap.entrySet()
                     .forEach(entry -> entry.getValue().reduceFeatureUsage(context, entry.getKey(), units.get(entry.getKey().getId())));
         }
+
+        usageRepository.updateUsageRecords(context);
     }
 
 
     @Override
     public boolean isWithinLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
-        var limitVerificationStrategiesMap = feature.getLimitsIds().stream()
-                .map(limitId -> usageLimitResolver.resolveUsageLimit(feature, limitId, userGrouping))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toMap(Function.identity(), limitVerifierStrategyResolver::resolveLimitVerificationStrategy));
+        var limitVerificationStrategiesMap = findVerificationStrategiesByLimit(feature, userGrouping);
 
-        var limitSearchCriteriaList = limitVerificationStrategiesMap.entrySet().stream()
-                .map(entry -> getLimitSearchCriteria(entry.getValue(), entry.getKey()))
-                .collect(Collectors.toList());
+        var limitSearchCriteriaList = gatherSearchCriteria(limitVerificationStrategiesMap);
 
         var context = usageRepository.loadUsageData(feature, userGrouping, limitSearchCriteriaList);
 
@@ -99,9 +98,22 @@ public class UsageLimitVerifierImpl implements UsageLimitVerifier {
 
     }
 
-    private RecordSearchCriteria getLimitSearchCriteria (LimitVerificationStrategy strategy, UsageLimit limit){
+    private List<RecordSearchCriteria> gatherSearchCriteria (Map<UsageLimit, UsageLimitVerificationStrategy> verificationStrategyMap){
+        return verificationStrategyMap.entrySet().stream()
+                .map(entry -> getLimitSearchCriteria(entry.getValue(), entry.getKey()))
+                .collect(Collectors.toList());
+    }
+    private Map<UsageLimit, UsageLimitVerificationStrategy> findVerificationStrategiesByLimit (Feature feature, UserGrouping userGrouping){
+        return feature.getLimitsIds().stream()
+                .map(limitId -> usageLimitResolver.resolveUsageLimit(feature, limitId, userGrouping))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toMap(Function.identity(), limitVerifierStrategyResolver::resolveLimitVerificationStrategy));
+    }
+
+
+    private RecordSearchCriteria getLimitSearchCriteria (UsageLimitVerificationStrategy strategy, UsageLimit limit){
         return new RecordSearchCriteria(limit.getId(), strategy.getWindowStart(limit, ZonedDateTime.now()),
                 strategy.getWindowEnd(limit, ZonedDateTime.now()));
     }
-
 }
