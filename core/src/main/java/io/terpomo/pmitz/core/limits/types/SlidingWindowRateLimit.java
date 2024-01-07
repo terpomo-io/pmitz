@@ -6,8 +6,8 @@ import java.util.Optional;
 
 public class SlidingWindowRateLimit extends RateLimit{
 
-    public SlidingWindowRateLimit(int quota, ChronoUnit interval, int duration) {
-        super(quota, interval, duration);
+    public SlidingWindowRateLimit(String limitId, int quota, ChronoUnit interval, int duration) {
+        super(limitId, quota, interval, duration);
     }
 
     @Override

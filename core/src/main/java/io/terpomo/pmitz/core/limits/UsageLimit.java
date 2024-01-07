@@ -8,6 +8,10 @@ public abstract class UsageLimit {
     private String unit;
     private String id;
 
+    public UsageLimit(String id) {
+        this.id = id;
+    }
+
     public abstract long getValue();
 
     public String getUnit() {

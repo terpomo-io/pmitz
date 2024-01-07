@@ -23,6 +23,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @ExcludeFromJacocoGeneratedReport
 public abstract class SlidingWindowRateLimitMixIn {
 
+	@JsonProperty("id")
+	private String id;
+
 	@JsonProperty("quota")
 	private int quota;
 	@JsonProperty("interval")
@@ -32,6 +35,7 @@ public abstract class SlidingWindowRateLimitMixIn {
 
 	@JsonCreator
 	public SlidingWindowRateLimitMixIn(
+			@JsonProperty("id") String id,
 			@JsonProperty("quota") int quota,
 			@JsonProperty("interval") ChronoUnit interval,
 			@JsonProperty("duration") int duration) { }

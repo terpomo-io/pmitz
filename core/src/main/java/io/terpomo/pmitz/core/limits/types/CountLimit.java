@@ -10,8 +10,8 @@ public class CountLimit extends UsageLimit {
     private long count;
 
     public CountLimit(String id, long count) {
+        super(id);
         this.count = count;
-        setId(id);
     }
 
     @Override

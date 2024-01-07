@@ -556,7 +556,7 @@ public class InMemoryProductRepositoryTest {
 		uploadingPicture.getLimits().add(maximumPictureSize);
 
 		// R A T E L I M I T
-		SlidingWindowRateLimit maximumPicturesUploadedByHour = new SlidingWindowRateLimit(10, ChronoUnit.HOURS, 1);
+		SlidingWindowRateLimit maximumPicturesUploadedByHour = new SlidingWindowRateLimit("max-photos-uploaded", 10, ChronoUnit.HOURS, 1);
 		maximumPicturesUploadedByHour.setId("Maximum of pictures uploaded by hour");
 		uploadingPicture.getLimits().add(maximumPicturesUploadedByHour);
 
@@ -565,7 +565,7 @@ public class InMemoryProductRepositoryTest {
 		repository.addFeature(downloadingPicture);
 
 		// R A T E L I M I T
-		SlidingWindowRateLimit maximumPicturesDownloadedByHour = new SlidingWindowRateLimit(8, ChronoUnit.MINUTES, 60);
+		SlidingWindowRateLimit maximumPicturesDownloadedByHour = new SlidingWindowRateLimit("max-photos-downloaded", 8, ChronoUnit.MINUTES, 60);
 		maximumPicturesDownloadedByHour.setId("Maximum of pictures downloaded by hour");
 		downloadingPicture.getLimits().add(maximumPicturesDownloadedByHour);
 

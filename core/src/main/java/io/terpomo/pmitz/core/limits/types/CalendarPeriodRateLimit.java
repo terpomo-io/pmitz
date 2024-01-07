@@ -9,8 +9,8 @@ public class CalendarPeriodRateLimit extends RateLimit{
 
     private final Periodicity periodicity;
 
-    public CalendarPeriodRateLimit(int quota, Periodicity periodicity){
-        super (quota, periodicity.getChronoUnit(), 1);
+    public CalendarPeriodRateLimit(String id, int quota, Periodicity periodicity){
+        super (id, quota, periodicity.getChronoUnit(), 1);
         this.periodicity = periodicity;
     }
 

@@ -14,24 +14,25 @@ import static org.junit.jupiter.api.Assertions.*;
 class UsageLimitVerificationStrategyDefaultResolverTest {
 
     UsageLimitVerificationStrategyResolver strategyResolver = new UsageLimitVerificationStrategyDefaultResolver();
+    private String limitId = "max-number-of-photos";;
 
     @Test
     void resolveLimitVerificationStrategyShouldReturnSimpleStrategyWhenCountLimit(){
-        CountLimit countLimit = new CountLimit("max-number-of-photos", 10);
+        CountLimit countLimit = new CountLimit(limitId, 10);
         UsageLimitVerificationStrategy<CountLimit> countLimitVerifStrategy = strategyResolver.resolveLimitVerificationStrategy(countLimit);
         assertNotNull(countLimitVerifStrategy);
     }
 
     @Test
     void resolveLimitVerificationStrategyShouldReturnSimpleStrategyWhenCalendarPeriodRateLimit(){
-        CalendarPeriodRateLimit rateLimit = new CalendarPeriodRateLimit(10, CalendarPeriodRateLimit.Periodicity.WEEK);
+        CalendarPeriodRateLimit rateLimit = new CalendarPeriodRateLimit(limitId, 10, CalendarPeriodRateLimit.Periodicity.WEEK);
         UsageLimitVerificationStrategy<CalendarPeriodRateLimit> verifStrategy = strategyResolver.resolveLimitVerificationStrategy(rateLimit);
         assertNotNull(verifStrategy);
     }
 
     @Test
     void resolveLimitVerificationStrategyShouldReturnSimpleStrategyWhenSlidingWindowRateLimit(){
-        SlidingWindowRateLimit rateLimit = new SlidingWindowRateLimit(10, ChronoUnit.MONTHS, 1);
+        SlidingWindowRateLimit rateLimit = new SlidingWindowRateLimit(limitId, 10, ChronoUnit.MONTHS, 1);
         UsageLimitVerificationStrategy<SlidingWindowRateLimit> verifStrategy = strategyResolver.resolveLimitVerificationStrategy(rateLimit);
         assertNotNull(verifStrategy);
     }

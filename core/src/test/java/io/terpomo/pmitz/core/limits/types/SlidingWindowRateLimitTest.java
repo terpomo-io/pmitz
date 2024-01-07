@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SlidingWindowRateLimitTest {
 
-    SlidingWindowRateLimit rateLimit = new SlidingWindowRateLimit(10, ChronoUnit.DAYS, 30);
+    SlidingWindowRateLimit rateLimit = new SlidingWindowRateLimit("photos-uploaded", 10, ChronoUnit.DAYS, 30);
     @Test
     void getWindowStart() {
 
