@@ -21,6 +21,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
+import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -564,10 +565,15 @@ public class InMemoryProductRepositoryTest {
 		Feature downloadingPicture = new Feature(pictureHostingService, "Downloading pictures");
 		repository.addFeature(downloadingPicture);
 
-		// R A T E L I M I T
+		// R A T E L I M I T ( S l i d i n g W i n d o w R a t e L i m i t )
 		SlidingWindowRateLimit maximumPicturesDownloadedByHour = new SlidingWindowRateLimit("max-photos-downloaded", 8, ChronoUnit.MINUTES, 60);
 		maximumPicturesDownloadedByHour.setId("Maximum of pictures downloaded by hour");
 		downloadingPicture.getLimits().add(maximumPicturesDownloadedByHour);
+
+		// R A T E L I M I T ( C a l e n d a r P e r i o d R a t e L i m i t )
+		CalendarPeriodRateLimit maximumPicturesDownloadedByCalendarMonth = new CalendarPeriodRateLimit("max-photos-downloaded-by-calendar-month", 10, CalendarPeriodRateLimit.Periodicity.MONTH);
+		maximumPicturesDownloadedByCalendarMonth.setId("Maximum of pictures downloaded by calendar month");
+		downloadingPicture.getLimits().add(maximumPicturesDownloadedByCalendarMonth);
 
 
 		// P R O D U C T :  L I B R A R Y
@@ -614,8 +620,8 @@ public class InMemoryProductRepositoryTest {
 		assertEquals("Go", maximumPictureSize.getUnit());
 
 		// R A T E L I M I T
-		assertTrue(uploadingPicture.get().getLimits().get(1) instanceof RateLimit);
-		RateLimit maximumPicturesInMonth = (RateLimit)uploadingPicture.get().getLimits().get(1);
+		assertTrue(uploadingPicture.get().getLimits().get(1) instanceof SlidingWindowRateLimit);
+		SlidingWindowRateLimit maximumPicturesInMonth = (SlidingWindowRateLimit)uploadingPicture.get().getLimits().get(1);
 		assertEquals("Maximum of pictures uploaded by hour", maximumPicturesInMonth.getId());
 		assertEquals(10, maximumPicturesInMonth.getValue());
 		assertEquals(ChronoUnit.HOURS, maximumPicturesInMonth.getInterval());
@@ -626,15 +632,22 @@ public class InMemoryProductRepositoryTest {
 		assertTrue(downloadingPicture.isPresent());
 		assertEquals("Downloading pictures", downloadingPicture.get().getFeatureId());
 		assertEquals("Picture hosting service", downloadingPicture.get().getProduct().getProductId());
-		assertEquals(1, downloadingPicture.get().getLimits().size());
+		assertEquals(2, downloadingPicture.get().getLimits().size());
 
-		// R A T E L I M I T
-		assertTrue(downloadingPicture.get().getLimits().get(0) instanceof RateLimit);
-		maximumPicturesInMonth = (RateLimit)downloadingPicture.get().getLimits().get(0);
+		// R A T E L I M I T ( S l i d i n g W i n d o w R a t e L i m i t )
+		assertTrue(downloadingPicture.get().getLimits().get(0) instanceof SlidingWindowRateLimit);
+		maximumPicturesInMonth = (SlidingWindowRateLimit)downloadingPicture.get().getLimits().get(0);
 		assertEquals("Maximum of pictures downloaded by hour", maximumPicturesInMonth.getId());
 		assertEquals(8, maximumPicturesInMonth.getValue());
 		assertEquals(ChronoUnit.MINUTES, maximumPicturesInMonth.getInterval());
 		assertEquals(60, maximumPicturesInMonth.getDuration());
+
+		// R A T E L I M I T ( C a l e n d a r P e r i o d R a t e L i m i t )
+		assertTrue(downloadingPicture.get().getLimits().get(1) instanceof CalendarPeriodRateLimit);
+		CalendarPeriodRateLimit maximumPicturesInCalendarMonth = (CalendarPeriodRateLimit)downloadingPicture.get().getLimits().get(1);
+		assertEquals("Maximum of pictures downloaded by calendar month", maximumPicturesInCalendarMonth.getId());
+		assertEquals(10, maximumPicturesInCalendarMonth.getValue());
+		assertEquals(CalendarPeriodRateLimit.Periodicity.MONTH, maximumPicturesInCalendarMonth.getPeriodicity());
 
 
 		// P R O D U C T :  L I B R A R Y

@@ -14,6 +14,10 @@ public class CalendarPeriodRateLimit extends RateLimit{
         this.periodicity = periodicity;
     }
 
+    public Periodicity getPeriodicity() {
+        return periodicity;
+    }
+
     @Override
     public Optional<ZonedDateTime> getWindowStart(ZonedDateTime referenceDate) {
         ZonedDateTime adjustedDateTime = switch (periodicity) {

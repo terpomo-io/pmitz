@@ -3,6 +3,7 @@ package io.terpomo.pmitz.core.repository.product.inmemory;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 
@@ -11,6 +12,7 @@ import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 	property = "type"
 )
 @JsonSubTypes({
+	@JsonSubTypes.Type(value = CalendarPeriodRateLimit.class, name = "CalendarPeriodRateLimit"),
 	@JsonSubTypes.Type(value = CountLimit.class, name = "CountLimit"),
 	@JsonSubTypes.Type(value = SlidingWindowRateLimit.class, name = "SlidingWindowRateLimit")
 })
