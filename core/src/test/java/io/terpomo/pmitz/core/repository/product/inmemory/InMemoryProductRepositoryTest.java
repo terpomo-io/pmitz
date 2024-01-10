@@ -14,8 +14,8 @@
 
 package io.terpomo.pmitz.core.repository.product.inmemory;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -24,15 +24,16 @@ import java.util.Optional;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
-import io.terpomo.pmitz.core.limits.types.RateLimit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -40,16 +41,25 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Tests for {@link InMemoryProductRepository}.
+ *
+ * @since 1.0
+ */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class InMemoryProductRepositoryTest {
 
-	InMemoryProductRepository repository = new InMemoryProductRepository();
+	private static final String JSON_FILE = "./src/test/resources/products_repository_sample.json";
+
+	private static byte[] repository_exported;
+
+	private InMemoryProductRepository repository;
+
 
 	@BeforeEach
 	void setUp() {
-		repository.clear();
+		repository = new InMemoryProductRepository();
 	}
-
-	// P R O D U C T
 
 	@Test
 	void getProductIds_emptyList() {
@@ -214,9 +224,6 @@ public class InMemoryProductRepositoryTest {
 
 		assertTrue(p.isEmpty());
 	}
-
-
-	// F E A T U R E
 
 	@Test
 	void addFeature_featureNull() {
@@ -543,83 +550,70 @@ public class InMemoryProductRepositoryTest {
 	@Order(1)
 	void store_withFeatures() throws IOException {
 
-		// P R O D U C T :  P I C T U R E   H O S T I N G   S E R V I C E
 		Product pictureHostingService = new Product("Picture hosting service");
 		repository.addProduct(pictureHostingService);
 
-		// F E A T U R E :  U P L O A D I N G   P I C T U R E S
 		Feature uploadingPicture = new Feature(pictureHostingService, "Uploading pictures");
 		repository.addFeature(uploadingPicture);
 
-		// C O U N T L I M I T
 		CountLimit maximumPictureSize = new CountLimit("Maximum picture size", 10);
 		maximumPictureSize.setUnit("Go");
 		uploadingPicture.getLimits().add(maximumPictureSize);
 
-		// R A T E L I M I T
 		SlidingWindowRateLimit maximumPicturesUploadedByHour = new SlidingWindowRateLimit("max-photos-uploaded", 10, ChronoUnit.HOURS, 1);
 		maximumPicturesUploadedByHour.setId("Maximum of pictures uploaded by hour");
 		uploadingPicture.getLimits().add(maximumPicturesUploadedByHour);
 
-		// F E A T U R E :  D O W N L O A D I N G   P I C T U R E S
 		Feature downloadingPicture = new Feature(pictureHostingService, "Downloading pictures");
 		repository.addFeature(downloadingPicture);
 
-		// R A T E L I M I T ( S l i d i n g W i n d o w R a t e L i m i t )
 		SlidingWindowRateLimit maximumPicturesDownloadedByHour = new SlidingWindowRateLimit("max-photos-downloaded", 8, ChronoUnit.MINUTES, 60);
 		maximumPicturesDownloadedByHour.setId("Maximum of pictures downloaded by hour");
 		downloadingPicture.getLimits().add(maximumPicturesDownloadedByHour);
 
-		// R A T E L I M I T ( C a l e n d a r P e r i o d R a t e L i m i t )
 		CalendarPeriodRateLimit maximumPicturesDownloadedByCalendarMonth = new CalendarPeriodRateLimit("max-photos-downloaded-by-calendar-month", 10, CalendarPeriodRateLimit.Periodicity.MONTH);
 		maximumPicturesDownloadedByCalendarMonth.setId("Maximum of pictures downloaded by calendar month");
 		downloadingPicture.getLimits().add(maximumPicturesDownloadedByCalendarMonth);
 
 
-		// P R O D U C T :  L I B R A R Y
 		Product lendingBooks = new Product("Library");
 		repository.addProduct(lendingBooks);
 
-		// F E A T U R E :  R E S E R V I N G   B O O K S
 		Feature reservingBooks = new Feature(lendingBooks, "Reserving books");
 		repository.addFeature(reservingBooks);
 
-		// C O U N T L I M I T
 		CountLimit maximumBooksReserved = new CountLimit("Maximum books reserved", 5);
 		reservingBooks.getLimits().add(maximumBooksReserved);
 
 
-		FileOutputStream fos = new FileOutputStream("products_repository.json");
-		repository.store(fos);
-		fos.close();
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		repository.store(baos);
+		repository_exported = baos.toByteArray();
+		baos.close();
 	}
 
 	@Test
-	@Order(1)
+	@Order(2)
 	void load_jsonWithFeatures() throws IOException {
 
-		FileInputStream fis = new FileInputStream("products_repository.json");
-		repository.load(fis);
-		fis.close();
+		ByteArrayInputStream bais = new ByteArrayInputStream(repository_exported);
+		repository.load(bais);
+		bais.close();
 
-		// P R O D U C T :  P I C T U R E   H O S T I N G   S E R V I C E
 		Product pictureHostingService = new Product("Picture hosting service");
 
-		// F E A T U R E :  U P L O A D I N G   P I C T U R E S
 		Optional<Feature> uploadingPicture = repository.getFeature(pictureHostingService, "Uploading pictures");
 		assertTrue(uploadingPicture.isPresent());
 		assertEquals("Uploading pictures", uploadingPicture.get().getFeatureId());
 		assertEquals("Picture hosting service", uploadingPicture.get().getProduct().getProductId());
 		assertEquals(2, uploadingPicture.get().getLimits().size());
 
-		// C O U N T L I M I T
 		assertTrue(uploadingPicture.get().getLimits().get(0) instanceof CountLimit);
 		CountLimit maximumPictureSize = (CountLimit)uploadingPicture.get().getLimits().get(0);
 		assertEquals("Maximum picture size", maximumPictureSize.getId());
 		assertEquals(10, maximumPictureSize.getValue());
 		assertEquals("Go", maximumPictureSize.getUnit());
 
-		// R A T E L I M I T
 		assertTrue(uploadingPicture.get().getLimits().get(1) instanceof SlidingWindowRateLimit);
 		SlidingWindowRateLimit maximumPicturesInMonth = (SlidingWindowRateLimit)uploadingPicture.get().getLimits().get(1);
 		assertEquals("Maximum of pictures uploaded by hour", maximumPicturesInMonth.getId());
@@ -627,14 +621,12 @@ public class InMemoryProductRepositoryTest {
 		assertEquals(ChronoUnit.HOURS, maximumPicturesInMonth.getInterval());
 		assertEquals(1, maximumPicturesInMonth.getDuration());
 
-		// F E A T U R E :  U P L O A D I N G   P I C T U R E S
 		Optional<Feature> downloadingPicture = repository.getFeature(pictureHostingService, "Downloading pictures");
 		assertTrue(downloadingPicture.isPresent());
 		assertEquals("Downloading pictures", downloadingPicture.get().getFeatureId());
 		assertEquals("Picture hosting service", downloadingPicture.get().getProduct().getProductId());
 		assertEquals(2, downloadingPicture.get().getLimits().size());
 
-		// R A T E L I M I T ( S l i d i n g W i n d o w R a t e L i m i t )
 		assertTrue(downloadingPicture.get().getLimits().get(0) instanceof SlidingWindowRateLimit);
 		maximumPicturesInMonth = (SlidingWindowRateLimit)downloadingPicture.get().getLimits().get(0);
 		assertEquals("Maximum of pictures downloaded by hour", maximumPicturesInMonth.getId());
@@ -642,7 +634,6 @@ public class InMemoryProductRepositoryTest {
 		assertEquals(ChronoUnit.MINUTES, maximumPicturesInMonth.getInterval());
 		assertEquals(60, maximumPicturesInMonth.getDuration());
 
-		// R A T E L I M I T ( C a l e n d a r P e r i o d R a t e L i m i t )
 		assertTrue(downloadingPicture.get().getLimits().get(1) instanceof CalendarPeriodRateLimit);
 		CalendarPeriodRateLimit maximumPicturesInCalendarMonth = (CalendarPeriodRateLimit)downloadingPicture.get().getLimits().get(1);
 		assertEquals("Maximum of pictures downloaded by calendar month", maximumPicturesInCalendarMonth.getId());
@@ -650,17 +641,14 @@ public class InMemoryProductRepositoryTest {
 		assertEquals(CalendarPeriodRateLimit.Periodicity.MONTH, maximumPicturesInCalendarMonth.getPeriodicity());
 
 
-		// P R O D U C T :  L I B R A R Y
 		Product library = new Product("Library");
 
-		// F E A T U R E :  R E S E R V I N G   B O O K S
 		Optional<Feature> reservingBooks = repository.getFeature(library, "Reserving books");
 		assertTrue(reservingBooks.isPresent());
 		assertEquals("Reserving books", reservingBooks.get().getFeatureId());
 		assertEquals("Library", reservingBooks.get().getProduct().getProductId());
 		assertEquals(1, reservingBooks.get().getLimits().size());
 
-		// C O U N T L I M I T
 		assertTrue(reservingBooks.get().getLimits().get(0) instanceof CountLimit);
 		CountLimit maximumBooksReserved = (CountLimit)reservingBooks.get().getLimits().get(0);
 		assertEquals("Maximum books reserved", maximumBooksReserved.getId());
