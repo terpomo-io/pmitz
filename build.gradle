@@ -17,3 +17,17 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+subprojects {
+    apply plugin: 'checkstyle'
+
+    checkstyle {
+        toolVersion = "9.3"
+        ignoreFailures = true
+        showViolations = false
+    }
+
+    dependencies {
+        checkstyle("io.spring.javaformat:spring-javaformat-checkstyle:0.0.40")
+    }
+}
