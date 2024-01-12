@@ -23,6 +23,10 @@ import java.util.Optional;
 
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
+
+import com.fasterxml.jackson.databind.util.JSONPObject;
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -548,53 +552,65 @@ public class InMemoryProductRepositoryTest {
 
 	@Test
 	@Order(1)
-	void store_withFeatures() throws IOException {
+	void store_repository_to_json() throws IOException {
 
-		Product pictureHostingService = new Product("Picture hosting service");
-		repository.addProduct(pictureHostingService);
-
-		Feature uploadingPicture = new Feature(pictureHostingService, "Uploading pictures");
-		repository.addFeature(uploadingPicture);
-
-		CountLimit maximumPictureSize = new CountLimit("Maximum picture size", 10);
-		maximumPictureSize.setUnit("Go");
-		uploadingPicture.getLimits().add(maximumPictureSize);
-
-		SlidingWindowRateLimit maximumPicturesUploadedByHour = new SlidingWindowRateLimit("max-photos-uploaded", 10, ChronoUnit.HOURS, 1);
-		maximumPicturesUploadedByHour.setId("Maximum of pictures uploaded by hour");
-		uploadingPicture.getLimits().add(maximumPicturesUploadedByHour);
-
-		Feature downloadingPicture = new Feature(pictureHostingService, "Downloading pictures");
-		repository.addFeature(downloadingPicture);
-
-		SlidingWindowRateLimit maximumPicturesDownloadedByHour = new SlidingWindowRateLimit("max-photos-downloaded", 8, ChronoUnit.MINUTES, 60);
-		maximumPicturesDownloadedByHour.setId("Maximum of pictures downloaded by hour");
-		downloadingPicture.getLimits().add(maximumPicturesDownloadedByHour);
-
-		CalendarPeriodRateLimit maximumPicturesDownloadedByCalendarMonth = new CalendarPeriodRateLimit("max-photos-downloaded-by-calendar-month", 10, CalendarPeriodRateLimit.Periodicity.MONTH);
-		maximumPicturesDownloadedByCalendarMonth.setId("Maximum of pictures downloaded by calendar month");
-		downloadingPicture.getLimits().add(maximumPicturesDownloadedByCalendarMonth);
-
-
-		Product lendingBooks = new Product("Library");
-		repository.addProduct(lendingBooks);
-
-		Feature reservingBooks = new Feature(lendingBooks, "Reserving books");
-		repository.addFeature(reservingBooks);
-
-		CountLimit maximumBooksReserved = new CountLimit("Maximum books reserved", 5);
-		reservingBooks.getLimits().add(maximumBooksReserved);
-
+		this.populateRepository();
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		repository.store(baos);
 		repository_exported = baos.toByteArray();
 		baos.close();
+
+		DocumentContext dc = JsonPath.parse(new String(repository_exported));
+
+		assertEquals(2, (int)dc.read("$[0].length()"));
+
+		assertEquals("Library", dc.read("$[0].productId"));
+		assertEquals(1, (int)dc.read("$[0].features.length()"));
+
+		assertEquals("Reserving books", dc.read("$[0].features[0].featureId"));
+		assertEquals(1, (int)dc.read("$[0].features[0].limits.length()"));
+
+		assertEquals("CountLimit", dc.read("$[0].features[0].limits[0].type"));
+		assertEquals("Maximum books reserved", dc.read("$[0].features[0].limits[0].id"));
+		assertEquals(5, (int)dc.read("$[0].features[0].limits[0].count"));
+
+
+		assertEquals("Picture hosting service", dc.read("$[1].productId"));
+		assertEquals(2, (int)dc.read("$[1].features.length()"));
+
+		assertEquals("Uploading pictures", dc.read("$[1].features[0].featureId"));
+		assertEquals(2, (int)dc.read("$[1].features[0].limits.length()"));
+
+		assertEquals("CountLimit", dc.read("$[1].features[0].limits[0].type"));
+		assertEquals("Maximum picture size", dc.read("$[1].features[0].limits[0].id"));
+		assertEquals(10, (int)dc.read("$[1].features[0].limits[0].count"));
+		assertEquals("Go", dc.read("$[1].features[0].limits[0].unit"));
+
+		assertEquals("SlidingWindowRateLimit", dc.read("$[1].features[0].limits[1].type"));
+		assertEquals("Maximum of pictures uploaded by hour", dc.read("$[1].features[0].limits[1].id"));
+		assertEquals(10, (int)dc.read("$[1].features[0].limits[1].quota"));
+		assertEquals("HOURS", dc.read("$[1].features[0].limits[1].interval"));
+		assertEquals(1, (int)dc.read("$[1].features[0].limits[1].duration"));
+
+		assertEquals("Downloading pictures", dc.read("$[1].features[1].featureId"));
+		assertEquals(2, (int)dc.read("$[1].features[1].limits.length()"));
+
+		assertEquals("SlidingWindowRateLimit", dc.read("$[1].features[1].limits[0].type"));
+		assertEquals("Maximum of pictures downloaded by hour", dc.read("$[1].features[1].limits[0].id"));
+		assertEquals(8, (int)dc.read("$[1].features[1].limits[0].quota"));
+		assertEquals("MINUTES", dc.read("$[1].features[1].limits[0].interval"));
+		assertEquals(60, (int)dc.read("$[1].features[1].limits[0].duration"));
+
+		assertEquals("CalendarPeriodRateLimit", dc.read("$[1].features[1].limits[1].type"));
+		assertEquals("Maximum of pictures downloaded by calendar month", dc.read("$[1].features[1].limits[1].id"));
+		assertEquals(10, (int)dc.read("$[1].features[1].limits[1].quota"));
+		assertEquals("MONTH", dc.read("$[1].features[1].limits[1].periodicity"));
 	}
 
 	@Test
 	@Order(2)
-	void load_jsonWithFeatures() throws IOException {
+	void load_repository_from_json() throws IOException {
 
 		ByteArrayInputStream bais = new ByteArrayInputStream(repository_exported);
 		repository.load(bais);
@@ -654,5 +670,43 @@ public class InMemoryProductRepositoryTest {
 		assertEquals("Maximum books reserved", maximumBooksReserved.getId());
 		assertEquals(5, maximumBooksReserved.getValue());
 		assertNull(maximumBooksReserved.getUnit());
+	}
+
+	private void populateRepository() {
+
+		Product pictureHostingService = new Product("Picture hosting service");
+		repository.addProduct(pictureHostingService);
+
+		Feature uploadingPicture = new Feature(pictureHostingService, "Uploading pictures");
+		repository.addFeature(uploadingPicture);
+
+		CountLimit maximumPictureSize = new CountLimit("Maximum picture size", 10);
+		maximumPictureSize.setUnit("Go");
+		uploadingPicture.getLimits().add(maximumPictureSize);
+
+		SlidingWindowRateLimit maximumPicturesUploadedByHour = new SlidingWindowRateLimit("max-photos-uploaded", 10, ChronoUnit.HOURS, 1);
+		maximumPicturesUploadedByHour.setId("Maximum of pictures uploaded by hour");
+		uploadingPicture.getLimits().add(maximumPicturesUploadedByHour);
+
+		Feature downloadingPicture = new Feature(pictureHostingService, "Downloading pictures");
+		repository.addFeature(downloadingPicture);
+
+		SlidingWindowRateLimit maximumPicturesDownloadedByHour = new SlidingWindowRateLimit("max-photos-downloaded", 8, ChronoUnit.MINUTES, 60);
+		maximumPicturesDownloadedByHour.setId("Maximum of pictures downloaded by hour");
+		downloadingPicture.getLimits().add(maximumPicturesDownloadedByHour);
+
+		CalendarPeriodRateLimit maximumPicturesDownloadedByCalendarMonth = new CalendarPeriodRateLimit("max-photos-downloaded-by-calendar-month", 10, CalendarPeriodRateLimit.Periodicity.MONTH);
+		maximumPicturesDownloadedByCalendarMonth.setId("Maximum of pictures downloaded by calendar month");
+		downloadingPicture.getLimits().add(maximumPicturesDownloadedByCalendarMonth);
+
+
+		Product lendingBooks = new Product("Library");
+		repository.addProduct(lendingBooks);
+
+		Feature reservingBooks = new Feature(lendingBooks, "Reserving books");
+		repository.addFeature(reservingBooks);
+
+		CountLimit maximumBooksReserved = new CountLimit("Maximum books reserved", 5);
+		reservingBooks.getLimits().add(maximumBooksReserved);
 	}
 }
