@@ -1,6 +1,7 @@
 # Code style
 
-The coding convention required in the contributions to the project is that used by the [Spring Code Style](https://github.com/spring-projects/spring-framework/wiki/Code-Style). Only the few following points modify it.
+The coding convention required in the contributions to the project is that used by
+the [Google Code Style](https://google.github.io/styleguide/javaguide.html). Only the few following points modify it.
 
 ### License
 
