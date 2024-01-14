@@ -152,7 +152,7 @@ Updating, improving and correcting the documentation
 
 Coding convention rules are described in our [code style page](CODE_STYLE.md).
 
-Guidelines for configuring the IntelliJ IDEA IDE to follow this Code Style are explained in [Spring IntelliJ IDEA Editor Settings](https://github.com/spring-projects/spring-framework/wiki/IntelliJ-IDEA-Editor-Settings).
+Guidelines for configuring the IntelliJ IDEA IDE to follow this Code Style are explained in [google-java-format](https://github.com/google/google-java-format/blob/master/README.md#intellij-android-studio-and-other-jetbrains-ides).
 
 ### Commit Messages
 
