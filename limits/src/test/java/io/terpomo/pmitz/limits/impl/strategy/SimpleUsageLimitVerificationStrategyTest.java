@@ -87,7 +87,7 @@ class SimpleUsageLimitVerificationStrategyTest {
 
     @Test
     void recordFeatureUsageShouldThrowExceptionWhenLimitExceeded(){
-        UsageRecord existingRecord = new UsageRecord(feature, limitId, Optional.empty(), Optional.empty(), 5L);
+        UsageRecord existingRecord = new UsageRecord(limitId, Optional.empty(), Optional.empty(), 5L);
 
         LimitTrackingContext context = initContextMock(Optional.empty(), Optional.empty(), Collections.singletonList(existingRecord));
 
@@ -145,7 +145,7 @@ class SimpleUsageLimitVerificationStrategyTest {
     @ParameterizedTest
     @MethodSource("existingRecords")
     void isWithinLimitsShouldReturnTrueIfLimitNotExceeded(List<UsageRecord> existingRecords) {
-        LimitTrackingContext context = initContextMock(Optional.empty(), Optional.empty(), existingRecords, false);
+        LimitTrackingContext context = initContextMock(Optional.empty(), Optional.empty(), existingRecords);
 
         CountLimit usageLimit = new CountLimit(limitId, 10);
 
@@ -154,8 +154,8 @@ class SimpleUsageLimitVerificationStrategyTest {
 
     @Test
     void isWithinLimitsShouldReturnFalseIfLimitExceeded() {
-        UsageRecord existingRecord = new UsageRecord(feature, limitId, Optional.empty(), Optional.empty(), 5L);
-        LimitTrackingContext context = initContextMock(Optional.empty(), Optional.empty(), Collections.singletonList(existingRecord), false);
+        UsageRecord existingRecord = new UsageRecord(limitId, Optional.empty(), Optional.empty(), 5L);
+        LimitTrackingContext context = initContextMock(Optional.empty(), Optional.empty(), Collections.singletonList(existingRecord));
 
         CountLimit usageLimit = new CountLimit(limitId, 10);
 
@@ -165,7 +165,7 @@ class SimpleUsageLimitVerificationStrategyTest {
     @ParameterizedTest
     @MethodSource("existingRecords")
     void getRemainingUnitsShouldReturnUnusedUnits(List<UsageRecord> existingRecords, int previouslyConsumedUnits) {
-        LimitTrackingContext context = initContextMock(Optional.empty(), Optional.empty(), existingRecords, false);
+        LimitTrackingContext context = initContextMock(Optional.empty(), Optional.empty(), existingRecords);
 
         CountLimit usageLimit = new CountLimit(limitId, 10);
 
@@ -190,15 +190,9 @@ class SimpleUsageLimitVerificationStrategyTest {
         assertEquals(windowEnd, verificationStrategy.getWindowStart(usageLimit, ZonedDateTime.now()).get());
     }
 
-    private LimitTrackingContext initContextMock(Optional<ZonedDateTime> windowStart, Optional<ZonedDateTime> windowEnd, List<UsageRecord> existingUsageRecord) {
-        return initContextMock(windowStart, windowEnd, existingUsageRecord, true);
-    }
 
-    private LimitTrackingContext initContextMock(Optional<ZonedDateTime> windowStart, Optional<ZonedDateTime> windowEnd, List<UsageRecord> existingUsageRecord, boolean initFeature) {
+    private LimitTrackingContext initContextMock(Optional<ZonedDateTime> windowStart, Optional<ZonedDateTime> windowEnd, List<UsageRecord> existingUsageRecord) {
         LimitTrackingContext context = mock(LimitTrackingContext.class);
-        if (initFeature) {
-            when(context.getFeature()).thenReturn(feature);
-        }
         when(context.findUsageRecords(limitId, windowStart, windowEnd)).thenReturn(existingUsageRecord);
 
         return context;
@@ -221,7 +215,7 @@ class SimpleUsageLimitVerificationStrategyTest {
     }
 
     static Stream<Arguments> existingRecords() {
-        UsageRecord existingRecord = new UsageRecord(feature, limitId, Optional.empty(), Optional.empty(), 5L);
+        UsageRecord existingRecord = new UsageRecord(limitId, Optional.empty(), Optional.empty(), 5L);
         return Stream.of(
                 Arguments.of(Collections.emptyList(), 0),
                 Arguments.of(Collections.singletonList(existingRecord), 5)

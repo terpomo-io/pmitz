@@ -25,7 +25,7 @@ class LimitTrackingContextTest {
     void addUsageRecordsShouldAddRecordsToUpdatedList() {
         LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
 
-        UsageRecord usageRecord = new UsageRecord(feature, limitId, Optional.empty(), Optional.empty(), 3L);
+        UsageRecord usageRecord = new UsageRecord(limitId, Optional.empty(), Optional.empty(), 3L);
         context.addUsageRecords(Collections.singletonList(usageRecord));
 
         var updatedRecords = context.getUpdatedUsageRecords();
@@ -60,10 +60,10 @@ class LimitTrackingContextTest {
     }
 
     private List<UsageRecord> getCurrentUsageRecords (ZonedDateTime startTime, ZonedDateTime endTime){
-        UsageRecord usageRecord1 = new UsageRecord(feature, limitId, Optional.empty(), Optional.empty(), 3L);
-        UsageRecord usageRecord2 = new UsageRecord(feature, limitId, Optional.of(startTime), Optional.empty(), 2L);
-        UsageRecord usageRecord3 = new UsageRecord(feature, limitId, Optional.empty(), Optional.of(endTime), 2L);
-        UsageRecord usageRecord4 = new UsageRecord(feature, limitId, Optional.of(startTime.minusHours(1)), Optional.of(endTime), 2L);
+        UsageRecord usageRecord1 = new UsageRecord(limitId, Optional.empty(), Optional.empty(), 3L);
+        UsageRecord usageRecord2 = new UsageRecord(limitId, Optional.of(startTime), Optional.empty(), 2L);
+        UsageRecord usageRecord3 = new UsageRecord(limitId, Optional.empty(), Optional.of(endTime), 2L);
+        UsageRecord usageRecord4 = new UsageRecord(limitId, Optional.of(startTime.minusHours(1)), Optional.of(endTime), 2L);
 
         return Arrays.asList(usageRecord1, usageRecord2, usageRecord3, usageRecord4);
     }

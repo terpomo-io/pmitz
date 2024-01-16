@@ -23,7 +23,7 @@ public class SimpleUsageLimitVerificationStrategy<T extends UsageLimit> implemen
                     context.getFeature(), context.getUserGrouping());
         }
 
-        var updatedRecord = new UsageRecord(context.getFeature(), usageLimit.getId(), getWindowStart(usageLimit, now), getWindowEnd(usageLimit, now), newUnits);
+        var updatedRecord = new UsageRecord(usageLimit.getId(), getWindowStart(usageLimit, now), getWindowEnd(usageLimit, now), newUnits);
 
         context.addUsageRecords(Collections.singletonList(updatedRecord));
     }
@@ -35,7 +35,7 @@ public class SimpleUsageLimitVerificationStrategy<T extends UsageLimit> implemen
 
         var newUnits = alreadyUsedUnits > reducedUnits ? alreadyUsedUnits - reducedUnits : 0;
 
-        var updatedRecord = new UsageRecord(context.getFeature(), usageLimit.getId(), getWindowStart(usageLimit, now), getWindowEnd(usageLimit, now), newUnits);
+        var updatedRecord = new UsageRecord(usageLimit.getId(), getWindowStart(usageLimit, now), getWindowEnd(usageLimit, now), newUnits);
         context.addUsageRecords(Collections.singletonList(updatedRecord));
     }
 

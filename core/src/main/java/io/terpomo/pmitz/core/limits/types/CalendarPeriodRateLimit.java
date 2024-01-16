@@ -53,8 +53,7 @@ public class CalendarPeriodRateLimit extends RateLimit{
     }
 
     private ZonedDateTime lastNanosecondOfDay (ZonedDateTime dateTime) {
-        return dateTime.with(ChronoField.SECOND_OF_DAY, (3600 * 24) -1)
-                .with(ChronoField.NANO_OF_SECOND, 999_999_999);
+        return dateTime.with(ChronoField.NANO_OF_DAY, 1_000_000_000L * (60 * 60 * 24) -1);
     }
 
     public enum Periodicity {
