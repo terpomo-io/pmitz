@@ -10,7 +10,6 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,7 +24,7 @@ class LimitTrackingContextTest {
     void addUsageRecordsShouldAddRecordsToUpdatedList() {
         LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
 
-        UsageRecord usageRecord = new UsageRecord(limitId, Optional.empty(), Optional.empty(), 3L);
+        UsageRecord usageRecord = new UsageRecord(limitId, null, null, 3L, null);
         context.addUsageRecords(Collections.singletonList(usageRecord));
 
         var updatedRecords = context.getUpdatedUsageRecords();
@@ -40,7 +39,7 @@ class LimitTrackingContextTest {
 
         LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList(), usageRecords, Collections.emptyList());
 
-        var filteredRecords = context.findUsageRecords(limitId, Optional.of(startTime), Optional.of(endTime));
+        var filteredRecords = context.findUsageRecords(limitId, startTime, endTime);
 
         assertEquals(3, filteredRecords.size());
     }
@@ -54,16 +53,16 @@ class LimitTrackingContextTest {
 
         LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList(), usageRecords, Collections.emptyList());
 
-        var filteredRecords = context.findUsageRecords(limitId, Optional.empty(), Optional.empty());
+        var filteredRecords = context.findUsageRecords(limitId, null, null);
 
         assertEquals(4, filteredRecords.size());
     }
 
     private List<UsageRecord> getCurrentUsageRecords (ZonedDateTime startTime, ZonedDateTime endTime){
-        UsageRecord usageRecord1 = new UsageRecord(limitId, Optional.empty(), Optional.empty(), 3L);
-        UsageRecord usageRecord2 = new UsageRecord(limitId, Optional.of(startTime), Optional.empty(), 2L);
-        UsageRecord usageRecord3 = new UsageRecord(limitId, Optional.empty(), Optional.of(endTime), 2L);
-        UsageRecord usageRecord4 = new UsageRecord(limitId, Optional.of(startTime.minusHours(1)), Optional.of(endTime), 2L);
+        UsageRecord usageRecord1 = new UsageRecord(limitId, null, null, 3L, null);
+        UsageRecord usageRecord2 = new UsageRecord(limitId, null, null, 2L, null);
+        UsageRecord usageRecord3 = new UsageRecord(limitId, null, null, 2L, null);
+        UsageRecord usageRecord4 = new UsageRecord(limitId, startTime.minusHours(1), endTime, 2L, null);
 
         return Arrays.asList(usageRecord1, usageRecord2, usageRecord3, usageRecord4);
     }

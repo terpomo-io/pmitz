@@ -15,7 +15,8 @@ public class SimpleUsageLimitVerificationStrategy<T extends UsageLimit> implemen
     @Override
     public void recordFeatureUsage(LimitTrackingContext context, T usageLimit, long additionalUnits) {
         var now = ZonedDateTime.now();
-        long alreadyUsedUnits = findCurrentUsage (context, usageLimit, now);
+        var optExistingUsageRecord = findCurrentUsage (context, usageLimit, now);
+        long alreadyUsedUnits = optExistingUsageRecord.isEmpty() ? 0 : optExistingUsageRecord.get().units();
         long newUnits = alreadyUsedUnits + additionalUnits;
 
         if (newUnits > usageLimit.getValue()){
@@ -23,7 +24,9 @@ public class SimpleUsageLimitVerificationStrategy<T extends UsageLimit> implemen
                     context.getFeature(), context.getUserGrouping());
         }
 
-        var updatedRecord = new UsageRecord(usageLimit.getId(), getWindowStart(usageLimit, now), getWindowEnd(usageLimit, now), newUnits);
+        var windowEnd = getWindowEnd(usageLimit, now).orElse(null);
+        var updatedRecord = optExistingUsageRecord.map(usageRecord -> UsageRecord.updage(usageRecord, newUnits, usageRecord.expirationDate()))
+                .orElseGet(() -> new UsageRecord(usageLimit.getId(), getWindowStart(usageLimit, now).orElse(null), windowEnd, newUnits, calculateExpirationDate(windowEnd)));
 
         context.addUsageRecords(Collections.singletonList(updatedRecord));
     }
@@ -31,11 +34,15 @@ public class SimpleUsageLimitVerificationStrategy<T extends UsageLimit> implemen
     @Override
     public void reduceFeatureUsage(LimitTrackingContext context, T usageLimit, long reducedUnits) {
         var now = ZonedDateTime.now();
-        long alreadyUsedUnits = findCurrentUsage(context, usageLimit, now);
+        var optExistingUsageRecord = findCurrentUsage(context, usageLimit, now);
+
+        var alreadyUsedUnits = optExistingUsageRecord.isEmpty() ? 0 : optExistingUsageRecord.get().units();
 
         var newUnits = alreadyUsedUnits > reducedUnits ? alreadyUsedUnits - reducedUnits : 0;
 
-        var updatedRecord = new UsageRecord(usageLimit.getId(), getWindowStart(usageLimit, now), getWindowEnd(usageLimit, now), newUnits);
+        var windowEnd = getWindowEnd(usageLimit, now).orElse(null);
+        var updatedRecord = optExistingUsageRecord.map(usageRecord -> UsageRecord.updage(usageRecord, newUnits, usageRecord.expirationDate()))
+                .orElseGet(() -> new UsageRecord(usageLimit.getId(), getWindowStart(usageLimit, now).orElse(null), windowEnd, newUnits, calculateExpirationDate(windowEnd)));
         context.addUsageRecords(Collections.singletonList(updatedRecord));
     }
 
@@ -47,7 +54,8 @@ public class SimpleUsageLimitVerificationStrategy<T extends UsageLimit> implemen
     @Override
     public long getRemainingUnits(LimitTrackingContext context, T usageLimit) {
         var now = ZonedDateTime.now();
-        long currentUsage = findCurrentUsage(context, usageLimit, now);
+        var optUsageRecord =  findCurrentUsage(context, usageLimit, now);
+        long currentUsage = optUsageRecord.isEmpty() ? 0 : optUsageRecord.get().units();
         return usageLimit.getValue() - currentUsage;
     }
 
@@ -61,13 +69,17 @@ public class SimpleUsageLimitVerificationStrategy<T extends UsageLimit> implemen
         return usageLimit.getWindowEnd(referenceDate);
     }
 
-    private long findCurrentUsage(LimitTrackingContext context, T usageLimit, ZonedDateTime referenceDate) {
-        var usageRecordList = context.findUsageRecords(usageLimit.getId(), getWindowStart(usageLimit, referenceDate), getWindowEnd(usageLimit, referenceDate));
+    private ZonedDateTime calculateExpirationDate(ZonedDateTime windowEnd ) {
+        return windowEnd == null ? null : windowEnd.plusMonths(3);
+    }
+
+    private Optional<UsageRecord> findCurrentUsage(LimitTrackingContext context, T usageLimit, ZonedDateTime referenceDate) {
+        var usageRecordList = context.findUsageRecords(usageLimit.getId(), getWindowStart(usageLimit, referenceDate).orElse(null), getWindowEnd(usageLimit, referenceDate).orElse(null));
 
         if (usageRecordList.size() > 1){
             throw new IllegalStateException("Inconsistent data found in usage repository. Should find 1 record atmost for this type of limit");
         }
 
-        return (usageRecordList.isEmpty() ? 0 : usageRecordList.get(0).units());
+        return (usageRecordList.isEmpty() ? Optional.empty() : Optional.of(usageRecordList.get(0)));
     }
 }

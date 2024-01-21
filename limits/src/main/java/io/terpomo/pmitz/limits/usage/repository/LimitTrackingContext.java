@@ -7,20 +7,19 @@ import io.terpomo.pmitz.limits.UsageRecord;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class LimitTrackingContext {
 
-    private Feature feature;
+    private final Feature feature;
 
-    private UserGrouping userGrouping;
-    private List<RecordSearchCriteria> searchCriteria;
+    private final UserGrouping userGrouping;
+    private final List<RecordSearchCriteria> searchCriteria;
 
-    private List<UsageRecord> currentUsageRecords;
+    private final List<UsageRecord> currentUsageRecords;
 
-    private List<UsageRecord> updatedUsageRecords;
+    private final List<UsageRecord> updatedUsageRecords;
 
     LimitTrackingContext(Feature feature, UserGrouping userGrouping, List<RecordSearchCriteria> searchCriteria, List<UsageRecord> currentUsageRecords, List<UsageRecord> updatedUsageRecords) {
         this.feature = feature;
@@ -55,11 +54,11 @@ public class LimitTrackingContext {
         updatedUsageRecords.addAll(additionalUsageRecords);
     }
 
-    public List<UsageRecord> findUsageRecords (String limitId, Optional<ZonedDateTime> startTime, Optional <ZonedDateTime> endTime){
+    public List<UsageRecord> findUsageRecords (String limitId, ZonedDateTime startTime, ZonedDateTime endTime){
 
         Predicate<UsageRecord> filterCondition = usageRecord -> limitId.equals(usageRecord.limitId())
-                && (startTime.isEmpty() || usageRecord.startTime().isEmpty() || usageRecord.startTime().get().isAfter(startTime.get()) || usageRecord.startTime().get().isEqual(startTime.get()))
-                && (endTime.isEmpty() || usageRecord.endTime().isEmpty() || usageRecord.endTime().get().isBefore(endTime.get()) || usageRecord.endTime().get().isEqual(endTime.get()));
+                && (startTime == null || usageRecord.startTime() == null || usageRecord.startTime().isAfter(startTime) || usageRecord.startTime().isEqual(startTime))
+                && (endTime == null || usageRecord.endTime() == null || usageRecord.endTime().isBefore(endTime) || usageRecord.endTime().isEqual(endTime));
 
         return getCurrentUsageRecords().stream().filter(filterCondition).collect(Collectors.toList());
     }
