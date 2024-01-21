@@ -5,6 +5,7 @@ import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.limits.*;
 import io.terpomo.pmitz.core.limits.UsageLimitVerifier;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
 import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
 
@@ -49,7 +50,7 @@ public class UsageLimitVerifierImpl implements UsageLimitVerifier {
         if (reducedUnits.values().stream().anyMatch(v -> v == null || v <=0)){
             throw new IllegalArgumentException("Reduced units must be positive numbers");
         }
-        recordOrReduce(feature, userGrouping, reducedUnits, true);
+        recordOrReduce(feature, userGrouping, reducedUnits, false);
     }
 
     @Override
@@ -58,10 +59,25 @@ public class UsageLimitVerifierImpl implements UsageLimitVerifier {
 
         var limitSearchCriteriaList = gatherSearchCriteria(limitVerificationStrategiesMap);
 
-        var context = usageRepository.loadUsageData(feature, userGrouping, limitSearchCriteriaList);
+        var context = new LimitTrackingContext(feature, userGrouping, limitSearchCriteriaList);
+
+        usageRepository.loadUsageData(context);
 
         return limitVerificationStrategiesMap.entrySet().stream()
                 .collect(Collectors.toMap(entry -> entry.getKey().getId(), entry -> entry.getValue().getRemainingUnits(context, entry.getKey())));
+    }
+
+    @Override
+    public boolean isWithinLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
+        var limitVerificationStrategiesMap = findVerificationStrategiesByLimit(feature, userGrouping);
+
+        var limitSearchCriteriaList = gatherSearchCriteria(limitVerificationStrategiesMap);
+
+        var context = new LimitTrackingContext(feature, userGrouping, limitSearchCriteriaList);
+        usageRepository.loadUsageData(context);
+
+        return limitVerificationStrategiesMap.entrySet().stream()
+                .allMatch(entry -> entry.getValue().isWithinLimits(context, entry.getKey(), additionalUnits.get(entry.getKey().getId())));
 
     }
 
@@ -71,31 +87,17 @@ public class UsageLimitVerifierImpl implements UsageLimitVerifier {
 
         var limitSearchCriteriaList = gatherSearchCriteria(limitVerificationStrategiesMap);
 
-        var context = usageRepository.loadUsageData(feature, userGrouping, limitSearchCriteriaList);
+        var context = new LimitTrackingContext(feature, userGrouping, limitSearchCriteriaList);
 
         if (isRecord) {
-            limitVerificationStrategiesMap.entrySet()
-                    .forEach(entry -> entry.getValue().recordFeatureUsage(context, entry.getKey(), units.get(entry.getKey().getId())));
+            limitVerificationStrategiesMap
+                    .forEach((usageLimit, verifStrategy) -> verifStrategy.recordFeatureUsage(context, usageLimit, units.get(usageLimit.getId())));
         } else {
-            limitVerificationStrategiesMap.entrySet()
-                    .forEach(entry -> entry.getValue().reduceFeatureUsage(context, entry.getKey(), units.get(entry.getKey().getId())));
+            limitVerificationStrategiesMap
+                    .forEach((usageLimit, verifStrategy) -> verifStrategy.reduceFeatureUsage(context, usageLimit, units.get(usageLimit.getId())));
         }
 
         usageRepository.updateUsageRecords(context);
-    }
-
-
-    @Override
-    public boolean isWithinLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
-        var limitVerificationStrategiesMap = findVerificationStrategiesByLimit(feature, userGrouping);
-
-        var limitSearchCriteriaList = gatherSearchCriteria(limitVerificationStrategiesMap);
-
-        var context = usageRepository.loadUsageData(feature, userGrouping, limitSearchCriteriaList);
-
-        return limitVerificationStrategiesMap.entrySet().stream()
-                .allMatch(entry -> entry.getValue().isWithinLimits(context, entry.getKey(), additionalUnits.get(entry.getKey().getId())));
-
     }
 
     private List<RecordSearchCriteria> gatherSearchCriteria (Map<UsageLimit, UsageLimitVerificationStrategy> verificationStrategyMap){

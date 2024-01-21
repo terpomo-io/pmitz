@@ -10,13 +10,15 @@ import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
 import io.terpomo.pmitz.limits.UsageLimitVerificationStrategyResolver;
 import io.terpomo.pmitz.limits.UsageLimitResolver;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
-import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
 import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -26,7 +28,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,13 +41,16 @@ class UsageLimitVerifierImplTest {
     UsageRepository usageRepo;
 
     @Mock
-    UsageLimitVerificationStrategy limitVerificationStrategy;
+    UsageLimitVerificationStrategy<UsageLimit> limitVerificationStrategy;
 
     @Mock
     UsageLimitVerificationStrategyResolver limitVerificationStrategyResolver;
 
-    @Mock
-    LimitTrackingContext limitTrackingContext;
+    @Captor
+    ArgumentCaptor<LimitTrackingContext> contextArgCaptor;
+
+    @Captor
+    ArgumentCaptor<UsageLimit> usageLimitArgCaptor;
 
     Feature feature;
 
@@ -67,7 +72,7 @@ class UsageLimitVerifierImplTest {
     }
 
     @Test
-    void recordUsageShouldCallLimitVerificationStrategy() {
+    void recordUsageShouldCallLimitVerificationStrategyAndRepoUpdate() {
         initMocks();
 
         try (MockedStatic<ZonedDateTime> mockedLocalDateTime = mockStatic(ZonedDateTime.class)) {
@@ -76,7 +81,92 @@ class UsageLimitVerifierImplTest {
             usageLimitVerifier.recordFeatureUsage(feature, userGrouping, Collections.singletonMap("MAX_FILES", 2L));
         }
 
-        verify(limitVerificationStrategy).recordFeatureUsage(limitTrackingContext, usageLimit,2L);
+        verify(limitVerificationStrategy).recordFeatureUsage(contextArgCaptor.capture(), usageLimitArgCaptor.capture(),eq(2L));
+
+        var capturedUsageLimit = usageLimitArgCaptor.getValue();
+        assertEquals(usageLimit, capturedUsageLimit);
+
+        var capturedContext = contextArgCaptor.getValue();
+
+        var searchCriteriaList = capturedContext.getSearchCriteria();
+        assertEquals(1, searchCriteriaList.size());
+        var searchCriteria = searchCriteriaList.get(0);
+        assertEquals("MAX_FILES", searchCriteria.limitId());
+        assertEquals(Optional.empty(), searchCriteria.windowStart());
+        assertEquals(Optional.empty(), searchCriteria.windowEnd());
+
+        assertEquals(feature, capturedContext.getFeature());
+        assertEquals(userGrouping, capturedContext.getUserGrouping());
+
+        verify(usageRepo).updateUsageRecords(capturedContext);
+    }
+
+    @Test
+    void reduceFeatureUsageShouldCallLimitVerificationStrategyAndRepo() {
+        initMocks();
+
+        try (MockedStatic<ZonedDateTime> mockedLocalDateTime = mockStatic(ZonedDateTime.class)) {
+            mockedLocalDateTime.when(ZonedDateTime::now).thenReturn(zonedDateTime);
+
+            usageLimitVerifier.reduceFeatureUsage(feature, userGrouping, Collections.singletonMap("MAX_FILES", 2L));
+        }
+        verify(limitVerificationStrategy).reduceFeatureUsage(contextArgCaptor.capture(), usageLimitArgCaptor.capture(),eq(2L));
+
+        var capturedUsageLimit = usageLimitArgCaptor.getValue();
+        assertEquals(usageLimit, capturedUsageLimit);
+
+        var capturedContext = contextArgCaptor.getValue();
+
+        var searchCriteriaList = capturedContext.getSearchCriteria();
+        assertEquals(1, searchCriteriaList.size());
+        var searchCriteria = searchCriteriaList.get(0);
+        assertEquals("MAX_FILES", searchCriteria.limitId());
+        assertEquals(Optional.empty(), searchCriteria.windowStart());
+        assertEquals(Optional.empty(), searchCriteria.windowEnd());
+
+        assertEquals(feature, capturedContext.getFeature());
+        assertEquals(userGrouping, capturedContext.getUserGrouping());
+
+        verify(usageRepo).updateUsageRecords(capturedContext);
+    }
+
+    @Test
+    void getLimitsRemainingUnitsShouldCallStrategyAndRepositoryLoadUsageData() {
+        initMocks();
+        when(limitVerificationStrategy.getRemainingUnits(any(), eq(usageLimit))).thenReturn(2L);
+
+        try (MockedStatic<ZonedDateTime> mockedLocalDateTime = mockStatic(ZonedDateTime.class)) {
+            mockedLocalDateTime.when(ZonedDateTime::now).thenReturn(zonedDateTime);
+
+            var remainingUnitsMap = usageLimitVerifier.getLimitsRemainingUnits(feature, userGrouping);
+            assertEquals(1, remainingUnitsMap.size());
+            assertEquals(2L, remainingUnitsMap.get(usageLimit.getId()));
+        }
+        verify(usageRepo).loadUsageData(contextArgCaptor.capture());
+
+        var capturedContext = contextArgCaptor.getValue();
+
+        verify(limitVerificationStrategy).getRemainingUnits(capturedContext, usageLimit);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void isWithinLimitsShouldCallStrategyAndRepositoryLoadUsageData(boolean expectedResult) {
+        initMocks();
+        long requiredAdditionalUnits = 3L;
+        when(limitVerificationStrategy.isWithinLimits(any(), eq(usageLimit), eq(requiredAdditionalUnits))).thenReturn(expectedResult);
+
+        try (MockedStatic<ZonedDateTime> mockedLocalDateTime = mockStatic(ZonedDateTime.class)) {
+            mockedLocalDateTime.when(ZonedDateTime::now).thenReturn(zonedDateTime);
+
+            var isWithinLimits = usageLimitVerifier.isWithinLimits(feature, userGrouping, Collections.singletonMap(usageLimit.getId(), requiredAdditionalUnits));
+            assertEquals(expectedResult, isWithinLimits);
+        }
+        verify(usageRepo).loadUsageData(contextArgCaptor.capture());
+
+        var capturedContext = contextArgCaptor.getValue();
+
+        verify(limitVerificationStrategy).isWithinLimits(capturedContext, usageLimit, requiredAdditionalUnits);
     }
 
     @ParameterizedTest
@@ -111,9 +201,6 @@ class UsageLimitVerifierImplTest {
 
     }
 
-    // TODO : Complete other cases when data not found in repos : Limits, LimitsVerificationStrategy, etc.
-
-
     private void initMocks() {
         when(usageLimitResolver.resolveUsageLimit(feature, "MAX_FILES", userGrouping))
                 .thenReturn(Optional.of(usageLimit));
@@ -125,9 +212,6 @@ class UsageLimitVerifierImplTest {
         zonedDateTime = ZonedDateTime.parse(instantExpected);
 
         when(limitVerificationStrategy.getWindowStart(usageLimit, zonedDateTime)).thenReturn(Optional.empty());
-
-        RecordSearchCriteria searchCriteria = new RecordSearchCriteria("MAX_FILES", Optional.empty(), Optional.empty());
-        when(usageRepo.loadUsageData(feature, userGrouping, Collections.singletonList(searchCriteria))).thenReturn(limitTrackingContext);
     }
 
 }

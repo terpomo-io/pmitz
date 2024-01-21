@@ -111,11 +111,6 @@ class FeatureUsageTrackerImplTest {
 
         assertEquals(FeatureStatus.AVAILABLE, featureInfo.featureStatus());
         assertEquals(1L, featureInfo.remainingUsageUnits().get(limitId));
-
-        //TODO question : What if there is no remaining units available. Should status be still Available?
-        // shall we introduce a new status : LIMIT_REACHED, that is : limit is not exceeded but no more room for additional units
-        //
-
     }
 
 }

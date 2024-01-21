@@ -22,10 +22,10 @@ class LimitTrackingContextTest {
 
     @Test
     void addUsageRecordsShouldAddRecordsToUpdatedList() {
-        LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+        LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList());
 
         UsageRecord usageRecord = new UsageRecord(limitId, null, null, 3L, null);
-        context.addUsageRecords(Collections.singletonList(usageRecord));
+        context.addUpdatedUsageRecords(Collections.singletonList(usageRecord));
 
         var updatedRecords = context.getUpdatedUsageRecords();
         assertEquals(1, updatedRecords.size());
@@ -37,7 +37,8 @@ class LimitTrackingContextTest {
 
         var usageRecords = getCurrentUsageRecords(startTime, endTime);
 
-        LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList(), usageRecords, Collections.emptyList());
+        LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList());
+        context.addCurrentUsageRecords(usageRecords);
 
         var filteredRecords = context.findUsageRecords(limitId, startTime, endTime);
 
@@ -51,7 +52,8 @@ class LimitTrackingContextTest {
 
         var usageRecords = getCurrentUsageRecords(startTime, endTime);
 
-        LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList(), usageRecords, Collections.emptyList());
+        LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList());
+        context.addCurrentUsageRecords(usageRecords);
 
         var filteredRecords = context.findUsageRecords(limitId, null, null);
 

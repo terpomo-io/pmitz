@@ -45,7 +45,7 @@ class SimpleUsageLimitVerificationStrategyTest {
         CountLimit usageLimit = new CountLimit(limitId, 10);
         verificationStrategy.recordFeatureUsage(context, usageLimit, 5);
 
-        verify(context).addUsageRecords(updatedRecordArgCaptor.capture());
+        verify(context).addUpdatedUsageRecords(updatedRecordArgCaptor.capture());
 
         var updatedRecordList = updatedRecordArgCaptor.getValue();
 
@@ -71,7 +71,7 @@ class SimpleUsageLimitVerificationStrategyTest {
 
         verificationStrategy.recordFeatureUsage(context, usageLimit, 5);
 
-        verify(context).addUsageRecords(updatedRecordArgCaptor.capture());
+        verify(context).addUpdatedUsageRecords(updatedRecordArgCaptor.capture());
 
         var updatedRecordList = updatedRecordArgCaptor.getValue();
 
@@ -98,7 +98,7 @@ class SimpleUsageLimitVerificationStrategyTest {
 
         verificationStrategy.recordFeatureUsage(context, usageLimit, 10);
 
-        verify(context).addUsageRecords(updatedRecordArgCaptor.capture());
+        verify(context).addUpdatedUsageRecords(updatedRecordArgCaptor.capture());
 
         var updatedRecordList = updatedRecordArgCaptor.getValue();
 
@@ -130,7 +130,7 @@ class SimpleUsageLimitVerificationStrategyTest {
 
         verificationStrategy.reduceFeatureUsage(context, usageLimit, 5);
 
-        verify(context).addUsageRecords(updatedRecordArgCaptor.capture());
+        verify(context).addUpdatedUsageRecords(updatedRecordArgCaptor.capture());
 
         var updatedRecordList = updatedRecordArgCaptor.getValue();
 
@@ -156,7 +156,7 @@ class SimpleUsageLimitVerificationStrategyTest {
 
         verificationStrategy.reduceFeatureUsage(context, usageLimit, 4);
 
-        verify(context).addUsageRecords(updatedRecordArgCaptor.capture());
+        verify(context).addUpdatedUsageRecords(updatedRecordArgCaptor.capture());
 
         var updatedRecordList = updatedRecordArgCaptor.getValue();
 
@@ -182,7 +182,7 @@ class SimpleUsageLimitVerificationStrategyTest {
 
         verificationStrategy.reduceFeatureUsage(context, usageLimit, 5);
 
-        verify(context).addUsageRecords(updatedRecordArgCaptor.capture());
+        verify(context).addUpdatedUsageRecords(updatedRecordArgCaptor.capture());
 
         var updatedRecordList = updatedRecordArgCaptor.getValue();
 

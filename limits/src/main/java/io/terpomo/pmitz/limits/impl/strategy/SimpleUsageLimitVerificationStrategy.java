@@ -28,7 +28,7 @@ public class SimpleUsageLimitVerificationStrategy<T extends UsageLimit> implemen
         var updatedRecord = optExistingUsageRecord.map(usageRecord -> UsageRecord.updage(usageRecord, newUnits, usageRecord.expirationDate()))
                 .orElseGet(() -> new UsageRecord(usageLimit.getId(), getWindowStart(usageLimit, now).orElse(null), windowEnd, newUnits, calculateExpirationDate(windowEnd)));
 
-        context.addUsageRecords(Collections.singletonList(updatedRecord));
+        context.addUpdatedUsageRecords(Collections.singletonList(updatedRecord));
     }
 
     @Override
@@ -43,7 +43,7 @@ public class SimpleUsageLimitVerificationStrategy<T extends UsageLimit> implemen
         var windowEnd = getWindowEnd(usageLimit, now).orElse(null);
         var updatedRecord = optExistingUsageRecord.map(usageRecord -> UsageRecord.updage(usageRecord, newUnits, usageRecord.expirationDate()))
                 .orElseGet(() -> new UsageRecord(usageLimit.getId(), getWindowStart(usageLimit, now).orElse(null), windowEnd, newUnits, calculateExpirationDate(windowEnd)));
-        context.addUsageRecords(Collections.singletonList(updatedRecord));
+        context.addUpdatedUsageRecords(Collections.singletonList(updatedRecord));
     }
 
     @Override

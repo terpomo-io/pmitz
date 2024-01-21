@@ -21,13 +21,12 @@ public class LimitTrackingContext {
 
     private final List<UsageRecord> updatedUsageRecords;
 
-    LimitTrackingContext(Feature feature, UserGrouping userGrouping, List<RecordSearchCriteria> searchCriteria, List<UsageRecord> currentUsageRecords, List<UsageRecord> updatedUsageRecords) {
+    public LimitTrackingContext(Feature feature, UserGrouping userGrouping, List<RecordSearchCriteria> searchCriteria) {
         this.feature = feature;
         this.userGrouping = userGrouping;
         this.searchCriteria = searchCriteria;
-        this.currentUsageRecords = currentUsageRecords;
+        this.currentUsageRecords = new ArrayList<>();
         this.updatedUsageRecords = new ArrayList<>();
-        this.updatedUsageRecords.addAll(updatedUsageRecords);
     }
 
     public Feature getFeature() {
@@ -50,7 +49,11 @@ public class LimitTrackingContext {
         return updatedUsageRecords;
     }
 
-    public void addUsageRecords (List<UsageRecord> additionalUsageRecords){
+    public void addCurrentUsageRecords(List<UsageRecord> usageRecords){
+        currentUsageRecords.addAll(usageRecords);
+    }
+
+    public void addUpdatedUsageRecords(List<UsageRecord> additionalUsageRecords){
         updatedUsageRecords.addAll(additionalUsageRecords);
     }
 
