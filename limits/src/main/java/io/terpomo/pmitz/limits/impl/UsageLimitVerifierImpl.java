@@ -113,9 +113,10 @@ public class UsageLimitVerifierImpl implements UsageLimitVerifier {
                 .collect(Collectors.toMap(Function.identity(), limitVerifierStrategyResolver::resolveLimitVerificationStrategy));
     }
 
-
     private RecordSearchCriteria getLimitSearchCriteria (UsageLimitVerificationStrategy strategy, UsageLimit limit){
-        return new RecordSearchCriteria(limit.getId(), strategy.getWindowStart(limit, ZonedDateTime.now()),
-                strategy.getWindowEnd(limit, ZonedDateTime.now()));
+        Optional<ZonedDateTime> windowStart = strategy.getWindowStart(limit, ZonedDateTime.now());
+        Optional<ZonedDateTime> windowEnd = strategy.getWindowEnd(limit, ZonedDateTime.now());
+        return new RecordSearchCriteria(limit.getId(), windowStart.orElse(null),
+                windowEnd.orElse(null));
     }
 }

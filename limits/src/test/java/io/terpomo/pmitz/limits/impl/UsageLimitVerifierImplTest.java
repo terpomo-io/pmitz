@@ -92,8 +92,8 @@ class UsageLimitVerifierImplTest {
         assertEquals(1, searchCriteriaList.size());
         var searchCriteria = searchCriteriaList.get(0);
         assertEquals("MAX_FILES", searchCriteria.limitId());
-        assertEquals(Optional.empty(), searchCriteria.windowStart());
-        assertEquals(Optional.empty(), searchCriteria.windowEnd());
+        assertNull(searchCriteria.windowStart());
+        assertNull(searchCriteria.windowEnd());
 
         assertEquals(feature, capturedContext.getFeature());
         assertEquals(userGrouping, capturedContext.getUserGrouping());
@@ -121,8 +121,8 @@ class UsageLimitVerifierImplTest {
         assertEquals(1, searchCriteriaList.size());
         var searchCriteria = searchCriteriaList.get(0);
         assertEquals("MAX_FILES", searchCriteria.limitId());
-        assertEquals(Optional.empty(), searchCriteria.windowStart());
-        assertEquals(Optional.empty(), searchCriteria.windowEnd());
+        assertNull(searchCriteria.windowStart());
+        assertNull(searchCriteria.windowEnd());
 
         assertEquals(feature, capturedContext.getFeature());
         assertEquals(userGrouping, capturedContext.getUserGrouping());
