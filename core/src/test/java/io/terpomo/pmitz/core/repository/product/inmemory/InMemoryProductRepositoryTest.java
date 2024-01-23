@@ -1,4 +1,6 @@
 /*
+ * Copyright 2002-2023 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,9 +16,9 @@
 
 package io.terpomo.pmitz.core.repository.product.inmemory;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -24,14 +26,10 @@ import java.util.Optional;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 
-import com.fasterxml.jackson.databind.util.JSONPObject;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
@@ -50,10 +48,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @since 1.0
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class InMemoryProductRepositoryTest {
 
-	private static final String JSON_FILE = "./src/test/resources/products_repository_sample.json";
+	private static final String JSON_FILE = "./src/test/resources/products_repository.json";
 
 	private static byte[] repository_exported;
 
@@ -551,7 +548,6 @@ public class InMemoryProductRepositoryTest {
 	}
 
 	@Test
-	@Order(1)
 	void store_repository_to_json() throws IOException {
 
 		this.populateRepository();
@@ -609,12 +605,13 @@ public class InMemoryProductRepositoryTest {
 	}
 
 	@Test
-	@Order(2)
 	void load_repository_from_json() throws IOException {
 
-		ByteArrayInputStream bais = new ByteArrayInputStream(repository_exported);
-		repository.load(bais);
-		bais.close();
+		InputStream ioStream = this.getClass()
+				.getClassLoader()
+				.getResourceAsStream("products_repository.json");
+		repository.load(ioStream);
+		ioStream.close();
 
 		Product pictureHostingService = new Product("Picture hosting service");
 
