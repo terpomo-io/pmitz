@@ -1,6 +1,5 @@
-plugins {
-    id 'java'
-}
+apply plugin: 'java'
+apply plugin: 'checkstyle'
 
 group 'io.terpomo.pmitz'
 version '1.0-SNAPSHOT'
@@ -10,7 +9,6 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.google.googlejavaformat:google-java-format:1.19.2'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
@@ -26,6 +24,10 @@ subprojects {
         toolVersion = "10.12.7"
         ignoreFailures = true
         showViolations = false
+    }
+
+    dependencies {
+        checkstyle("io.spring.javaformat:spring-javaformat-checkstyle:0.0.41")
     }
 
     configurations.checkstyle {

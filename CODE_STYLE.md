@@ -1,7 +1,8 @@
 # Code style
 
 The coding convention required in the contributions to the project is that used by
-the [Google Code Style](https://google.github.io/styleguide/javaguide.html). Only the few following points modify it.
+the [Spring Code Style](https://github.com/spring-projects/spring-framework/wiki/Code-Style). Only the few following
+points modify it.
 
 ### License
 
@@ -9,6 +10,8 @@ Each source file must specify the following license at the very top of the file 
 
 ```java
 /*
+ * Copyright 2023-2024 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
