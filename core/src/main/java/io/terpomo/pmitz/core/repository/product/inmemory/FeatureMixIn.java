@@ -1,4 +1,6 @@
 /*
+ * Copyright 2023-2024 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,7 +19,6 @@ package io.terpomo.pmitz.core.repository.product.inmemory;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import io.terpomo.pmitz.core.Product;
 
 @ExcludeFromJacocoGeneratedReport
@@ -31,11 +32,15 @@ public class FeatureMixIn {
 	@JsonCreator
 	public FeatureMixIn(
 			@JsonProperty("product") Product product,
-			@JsonProperty("featureId") String featureId) {}
+			@JsonProperty("featureId") String featureId) {
+	}
 
 	@JsonIgnore
-	public void getLimitsIds() {}
+	public void getLimitsIds() {
+	}
 
 	@JsonIgnore
-	public Product getProduct() { return null; }
+	public Product getProduct() {
+		return null;
+	}
 }

@@ -1,4 +1,6 @@
 /*
+ * Copyright 2023-2024 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,23 +25,23 @@ import io.terpomo.pmitz.core.limits.UsageLimit;
 
 public interface ProductRepository {
 
-    List<String> getProductIds ();
+	List<String> getProductIds();
 
-    Optional<Product> getProductById (String productId);
+	Optional<Product> getProductById(String productId);
 
-    void addProduct (Product product);
+	void addProduct(Product product);
 
-    void removeProduct (Product product);
+	void removeProduct(Product product);
 
-    List<Feature> getFeatures (Product product);
+	List<Feature> getFeatures(Product product);
 
-    Optional<Feature> getFeature (Product product, String featureId);
+	Optional<Feature> getFeature(Product product, String featureId);
 
-    Optional<UsageLimit> getGlobalLimit (Feature feature, String usageLimitId);
+	Optional<UsageLimit> getGlobalLimit(Feature feature, String usageLimitId);
 
-    void addFeature (Feature feature);
+	void addFeature(Feature feature);
 
-    void updateFeature (Feature feature);
+	void updateFeature(Feature feature);
 
-    void removeFeature (Feature feature);
+	void removeFeature(Feature feature);
 }

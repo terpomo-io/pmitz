@@ -1,4 +1,6 @@
 /*
+ * Copyright 2023-2024 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +21,6 @@ import java.time.temporal.ChronoUnit;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 
 @ExcludeFromJacocoGeneratedReport
@@ -36,16 +37,19 @@ public abstract class CalendarPeriodRateLimitMixIn {
 	public CalendarPeriodRateLimitMixIn(
 			@JsonProperty("id") String id,
 			@JsonProperty("quota") int quota,
-			@JsonProperty("periodicity") CalendarPeriodRateLimit.Periodicity periodicity) { }
+			@JsonProperty("periodicity") CalendarPeriodRateLimit.Periodicity periodicity) {
+	}
 
 	@JsonIgnore
 	public long getValue() {
 		return 0;
 	}
+
 	@JsonIgnore
 	public int getDuration() {
 		return 0;
 	}
+
 	@JsonIgnore
 	public ChronoUnit getInterval() {
 		return null;

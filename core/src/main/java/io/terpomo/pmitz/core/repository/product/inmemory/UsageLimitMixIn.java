@@ -1,20 +1,35 @@
+/*
+ * Copyright 2023-2024 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.terpomo.pmitz.core.repository.product.inmemory;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 
 @JsonTypeInfo(
-	use = JsonTypeInfo.Id.NAME,
-	property = "type"
+		use = JsonTypeInfo.Id.NAME,
+		property = "type"
 )
 @JsonSubTypes({
-	@JsonSubTypes.Type(value = CalendarPeriodRateLimit.class, name = "CalendarPeriodRateLimit"),
-	@JsonSubTypes.Type(value = CountLimit.class, name = "CountLimit"),
-	@JsonSubTypes.Type(value = SlidingWindowRateLimit.class, name = "SlidingWindowRateLimit")
+		@JsonSubTypes.Type(value = CalendarPeriodRateLimit.class, name = "CalendarPeriodRateLimit"),
+		@JsonSubTypes.Type(value = CountLimit.class, name = "CountLimit"),
+		@JsonSubTypes.Type(value = SlidingWindowRateLimit.class, name = "SlidingWindowRateLimit")
 })
 @ExcludeFromJacocoGeneratedReport
 public class UsageLimitMixIn {

@@ -1,4 +1,6 @@
 /*
+ * Copyright 2023-2024 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,7 +31,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.RepositoryException;
@@ -41,13 +42,12 @@ import io.terpomo.pmitz.core.repository.product.ProductRepository;
 
 public class InMemoryProductRepository implements ProductRepository {
 
-	private Map<String, Product> products = new HashMap<>();
-
 	private final ObjectMapper mapper;
+	private Map<String, Product> products = new HashMap<>();
 
 	public InMemoryProductRepository() {
 
-		mapper = new ObjectMapper()
+		this.mapper = new ObjectMapper()
 				.setSerializationInclusion(JsonInclude.Include.NON_NULL)
 				.enable(SerializationFeature.INDENT_OUTPUT)
 				.addMixIn(Product.class, ProductMixIn.class)
@@ -61,7 +61,7 @@ public class InMemoryProductRepository implements ProductRepository {
 	@Override
 	public List<String> getProductIds() {
 
-		return products.values().stream()
+		return this.products.values().stream()
 				.map(Product::getProductId)
 				.collect(Collectors.toList());
 	}
@@ -71,7 +71,7 @@ public class InMemoryProductRepository implements ProductRepository {
 
 		validateProductId(productId);
 
-		return Optional.ofNullable(products.get(productId));
+		return Optional.ofNullable(this.products.get(productId));
 	}
 
 	@Override
@@ -79,7 +79,7 @@ public class InMemoryProductRepository implements ProductRepository {
 
 		validateProduct(product);
 
-		products.compute(product.getProductId(), (productId, existingProduct) -> {
+		this.products.compute(product.getProductId(), (productId, existingProduct) -> {
 			if (existingProduct != null) {
 				throw new RepositoryException(String.format("Product '%s' already exists", productId));
 			}
@@ -94,7 +94,7 @@ public class InMemoryProductRepository implements ProductRepository {
 
 		this.getProductById(product.getProductId())
 				.ifPresentOrElse(
-						existingProduct -> products.remove(product.getProductId()),
+						(existingProduct) -> this.products.remove(product.getProductId()),
 						() -> {
 							throw new RepositoryException(String.format("Product '%s' not found", product.getProductId()));
 						}
@@ -118,8 +118,8 @@ public class InMemoryProductRepository implements ProductRepository {
 		validateFeatureId(featureId);
 
 		return this.getProductById(product.getProductId())
-				.flatMap(p -> p.getFeatures().stream()
-						.filter(f -> f.getFeatureId().equals(featureId))
+				.flatMap((p) -> p.getFeatures().stream()
+						.filter((f) -> f.getFeatureId().equals(featureId))
 						.findFirst());
 	}
 
@@ -130,14 +130,14 @@ public class InMemoryProductRepository implements ProductRepository {
 
 		return Optional.ofNullable(feature.getProduct())
 				.map(Product::getProductId)
-				.flatMap(productId -> Optional.ofNullable(products.get(productId)))
-				.flatMap(p -> p.getFeatures().stream()
+				.flatMap((productId) -> Optional.ofNullable(this.products.get(productId)))
+				.flatMap((p) -> p.getFeatures().stream()
 						.filter(feature::equals)
 						.findFirst())
-				.flatMap(f -> Optional.ofNullable(f.getLimits())
-						.flatMap(ll -> ll.stream()
-						.filter(l -> l.getId().equals(usageLimitId))
-						.findFirst()));
+				.flatMap((f) -> Optional.ofNullable(f.getLimits())
+						.flatMap((ll) -> ll.stream()
+								.filter((l) -> l.getId().equals(usageLimitId))
+								.findFirst()));
 	}
 
 	@Override
@@ -146,7 +146,7 @@ public class InMemoryProductRepository implements ProductRepository {
 		validateFeature(feature);
 
 		String productId = feature.getProduct().getProductId();
-		Product existingProduct = products.get(productId);
+		Product existingProduct = this.products.get(productId);
 
 		if (existingProduct == null) {
 			throw new RepositoryException(String.format("Product '%s' not found", productId));
@@ -166,14 +166,14 @@ public class InMemoryProductRepository implements ProductRepository {
 
 		String productId = feature.getProduct().getProductId();
 
-		products.compute(productId, (key, existingProduct) -> {
+		this.products.compute(productId, (key, existingProduct) -> {
 
 			if (existingProduct == null) {
 				throw new RepositoryException(String.format("Product '%s' not found", productId));
 			}
 
 			OptionalInt indexOpt = IntStream.range(0, existingProduct.getFeatures().size())
-					.filter(i -> feature.getFeatureId().equals(existingProduct.getFeatures().get(i).getFeatureId()))
+					.filter((i) -> feature.getFeatureId().equals(existingProduct.getFeatures().get(i).getFeatureId()))
 					.findFirst();
 
 			if (indexOpt.isEmpty()) {
@@ -193,14 +193,14 @@ public class InMemoryProductRepository implements ProductRepository {
 
 		String productId = feature.getProduct().getProductId();
 
-		if (!products.containsKey(productId)) {
+		if (!this.products.containsKey(productId)) {
 			throw new RepositoryException(String.format("Product '%s' not found", productId));
 		}
 
-		products.computeIfPresent(productId, (key, existingProduct) -> {
+		this.products.computeIfPresent(productId, (key, existingProduct) -> {
 
 			OptionalInt indexOpt = IntStream.range(0, existingProduct.getFeatures().size())
-					.filter(i -> feature.getFeatureId().equals(existingProduct.getFeatures().get(i).getFeatureId()))
+					.filter((i) -> feature.getFeatureId().equals(existingProduct.getFeatures().get(i).getFeatureId()))
 					.findFirst();
 
 			if (indexOpt.isEmpty()) {
@@ -215,17 +215,17 @@ public class InMemoryProductRepository implements ProductRepository {
 
 
 	public void clear() {
-		products.clear();
+		this.products.clear();
 	}
 
 	public void load(InputStream inputStream) throws IOException {
 
-		TypeReference<List<Product>> typeRef = new TypeReference<>() {};
-		List<Product> loadedProducts = mapper.readValue(inputStream, typeRef);
+		TypeReference<List<Product>> typeRef = new TypeReference<>() { };
+		List<Product> loadedProducts = this.mapper.readValue(inputStream, typeRef);
 
-		loadedProducts.forEach(product -> {
+		loadedProducts.forEach((product) -> {
 			List<Feature> updatedFeatures = product.getFeatures().stream()
-					.map(f -> {
+					.map((f) -> {
 						Feature newFeature = new Feature(product, f.getFeatureId());
 						newFeature.getLimits().addAll(f.getLimits());
 						return newFeature;
@@ -237,12 +237,12 @@ public class InMemoryProductRepository implements ProductRepository {
 		});
 
 		this.products = loadedProducts.stream()
-							.collect(Collectors.toMap(Product::getProductId, product -> product));
+				.collect(Collectors.toMap(Product::getProductId, (product) -> product));
 	}
 
 	public void store(OutputStream outputStream) throws IOException {
 
-		mapper.writeValue(outputStream, products.values());
+		this.mapper.writeValue(outputStream, this.products.values());
 	}
 
 

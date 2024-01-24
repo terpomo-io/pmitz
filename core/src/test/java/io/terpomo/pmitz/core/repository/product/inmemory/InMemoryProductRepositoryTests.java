@@ -23,49 +23,39 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
-import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
-import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
-
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
+import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for {@link InMemoryProductRepository}.
  *
  * @since 1.0
  */
-public class InMemoryProductRepositoryTest {
-
-	private static final String JSON_FILE = "./src/test/resources/products_repository.json";
-
-	private static byte[] repository_exported;
+public class InMemoryProductRepositoryTests {
 
 	private InMemoryProductRepository repository;
 
 
 	@BeforeEach
 	void setUp() {
-		repository = new InMemoryProductRepository();
+		this.repository = new InMemoryProductRepository();
 	}
 
 	@Test
 	void getProductIds_emptyList() {
 
-		List<String> ids = repository.getProductIds();
+		List<String> ids = this.repository.getProductIds();
 
 		assertNotNull(ids);
 		assertTrue(ids.isEmpty());
@@ -75,9 +65,9 @@ public class InMemoryProductRepositoryTest {
 	void getProductIds_1ItemList() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 
-		List<String> ids = repository.getProductIds();
+		List<String> ids = this.repository.getProductIds();
 
 		assertNotNull(ids);
 		assertEquals(1, ids.size());
@@ -87,13 +77,13 @@ public class InMemoryProductRepositoryTest {
 	void getProductIds_multipleItemList() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 		Product p2 = new Product("p2");
-		repository.addProduct(p2);
+		this.repository.addProduct(p2);
 		Product p3 = new Product("p3");
-		repository.addProduct(p3);
+		this.repository.addProduct(p3);
 
-		List<String> ids = repository.getProductIds();
+		List<String> ids = this.repository.getProductIds();
 
 		assertNotNull(ids);
 		assertEquals(3, ids.size());
@@ -106,7 +96,7 @@ public class InMemoryProductRepositoryTest {
 	void getProductById_productIdNull() {
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.getProductById(null);
+			this.repository.getProductById(null);
 		});
 
 		assertEquals("ProductId must not be 'null'", exception.getMessage());
@@ -116,9 +106,9 @@ public class InMemoryProductRepositoryTest {
 	void getProductById_existingProduct() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 
-		Optional<Product> p = repository.getProductById("p1");
+		Optional<Product> p = this.repository.getProductById("p1");
 
 		assertTrue(p.isPresent());
 		assertEquals(p1.getProductId(), p.get().getProductId());
@@ -127,7 +117,7 @@ public class InMemoryProductRepositoryTest {
 	@Test
 	void getProductById_notExistingProduct() {
 
-		Optional<Product> product = repository.getProductById("p1");
+		Optional<Product> product = this.repository.getProductById("p1");
 
 		assertTrue(product.isEmpty());
 	}
@@ -136,7 +126,7 @@ public class InMemoryProductRepositoryTest {
 	void addProduct_productNull() {
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.addProduct(null);
+			this.repository.addProduct(null);
 		});
 
 		assertEquals("Product must not be 'null'", exception.getMessage());
@@ -148,7 +138,7 @@ public class InMemoryProductRepositoryTest {
 		Product p1 = new Product(null);
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.addProduct(p1);
+			this.repository.addProduct(p1);
 		});
 
 		assertEquals("ProductId must not be 'null'", exception.getMessage());
@@ -158,9 +148,9 @@ public class InMemoryProductRepositoryTest {
 	void addProduct_newProduct() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 
-		Optional<Product> p = repository.getProductById("p1");
+		Optional<Product> p = this.repository.getProductById("p1");
 
 		assertTrue(p.isPresent());
 		assertEquals(p1.getProductId(), p.get().getProductId());
@@ -170,10 +160,10 @@ public class InMemoryProductRepositoryTest {
 	void addProduct_existingProduct() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.addProduct(p1);
+			this.repository.addProduct(p1);
 		});
 
 		assertEquals("Product 'p1' already exists", exception.getMessage());
@@ -183,7 +173,7 @@ public class InMemoryProductRepositoryTest {
 	void removeProduct_productNull() {
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.removeProduct(null);
+			this.repository.removeProduct(null);
 		});
 
 		assertEquals("Product must not be 'null'", exception.getMessage());
@@ -195,7 +185,7 @@ public class InMemoryProductRepositoryTest {
 		Product p1 = new Product(null);
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.removeProduct(p1);
+			this.repository.removeProduct(p1);
 		});
 
 		assertEquals("ProductId must not be 'null'", exception.getMessage());
@@ -207,7 +197,7 @@ public class InMemoryProductRepositoryTest {
 		Product p1 = new Product("p1");
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.removeProduct(p1);
+			this.repository.removeProduct(p1);
 		});
 
 		assertEquals("Product 'p1' not found", exception.getMessage());
@@ -217,11 +207,11 @@ public class InMemoryProductRepositoryTest {
 	void removeProduct_existingProduct() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 
-		repository.removeProduct(p1);
+		this.repository.removeProduct(p1);
 
-		Optional<Product> p = repository.getProductById("p1");
+		Optional<Product> p = this.repository.getProductById("p1");
 
 		assertTrue(p.isEmpty());
 	}
@@ -230,7 +220,7 @@ public class InMemoryProductRepositoryTest {
 	void addFeature_featureNull() {
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.addFeature(null);
+			this.repository.addFeature(null);
 		});
 
 		assertEquals("Feature must not be 'null'", exception.getMessage());
@@ -240,10 +230,10 @@ public class InMemoryProductRepositoryTest {
 	void addFeature_invalidFeatureId() {
 
 		Product p1 = new Product("p1");
-		Feature f1 = new Feature(p1,null);
+		Feature f1 = new Feature(p1, null);
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.addFeature(f1);
+			this.repository.addFeature(f1);
 		});
 
 		assertEquals("FeatureId must not be 'null'", exception.getMessage());
@@ -253,10 +243,10 @@ public class InMemoryProductRepositoryTest {
 	void addFeature_invalidProductId() {
 
 		Product p1 = new Product(null);
-		Feature f1 = new Feature(p1,"f1");
+		Feature f1 = new Feature(p1, "f1");
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.addFeature(f1);
+			this.repository.addFeature(f1);
 		});
 
 		assertEquals("ProductId must not be 'null'", exception.getMessage());
@@ -266,10 +256,10 @@ public class InMemoryProductRepositoryTest {
 	void addFeature_productNotFound() {
 
 		Product p1 = new Product("p1");
-		Feature f1 = new Feature(p1,"f1");
+		Feature f1 = new Feature(p1, "f1");
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.addFeature(f1);
+			this.repository.addFeature(f1);
 		});
 
 		assertEquals("Product 'p1' not found", exception.getMessage());
@@ -279,14 +269,14 @@ public class InMemoryProductRepositoryTest {
 	void addFeature_validFeature() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 		Feature f1 = new Feature(p1, "f1");
 		CountLimit cl1 = new CountLimit("cl1", 10);
 		f1.getLimits().add(cl1);
 
-		repository.addFeature(f1);
+		this.repository.addFeature(f1);
 
-		Optional<Feature> f1p = repository.getFeature(p1, "f1");
+		Optional<Feature> f1p = this.repository.getFeature(p1, "f1");
 
 		assertTrue(f1p.isPresent());
 		assertEquals(f1, f1p.get());
@@ -296,13 +286,13 @@ public class InMemoryProductRepositoryTest {
 	void addFeature_existingFeature() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 		Feature f1 = new Feature(p1, "f1");
 
-		repository.addFeature(f1);
+		this.repository.addFeature(f1);
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.addFeature(f1);
+			this.repository.addFeature(f1);
 		});
 
 		assertEquals("Feature 'f1' already exists", exception.getMessage());
@@ -312,7 +302,7 @@ public class InMemoryProductRepositoryTest {
 	void getFeature_invalidProduct() {
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.getFeature(null, "f1");
+			this.repository.getFeature(null, "f1");
 		});
 
 		assertEquals("Product must not be 'null'", exception.getMessage());
@@ -324,7 +314,7 @@ public class InMemoryProductRepositoryTest {
 		Product p1 = new Product("p1");
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.getFeature(p1, null);
+			this.repository.getFeature(p1, null);
 		});
 
 		assertEquals("FeatureId must not be 'null'", exception.getMessage());
@@ -336,7 +326,7 @@ public class InMemoryProductRepositoryTest {
 		Product p1 = new Product("p1");
 		Feature f1 = new Feature(p1, "f1");
 
-		Optional<Feature> feature = repository.getFeature(p1, f1.getFeatureId());
+		Optional<Feature> feature = this.repository.getFeature(p1, f1.getFeatureId());
 
 		assertTrue(feature.isEmpty());
 	}
@@ -345,13 +335,13 @@ public class InMemoryProductRepositoryTest {
 	void getFeatures_ExistingFeaturesList() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 		Feature f1 = new Feature(p1, "f1");
-		repository.addFeature(f1);
+		this.repository.addFeature(f1);
 		Feature f2 = new Feature(p1, "f2");
-		repository.addFeature(f2);
+		this.repository.addFeature(f2);
 
-		List<Feature> featuresList = repository.getFeatures(p1);
+		List<Feature> featuresList = this.repository.getFeatures(p1);
 
 		assertNotNull(featuresList);
 		assertEquals(2, featuresList.size());
@@ -363,9 +353,9 @@ public class InMemoryProductRepositoryTest {
 	void getFeatures_emptyFeaturesList() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 
-		List<Feature> featuresList = repository.getFeatures(p1);
+		List<Feature> featuresList = this.repository.getFeatures(p1);
 
 		assertNotNull(featuresList);
 		assertEquals(0, featuresList.size());
@@ -375,7 +365,7 @@ public class InMemoryProductRepositoryTest {
 	void getFeatures_invalidProduct() {
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.getFeatures(null);
+			this.repository.getFeatures(null);
 		});
 
 		assertEquals("Product must not be 'null'", exception.getMessage());
@@ -387,7 +377,7 @@ public class InMemoryProductRepositoryTest {
 		Product p1 = new Product(null);
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.getFeatures(p1);
+			this.repository.getFeatures(p1);
 		});
 
 		assertEquals("ProductId must not be 'null'", exception.getMessage());
@@ -400,7 +390,7 @@ public class InMemoryProductRepositoryTest {
 		Feature f1 = new Feature(p1, "f1");
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.updateFeature(f1);
+			this.repository.updateFeature(f1);
 		});
 
 		assertEquals("Product 'p1' not found", exception.getMessage());
@@ -410,11 +400,11 @@ public class InMemoryProductRepositoryTest {
 	void updateFeature_FeatureNotFound() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 		Feature f1 = new Feature(p1, "f1");
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.updateFeature(f1);
+			this.repository.updateFeature(f1);
 		});
 
 		assertEquals("Feature 'f1' not found for product 'p1'", exception.getMessage());
@@ -424,7 +414,7 @@ public class InMemoryProductRepositoryTest {
 	void updateFeature_invalidFeature() {
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.updateFeature(null);
+			this.repository.updateFeature(null);
 		});
 
 		assertEquals("Feature must not be 'null'", exception.getMessage());
@@ -434,20 +424,20 @@ public class InMemoryProductRepositoryTest {
 	void updateFeature_featureExist() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 
 		Feature f1 = new Feature(p1, "f1");
-		repository.addFeature(f1);
+		this.repository.addFeature(f1);
 		CountLimit l1 = new CountLimit("l1", 10);
 		f1.getLimits().add(l1);
 
 		Feature f2 = new Feature(p1, "f2");
-		repository.addFeature(f2);
+		this.repository.addFeature(f2);
 
 
-		repository.updateFeature(f2);
+		this.repository.updateFeature(f2);
 
-		Optional<Feature> f = repository.getFeature(f2.getProduct(), f2.getFeatureId());
+		Optional<Feature> f = this.repository.getFeature(f2.getProduct(), f2.getFeatureId());
 
 		assertTrue(f.isPresent());
 		assertEquals(0, f.get().getLimits().size());
@@ -457,19 +447,19 @@ public class InMemoryProductRepositoryTest {
 	void removeFeature_featureExist() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 		Feature f1 = new Feature(p1, "f1");
-		repository.addFeature(f1);
+		this.repository.addFeature(f1);
 		Feature f2 = new Feature(p1, "f2");
-		repository.addFeature(f2);
+		this.repository.addFeature(f2);
 
-		repository.removeFeature(f1);
+		this.repository.removeFeature(f1);
 
-		Optional<Feature> f = repository.getFeature(f1.getProduct(), f1.getFeatureId());
+		Optional<Feature> f = this.repository.getFeature(f1.getProduct(), f1.getFeatureId());
 
 		assertTrue(f.isEmpty());
 
-		Optional<Product> op = repository.getProductById("p1");
+		Optional<Product> op = this.repository.getProductById("p1");
 		assertTrue(op.isPresent());
 
 		p1 = op.get();
@@ -483,7 +473,7 @@ public class InMemoryProductRepositoryTest {
 		Feature f1 = new Feature(p1, "f1");
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.removeFeature(f1);
+			this.repository.removeFeature(f1);
 		});
 
 		assertEquals("Product 'p1' not found", exception.getMessage());
@@ -493,58 +483,59 @@ public class InMemoryProductRepositoryTest {
 	void removeFeature_featureNotFounc() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 		Feature f1 = new Feature(p1, "f1");
 
 		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			repository.removeFeature(f1);
+			this.repository.removeFeature(f1);
 		});
 
 		assertEquals("Feature 'f1' not found for product 'p1'", exception.getMessage());
 	}
 
 	@Test
-	void getGlobalList_emptyLimitList() {
+	void getGlobalLimit_emptyLimitList() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 		Feature f1 = new Feature(p1, "f1");
-		repository.addFeature(f1);
+		this.repository.addFeature(f1);
 
-		Optional<UsageLimit> limit = repository.getGlobalLimit(f1, "l1");
+		Optional<UsageLimit> limit = this.repository.getGlobalLimit(f1, "l1");
 
 		assertTrue(limit.isEmpty());
 	}
 
 	@Test
-	void getGlobalList_LimitNotFound() {
+	void getGlobalLimit_LimitNotFound() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 		Feature f1 = new Feature(p1, "f1");
 		CountLimit l1 = new CountLimit("l1", 10);
 		f1.getLimits().add(l1);
-		repository.addFeature(f1);
+		this.repository.addFeature(f1);
 
-		Optional<UsageLimit> limit = repository.getGlobalLimit(f1, "l2");
+		Optional<UsageLimit> limit = this.repository.getGlobalLimit(f1, "l2");
 
 		assertTrue(limit.isEmpty());
 	}
 
 	@Test
-	void getGlobalList_LimitFound() {
+	void getGlobalLimit_LimitFound() {
 
 		Product p1 = new Product("p1");
-		repository.addProduct(p1);
+		this.repository.addProduct(p1);
 		Feature f1 = new Feature(p1, "f1");
 		CountLimit l1 = new CountLimit("l1", 10);
 		f1.getLimits().add(l1);
-		repository.addFeature(f1);
+		this.repository.addFeature(f1);
 
-		Optional<UsageLimit> limit = repository.getGlobalLimit(f1, "l1");
+		Optional<UsageLimit> limit = this.repository.getGlobalLimit(f1, "l1");
 
 		assertTrue(limit.isPresent());
 		assertEquals("l1", limit.get().getId());
+		assertEquals(10, limit.get().getValue());
 	}
 
 	@Test
@@ -553,54 +544,53 @@ public class InMemoryProductRepositoryTest {
 		this.populateRepository();
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		repository.store(baos);
-		repository_exported = baos.toByteArray();
+		this.repository.store(baos);
 		baos.close();
 
-		DocumentContext dc = JsonPath.parse(new String(repository_exported));
+		DocumentContext dc = JsonPath.parse(baos.toString());
 
-		assertEquals(2, (int)dc.read("$[0].length()"));
+		assertEquals(2, (int) dc.read("$[0].length()"));
 
 		assertEquals("Library", dc.read("$[0].productId"));
-		assertEquals(1, (int)dc.read("$[0].features.length()"));
+		assertEquals(1, (int) dc.read("$[0].features.length()"));
 
 		assertEquals("Reserving books", dc.read("$[0].features[0].featureId"));
-		assertEquals(1, (int)dc.read("$[0].features[0].limits.length()"));
+		assertEquals(1, (int) dc.read("$[0].features[0].limits.length()"));
 
 		assertEquals("CountLimit", dc.read("$[0].features[0].limits[0].type"));
 		assertEquals("Maximum books reserved", dc.read("$[0].features[0].limits[0].id"));
-		assertEquals(5, (int)dc.read("$[0].features[0].limits[0].count"));
+		assertEquals(5, (int) dc.read("$[0].features[0].limits[0].count"));
 
 
 		assertEquals("Picture hosting service", dc.read("$[1].productId"));
-		assertEquals(2, (int)dc.read("$[1].features.length()"));
+		assertEquals(2, (int) dc.read("$[1].features.length()"));
 
 		assertEquals("Uploading pictures", dc.read("$[1].features[0].featureId"));
-		assertEquals(2, (int)dc.read("$[1].features[0].limits.length()"));
+		assertEquals(2, (int) dc.read("$[1].features[0].limits.length()"));
 
 		assertEquals("CountLimit", dc.read("$[1].features[0].limits[0].type"));
 		assertEquals("Maximum picture size", dc.read("$[1].features[0].limits[0].id"));
-		assertEquals(10, (int)dc.read("$[1].features[0].limits[0].count"));
+		assertEquals(10, (int) dc.read("$[1].features[0].limits[0].count"));
 		assertEquals("Go", dc.read("$[1].features[0].limits[0].unit"));
 
 		assertEquals("SlidingWindowRateLimit", dc.read("$[1].features[0].limits[1].type"));
 		assertEquals("Maximum of pictures uploaded by hour", dc.read("$[1].features[0].limits[1].id"));
-		assertEquals(10, (int)dc.read("$[1].features[0].limits[1].quota"));
+		assertEquals(10, (int) dc.read("$[1].features[0].limits[1].quota"));
 		assertEquals("HOURS", dc.read("$[1].features[0].limits[1].interval"));
-		assertEquals(1, (int)dc.read("$[1].features[0].limits[1].duration"));
+		assertEquals(1, (int) dc.read("$[1].features[0].limits[1].duration"));
 
 		assertEquals("Downloading pictures", dc.read("$[1].features[1].featureId"));
-		assertEquals(2, (int)dc.read("$[1].features[1].limits.length()"));
+		assertEquals(2, (int) dc.read("$[1].features[1].limits.length()"));
 
 		assertEquals("SlidingWindowRateLimit", dc.read("$[1].features[1].limits[0].type"));
 		assertEquals("Maximum of pictures downloaded by hour", dc.read("$[1].features[1].limits[0].id"));
-		assertEquals(8, (int)dc.read("$[1].features[1].limits[0].quota"));
+		assertEquals(8, (int) dc.read("$[1].features[1].limits[0].quota"));
 		assertEquals("MINUTES", dc.read("$[1].features[1].limits[0].interval"));
-		assertEquals(60, (int)dc.read("$[1].features[1].limits[0].duration"));
+		assertEquals(60, (int) dc.read("$[1].features[1].limits[0].duration"));
 
 		assertEquals("CalendarPeriodRateLimit", dc.read("$[1].features[1].limits[1].type"));
 		assertEquals("Maximum of pictures downloaded by calendar month", dc.read("$[1].features[1].limits[1].id"));
-		assertEquals(10, (int)dc.read("$[1].features[1].limits[1].quota"));
+		assertEquals(10, (int) dc.read("$[1].features[1].limits[1].quota"));
 		assertEquals("MONTH", dc.read("$[1].features[1].limits[1].periodicity"));
 	}
 
@@ -610,45 +600,47 @@ public class InMemoryProductRepositoryTest {
 		InputStream ioStream = this.getClass()
 				.getClassLoader()
 				.getResourceAsStream("products_repository.json");
-		repository.load(ioStream);
-		ioStream.close();
+		this.repository.load(ioStream);
+		if (ioStream != null) {
+			ioStream.close();
+		}
 
 		Product pictureHostingService = new Product("Picture hosting service");
 
-		Optional<Feature> uploadingPicture = repository.getFeature(pictureHostingService, "Uploading pictures");
+		Optional<Feature> uploadingPicture = this.repository.getFeature(pictureHostingService, "Uploading pictures");
 		assertTrue(uploadingPicture.isPresent());
 		assertEquals("Uploading pictures", uploadingPicture.get().getFeatureId());
 		assertEquals("Picture hosting service", uploadingPicture.get().getProduct().getProductId());
 		assertEquals(2, uploadingPicture.get().getLimits().size());
 
-		assertTrue(uploadingPicture.get().getLimits().get(0) instanceof CountLimit);
-		CountLimit maximumPictureSize = (CountLimit)uploadingPicture.get().getLimits().get(0);
+		assertInstanceOf(CountLimit.class, uploadingPicture.get().getLimits().get(0));
+		CountLimit maximumPictureSize = (CountLimit) uploadingPicture.get().getLimits().get(0);
 		assertEquals("Maximum picture size", maximumPictureSize.getId());
 		assertEquals(10, maximumPictureSize.getValue());
 		assertEquals("Go", maximumPictureSize.getUnit());
 
-		assertTrue(uploadingPicture.get().getLimits().get(1) instanceof SlidingWindowRateLimit);
-		SlidingWindowRateLimit maximumPicturesInMonth = (SlidingWindowRateLimit)uploadingPicture.get().getLimits().get(1);
+		assertInstanceOf(SlidingWindowRateLimit.class, uploadingPicture.get().getLimits().get(1));
+		SlidingWindowRateLimit maximumPicturesInMonth = (SlidingWindowRateLimit) uploadingPicture.get().getLimits().get(1);
 		assertEquals("Maximum of pictures uploaded by hour", maximumPicturesInMonth.getId());
 		assertEquals(10, maximumPicturesInMonth.getValue());
 		assertEquals(ChronoUnit.HOURS, maximumPicturesInMonth.getInterval());
 		assertEquals(1, maximumPicturesInMonth.getDuration());
 
-		Optional<Feature> downloadingPicture = repository.getFeature(pictureHostingService, "Downloading pictures");
+		Optional<Feature> downloadingPicture = this.repository.getFeature(pictureHostingService, "Downloading pictures");
 		assertTrue(downloadingPicture.isPresent());
 		assertEquals("Downloading pictures", downloadingPicture.get().getFeatureId());
 		assertEquals("Picture hosting service", downloadingPicture.get().getProduct().getProductId());
 		assertEquals(2, downloadingPicture.get().getLimits().size());
 
-		assertTrue(downloadingPicture.get().getLimits().get(0) instanceof SlidingWindowRateLimit);
-		maximumPicturesInMonth = (SlidingWindowRateLimit)downloadingPicture.get().getLimits().get(0);
+		assertInstanceOf(SlidingWindowRateLimit.class, downloadingPicture.get().getLimits().get(0));
+		maximumPicturesInMonth = (SlidingWindowRateLimit) downloadingPicture.get().getLimits().get(0);
 		assertEquals("Maximum of pictures downloaded by hour", maximumPicturesInMonth.getId());
 		assertEquals(8, maximumPicturesInMonth.getValue());
 		assertEquals(ChronoUnit.MINUTES, maximumPicturesInMonth.getInterval());
 		assertEquals(60, maximumPicturesInMonth.getDuration());
 
-		assertTrue(downloadingPicture.get().getLimits().get(1) instanceof CalendarPeriodRateLimit);
-		CalendarPeriodRateLimit maximumPicturesInCalendarMonth = (CalendarPeriodRateLimit)downloadingPicture.get().getLimits().get(1);
+		assertInstanceOf(CalendarPeriodRateLimit.class, downloadingPicture.get().getLimits().get(1));
+		CalendarPeriodRateLimit maximumPicturesInCalendarMonth = (CalendarPeriodRateLimit) downloadingPicture.get().getLimits().get(1);
 		assertEquals("Maximum of pictures downloaded by calendar month", maximumPicturesInCalendarMonth.getId());
 		assertEquals(10, maximumPicturesInCalendarMonth.getValue());
 		assertEquals(CalendarPeriodRateLimit.Periodicity.MONTH, maximumPicturesInCalendarMonth.getPeriodicity());
@@ -656,14 +648,14 @@ public class InMemoryProductRepositoryTest {
 
 		Product library = new Product("Library");
 
-		Optional<Feature> reservingBooks = repository.getFeature(library, "Reserving books");
+		Optional<Feature> reservingBooks = this.repository.getFeature(library, "Reserving books");
 		assertTrue(reservingBooks.isPresent());
 		assertEquals("Reserving books", reservingBooks.get().getFeatureId());
 		assertEquals("Library", reservingBooks.get().getProduct().getProductId());
 		assertEquals(1, reservingBooks.get().getLimits().size());
 
-		assertTrue(reservingBooks.get().getLimits().get(0) instanceof CountLimit);
-		CountLimit maximumBooksReserved = (CountLimit)reservingBooks.get().getLimits().get(0);
+		assertInstanceOf(CountLimit.class, reservingBooks.get().getLimits().get(0));
+		CountLimit maximumBooksReserved = (CountLimit) reservingBooks.get().getLimits().get(0);
 		assertEquals("Maximum books reserved", maximumBooksReserved.getId());
 		assertEquals(5, maximumBooksReserved.getValue());
 		assertNull(maximumBooksReserved.getUnit());
@@ -672,10 +664,10 @@ public class InMemoryProductRepositoryTest {
 	private void populateRepository() {
 
 		Product pictureHostingService = new Product("Picture hosting service");
-		repository.addProduct(pictureHostingService);
+		this.repository.addProduct(pictureHostingService);
 
 		Feature uploadingPicture = new Feature(pictureHostingService, "Uploading pictures");
-		repository.addFeature(uploadingPicture);
+		this.repository.addFeature(uploadingPicture);
 
 		CountLimit maximumPictureSize = new CountLimit("Maximum picture size", 10);
 		maximumPictureSize.setUnit("Go");
@@ -686,7 +678,7 @@ public class InMemoryProductRepositoryTest {
 		uploadingPicture.getLimits().add(maximumPicturesUploadedByHour);
 
 		Feature downloadingPicture = new Feature(pictureHostingService, "Downloading pictures");
-		repository.addFeature(downloadingPicture);
+		this.repository.addFeature(downloadingPicture);
 
 		SlidingWindowRateLimit maximumPicturesDownloadedByHour = new SlidingWindowRateLimit("max-photos-downloaded", 8, ChronoUnit.MINUTES, 60);
 		maximumPicturesDownloadedByHour.setId("Maximum of pictures downloaded by hour");
@@ -698,10 +690,10 @@ public class InMemoryProductRepositoryTest {
 
 
 		Product lendingBooks = new Product("Library");
-		repository.addProduct(lendingBooks);
+		this.repository.addProduct(lendingBooks);
 
 		Feature reservingBooks = new Feature(lendingBooks, "Reserving books");
-		repository.addFeature(reservingBooks);
+		this.repository.addFeature(reservingBooks);
 
 		CountLimit maximumBooksReserved = new CountLimit("Maximum books reserved", 5);
 		reservingBooks.getLimits().add(maximumBooksReserved);
