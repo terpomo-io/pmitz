@@ -8,12 +8,48 @@ repositories {
     mavenCentral()
 }
 
+java {
+    registerFeature('postgres') {
+        usingSourceSet(sourceSets.main)
+    }
+    registerFeature('mysql') {
+        usingSourceSet(sourceSets.main)
+    }
+    registerFeature('sqlserver') {
+        usingSourceSet(sourceSets.main)
+    }
+}
+
 dependencies {
-    implementation project (':core')
-    //implementation project (':subscriptions')
+    implementation project(':core')
+    // implementation project(':subscriptions')
+    // SLF4J API
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+
+    // Testing
+    testImplementation 'org.apache.commons:commons-dbcp2:2.9.0'
+    testImplementation 'com.h2database:h2:2.2.220'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.9.0'
+
+    // SLF4J Log4j Implementation
+    testImplementation 'org.slf4j:slf4j-log4j12:2.0.9'
+
+    // JDBC Drivers
+    postgresImplementation 'org.postgresql:postgresql:42.5.1'
+    mysqlImplementation 'mysql:mysql-connector-java:8.0.30'
+    sqlserverImplementation 'com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre11'
+
+    testImplementation 'org.postgresql:postgresql:42.5.1'
+    testImplementation 'mysql:mysql-connector-java:8.0.30'
+    testImplementation 'com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre11'
+
+    testImplementation 'org.testcontainers:testcontainers:1.19.4'
+    testImplementation 'org.testcontainers:postgresql:1.19.4'
+    testImplementation 'org.testcontainers:mysql:1.19.4'
+    testImplementation 'org.testcontainers:mssqlserver:1.19.4'
+    testImplementation 'org.testcontainers:junit-jupiter:1.19.4'
 }
 
 test {
@@ -23,3 +59,6 @@ test {
 jar {
     archiveBaseName = 'pmitz-limits'
 }
+
+
+
