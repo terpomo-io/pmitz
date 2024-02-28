@@ -28,7 +28,7 @@ public abstract class RateLimit extends UsageLimit {
 
     private final int duration;
 
-    RateLimit(String id, int quota, ChronoUnit interval, int duration) {
+    RateLimit(String id, long quota, ChronoUnit interval, int duration) {
         super(id);
         this.quota = quota;
         this.interval = interval;

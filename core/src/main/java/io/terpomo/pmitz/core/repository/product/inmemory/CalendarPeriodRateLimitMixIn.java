@@ -36,7 +36,7 @@ public abstract class CalendarPeriodRateLimitMixIn {
 	@JsonCreator
 	public CalendarPeriodRateLimitMixIn(
 			@JsonProperty("id") String id,
-			@JsonProperty("quota") int quota,
+			@JsonProperty("quota") long quota,
 			@JsonProperty("periodicity") CalendarPeriodRateLimit.Periodicity periodicity) {
 	}
 

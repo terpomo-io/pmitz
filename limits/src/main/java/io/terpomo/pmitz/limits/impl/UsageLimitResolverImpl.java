@@ -16,7 +16,7 @@ package io.terpomo.pmitz.limits.impl;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.limits.UsageLimit;
-import io.terpomo.pmitz.core.limits.UserLimitRepository;
+import io.terpomo.pmitz.core.repository.userlimit.UserLimitRepository;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.UsageLimitResolver;

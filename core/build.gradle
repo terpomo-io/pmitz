@@ -14,6 +14,7 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.9.0'
     testImplementation 'com.jayway.jsonpath:json-path:2.8.0'
+    testImplementation 'com.h2database:h2:2.2.220'
 }
 
 test {
