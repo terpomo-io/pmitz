@@ -16,16 +16,19 @@
 
 package io.terpomo.pmitz.core.repository.userlimit;
 
+import java.util.Optional;
+
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 
-import java.util.Optional;
-
 public interface UserLimitRepository {
 
-    Optional<UsageLimit> findUsageLimit (Feature feature, String usageLimitId, UserGrouping userGrouping);
-    void addUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping);
-    void updateUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping);
-    void deleteUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping);
+	Optional<UsageLimit> findUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping);
+
+	void addUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping);
+
+	void updateUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping);
+
+	void deleteUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping);
 }

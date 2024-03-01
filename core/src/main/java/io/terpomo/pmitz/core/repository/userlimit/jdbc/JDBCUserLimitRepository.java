@@ -30,7 +30,6 @@ import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
-import io.terpomo.pmitz.core.limits.types.RateLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 import io.terpomo.pmitz.core.repository.userlimit.UserLimitRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
@@ -57,14 +56,15 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 
 		UsageLimit usageLimit = null;
 
-		String query = String.format("""
+		String query = String.format(
+						"""
 						SELECT * FROM %s.%s
 							WHERE limit_id = ? AND feature_id = ? AND user_group_id = ?
 						""",
-						schemaName, tableName);
+						this.schemaName, this.tableName);
 
-		try (Connection connection = dataSource.getConnection();
-			 PreparedStatement statement = connection.prepareStatement(query)) {
+		try (Connection connection = this.dataSource.getConnection();
+			PreparedStatement statement = connection.prepareStatement(query)) {
 
 			statement.setString(1, usageLimitId);
 			statement.setString(2, feature.getFeatureId());
@@ -76,8 +76,8 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 				}
 			}
 		}
-		catch (SQLException | IllegalArgumentException e) {
-			throw new RepositoryException("Error finding limit", e);
+		catch (SQLException | IllegalArgumentException ex) {
+			throw new RepositoryException("Error finding limit", ex);
 		}
 
 		return Optional.ofNullable(usageLimit);
@@ -90,15 +90,17 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 		this.validateUserGrouping(userGroup);
 
 		try {
-			String query = String.format("""
+			String query = String.format(
+							"""
 							INSERT INTO %s.%s (
 								limit_id, feature_id, user_group_id, limit_type,
 								limit_value, limit_unit, limit_interval, limit_duration
 							) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-							""", schemaName, tableName);
+							""",
+							this.schemaName, this.tableName);
 
-			try (Connection conn = dataSource.getConnection();
-				 PreparedStatement stmt = conn.prepareStatement(query)) {
+			try (Connection conn = this.dataSource.getConnection();
+				PreparedStatement stmt = conn.prepareStatement(query)) {
 
 				stmt.setString(1, usageLimit.getId());
 				stmt.setString(2, feature.getFeatureId());
@@ -110,10 +112,12 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 				if (usageLimit instanceof SlidingWindowRateLimit slidingWindowRateLimit) {
 					stmt.setString(7, slidingWindowRateLimit.getInterval().name());
 					stmt.setInt(8, slidingWindowRateLimit.getDuration());
-				} else if (usageLimit instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
+				}
+				else if (usageLimit instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
 					stmt.setString(7, calendarPeriodRateLimit.getPeriodicity().name());
 					stmt.setInt(8, calendarPeriodRateLimit.getDuration());
-				} else {
+				}
+				else {
 					stmt.setString(7, null);
 					stmt.setInt(8, 0);
 				}
@@ -133,15 +137,17 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 		this.validateUserGrouping(userGroup);
 
 		try {
-			String query = String.format("""
+			String query = String.format(
+							"""
 							UPDATE %s.%s
 								SET limit_value = ?, limit_unit = ?, limit_interval = ?, limit_duration = ?
 								WHERE limit_id = ? AND feature_id = ? AND user_group_id = ?
-							""", schemaName, tableName);
+							""",
+							this.schemaName, this.tableName);
 
-			try (Connection conn = dataSource.getConnection();
+			try (Connection conn = this.dataSource.getConnection();
 
-				 PreparedStatement stmt = conn.prepareStatement(query)) {
+				PreparedStatement stmt = conn.prepareStatement(query)) {
 				int idx = 1;
 				stmt.setLong(idx++, usageLimit.getValue());
 				stmt.setString(idx++, usageLimit.getUnit());
@@ -149,10 +155,12 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 				if (usageLimit instanceof SlidingWindowRateLimit slidingWindowRateLimit) {
 					stmt.setString(idx++, slidingWindowRateLimit.getInterval().name());
 					stmt.setInt(idx++, slidingWindowRateLimit.getDuration());
-				} else if (usageLimit instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
+				}
+				else if (usageLimit instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
 					stmt.setString(idx++, calendarPeriodRateLimit.getPeriodicity().name());
 					stmt.setInt(idx++, calendarPeriodRateLimit.getDuration());
-				} else {
+				}
+				else {
 					stmt.setString(idx++, null);
 					stmt.setInt(idx++, 0);
 				}
@@ -177,13 +185,15 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 		this.validateUserGrouping(userGroup);
 
 		try {
-			String query = String.format("""
+			String query = String.format(
+							"""
 							DELETE FROM %s.%s
 								WHERE limit_id = ? AND feature_id = ? AND user_group_id = ?
-							""", schemaName, tableName);
+							""",
+							this.schemaName, this.tableName);
 
-			try (Connection conn = dataSource.getConnection();
-				 PreparedStatement stmt = conn.prepareStatement(query)) {
+			try (Connection conn = this.dataSource.getConnection();
+				PreparedStatement stmt = conn.prepareStatement(query)) {
 
 				stmt.setString(1, usageLimitId);
 				stmt.setString(2, feature.getFeatureId());
