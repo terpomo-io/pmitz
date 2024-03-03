@@ -8,13 +8,44 @@ repositories {
     mavenCentral()
 }
 
+java {
+    registerFeature('postgres') {
+        usingSourceSet(sourceSets.main)
+    }
+    registerFeature('mysql') {
+        usingSourceSet(sourceSets.main)
+    }
+    registerFeature('sqlserver') {
+        usingSourceSet(sourceSets.main)
+    }
+}
+
 dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.9.0'
-    testImplementation 'com.jayway.jsonpath:json-path:2.8.0'
+    testImplementation 'com.jayway.jsonpath:json-path:2.9.0'
     testImplementation 'com.h2database:h2:2.2.220'
+
+    testImplementation 'org.apache.commons:commons-dbcp2:2.9.0'
+
+    testImplementation 'org.testcontainers:testcontainers:1.19.6'
+    testImplementation 'org.testcontainers:postgresql:1.19.6'
+    testImplementation 'org.testcontainers:mysql:1.19.6'
+    testImplementation 'org.testcontainers:mssqlserver:1.19.6'
+    testImplementation 'org.testcontainers:junit-jupiter:1.19.6'
+
+/*
+    testImplementation 'ch.qos.logback:logback-classic:1.5.1'
+*/
+
+    // JDBC Drivers
+    postgresImplementation 'org.postgresql:postgresql:42.7.2'
+    mysqlImplementation 'mysql:mysql-connector-java:8.0.33'
+    sqlserverImplementation 'com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre11'
 }
 
 test {

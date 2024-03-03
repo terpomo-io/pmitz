@@ -47,7 +47,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class JDBCUserLimitRepositoryTests {
+public class JDBCUserLimitRepositoryTests {
 
 	private static final String SCHEMA_NAME = "public";
 	private static final String TABLE_NAME = "user_usage_limit";
@@ -616,7 +616,7 @@ class JDBCUserLimitRepositoryTests {
 	}
 
 	// TODO: Remove
-	private void printDatabaseContents(DataSource dataSource) {
+	public static void printDatabaseContents(DataSource dataSource) {
 		try {
 			try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
