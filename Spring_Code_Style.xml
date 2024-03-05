@@ -1,4 +1,4 @@
-<code_scheme name="Project" version="173">
+<code_scheme name="Spring Code Style" version="173">
   <JavaCodeStyleSettings>
     <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="100" />
     <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="0" />
@@ -13,6 +13,7 @@
         <package name="" withSubpackages="true" static="true" />
       </value>
     </option>
+    <option name="ALIGN_MULTILINE_RECORDS" value="false" />
     <option name="ENABLE_JAVADOC_FORMATTING" value="false" />
   </JavaCodeStyleSettings>
   <codeStyleSettings language="JAVA">
@@ -22,6 +23,7 @@
     <option name="FINALLY_ON_NEW_LINE" value="true" />
     <option name="ALIGN_MULTILINE_PARAMETERS" value="false" />
     <option name="ALIGN_MULTILINE_RESOURCES" value="false" />
+    <option name="ALIGN_MULTILINE_FOR" value="false" />
     <option name="SPACE_BEFORE_ARRAY_INITIALIZER_LBRACE" value="true" />
     <option name="KEEP_SIMPLE_BLOCKS_IN_ONE_LINE" value="true" />
     <option name="KEEP_SIMPLE_CLASSES_IN_ONE_LINE" value="true" />
