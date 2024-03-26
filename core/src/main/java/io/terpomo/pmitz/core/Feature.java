@@ -14,41 +14,41 @@
 
 package io.terpomo.pmitz.core;
 
-import io.terpomo.pmitz.core.limits.UsageLimit;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.terpomo.pmitz.core.limits.UsageLimit;
+
 public class Feature {
 
-    private String featureId;
+	private String featureId;
 
-    private Product product;
+	private Product product;
 
-    private List<UsageLimit> limits = new ArrayList<>();
+	private List<UsageLimit> limits = new ArrayList<>();
 
-    public Feature(Product product, String featureId) {
+	public Feature(Product product, String featureId) {
 
-        this.product = product;
-        this.featureId = featureId;
-    }
+		this.product = product;
+		this.featureId = featureId;
+	}
 
-    public String getFeatureId() {
-        return featureId;
-    }
+	public String getFeatureId() {
+		return featureId;
+	}
 
-    public Product getProduct() {
-        return product;
-    }
+	public Product getProduct() {
+		return product;
+	}
 
-    public List<UsageLimit> getLimits() {
-        return limits;
-    }
+	public List<UsageLimit> getLimits() {
+		return limits;
+	}
 
-    public List<String> getLimitsIds() {
-        return limits == null ? Collections.emptyList() :
-                limits.stream().map(UsageLimit::getId).collect(Collectors.toList());
-    }
+	public List<String> getLimitsIds() {
+		return limits == null ? Collections.emptyList() :
+				limits.stream().map(UsageLimit::getId).collect(Collectors.toList());
+	}
 }

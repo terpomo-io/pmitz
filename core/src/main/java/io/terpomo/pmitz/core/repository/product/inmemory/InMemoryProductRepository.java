@@ -220,7 +220,7 @@ public class InMemoryProductRepository implements ProductRepository {
 
 	public void load(InputStream inputStream) throws IOException {
 
-		TypeReference<List<Product>> typeRef = new TypeReference<>() { };
+		TypeReference<List<Product>> typeRef = new TypeReference<>() {};
 		List<Product> loadedProducts = this.mapper.readValue(inputStream, typeRef);
 
 		loadedProducts.forEach((product) -> {

@@ -57,14 +57,14 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 		UsageLimit usageLimit = null;
 
 		String query = String.format(
-						"""
+				"""
 						SELECT * FROM %s.%s
 							WHERE limit_id = ? AND feature_id = ? AND user_group_id = ?
 						""",
-						this.schemaName, this.tableName);
+				this.schemaName, this.tableName);
 
 		try (Connection connection = this.dataSource.getConnection();
-			PreparedStatement statement = connection.prepareStatement(query)) {
+				PreparedStatement statement = connection.prepareStatement(query)) {
 
 			statement.setString(1, usageLimitId);
 			statement.setString(2, feature.getFeatureId());
@@ -91,16 +91,16 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 
 		try {
 			String query = String.format(
-							"""
+					"""
 							INSERT INTO %s.%s (
 								limit_id, feature_id, user_group_id, limit_type,
 								limit_value, limit_unit, limit_interval, limit_duration
 							) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 							""",
-							this.schemaName, this.tableName);
+					this.schemaName, this.tableName);
 
 			try (Connection conn = this.dataSource.getConnection();
-				PreparedStatement stmt = conn.prepareStatement(query)) {
+					PreparedStatement stmt = conn.prepareStatement(query)) {
 
 				stmt.setString(1, usageLimit.getId());
 				stmt.setString(2, feature.getFeatureId());
@@ -138,16 +138,16 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 
 		try {
 			String query = String.format(
-							"""
+					"""
 							UPDATE %s.%s
 								SET limit_value = ?, limit_unit = ?, limit_interval = ?, limit_duration = ?
 								WHERE limit_id = ? AND feature_id = ? AND user_group_id = ?
 							""",
-							this.schemaName, this.tableName);
+					this.schemaName, this.tableName);
 
 			try (Connection conn = this.dataSource.getConnection();
 
-				PreparedStatement stmt = conn.prepareStatement(query)) {
+					PreparedStatement stmt = conn.prepareStatement(query)) {
 				int idx = 1;
 				stmt.setLong(idx++, usageLimit.getValue());
 				stmt.setString(idx++, usageLimit.getUnit());
@@ -186,14 +186,14 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 
 		try {
 			String query = String.format(
-							"""
+					"""
 							DELETE FROM %s.%s
 								WHERE limit_id = ? AND feature_id = ? AND user_group_id = ?
 							""",
-							this.schemaName, this.tableName);
+					this.schemaName, this.tableName);
 
 			try (Connection conn = this.dataSource.getConnection();
-				PreparedStatement stmt = conn.prepareStatement(query)) {
+					PreparedStatement stmt = conn.prepareStatement(query)) {
 
 				stmt.setString(1, usageLimitId);
 				stmt.setString(2, feature.getFeatureId());

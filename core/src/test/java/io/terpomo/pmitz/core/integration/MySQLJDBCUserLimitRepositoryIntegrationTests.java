@@ -57,29 +57,29 @@ public class MySQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUs
 	protected void setupDatabase() throws SQLException {
 		String createQuery = String.format(
 				"""
-				CREATE TABLE IF NOT EXISTS %s.%s (
-					usage_id INT AUTO_INCREMENT PRIMARY KEY,
-					limit_id VARCHAR(255),
-					feature_id VARCHAR(255),
-					user_group_id VARCHAR(255),
-					limit_type VARCHAR(255),
-					limit_value INT,
-					limit_unit VARCHAR(255),
-					limit_interval VARCHAR(255),
-					limit_duration INT
-				) ENGINE=InnoDB;
-				""",
+						CREATE TABLE IF NOT EXISTS %s.%s (
+							usage_id INT AUTO_INCREMENT PRIMARY KEY,
+							limit_id VARCHAR(255),
+							feature_id VARCHAR(255),
+							user_group_id VARCHAR(255),
+							limit_type VARCHAR(255),
+							limit_value INT,
+							limit_unit VARCHAR(255),
+							limit_interval VARCHAR(255),
+							limit_duration INT
+						) ENGINE=InnoDB;
+						""",
 				SCHEMA_NAME, TABLE_NAME);
 
 		String addContraintQuery = String.format(
 				"""
-				ALTER TABLE %s.%s
-					ADD CONSTRAINT c_limit UNIQUE (limit_id,feature_id, user_group_id)
-				""",
+						ALTER TABLE %s.%s
+							ADD CONSTRAINT c_limit UNIQUE (limit_id,feature_id, user_group_id)
+						""",
 				SCHEMA_NAME, TABLE_NAME);
 
 		try (Connection conn = dataSource.getConnection();
-			Statement stmt = conn.createStatement()) {
+				Statement stmt = conn.createStatement()) {
 			stmt.execute(createQuery);
 			stmt.execute(addContraintQuery);
 		}
@@ -110,15 +110,15 @@ public class MySQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUs
 
 		String query = String.format(
 				"""
-				INSERT INTO %s.%s (
-					limit_id, feature_id, user_group_id, limit_type, limit_value,
-					limit_unit, limit_interval, limit_duration
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-				""",
+						INSERT INTO %s.%s (
+							limit_id, feature_id, user_group_id, limit_type, limit_value,
+							limit_unit, limit_interval, limit_duration
+						) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+						""",
 				SCHEMA_NAME, TABLE_NAME);
 
 		try (Connection conn = dataSource.getConnection();
-			PreparedStatement stmt = conn.prepareStatement(query)) {
+				PreparedStatement stmt = conn.prepareStatement(query)) {
 
 			String limitInterval = null;
 			int limitDuration = -1;
@@ -146,11 +146,11 @@ public class MySQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUs
 	protected void tearDownDatabase() throws SQLException {
 		String dropContraintQuery = String.format(
 				"""
-				DROP TABLE IF EXISTS %s.%s
-				""",
+						DROP TABLE IF EXISTS %s.%s
+						""",
 				SCHEMA_NAME, TABLE_NAME);
 		try (Connection conn = dataSource.getConnection();
-			Statement statement = conn.createStatement()) {
+				Statement statement = conn.createStatement()) {
 			statement.execute(dropContraintQuery);
 		}
 	}
@@ -163,11 +163,11 @@ public class MySQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUs
 
 		String query = String.format(
 				"""
-				SELECT * FROM %s.%s
-				""",
+						SELECT * FROM %s.%s
+						""",
 				SCHEMA_NAME, TABLE_NAME);
 		try (Connection conn = dataSource.getConnection();
-			Statement stmt = conn.createStatement()) {
+				Statement stmt = conn.createStatement()) {
 			ResultSet rs = stmt.executeQuery(query);
 			while (rs.next()) {
 				int usageId = rs.getInt("usage_id");
@@ -182,9 +182,9 @@ public class MySQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUs
 
 				System.out.printf(
 						"""
-						usageId=%s, limitId=%s, featureId=%s, userGroupId=%s, limitType=%s,
-						limitValue=%d, limitUnit=%s, limitInterval=%s, limitDuration=%d%n
-						""",
+								usageId=%s, limitId=%s, featureId=%s, userGroupId=%s, limitType=%s,
+								limitValue=%d, limitUnit=%s, limitInterval=%s, limitDuration=%d%n
+								""",
 						usageId, limitId, featureId, userGroupId, limitType,
 						limitValue, limitUnit, limitInterval, limitDuration);
 			}

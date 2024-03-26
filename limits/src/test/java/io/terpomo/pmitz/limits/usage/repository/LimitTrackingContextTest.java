@@ -1,71 +1,72 @@
 package io.terpomo.pmitz.limits.usage.repository;
 
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.limits.UsageRecord;
 import org.junit.jupiter.api.Test;
 
-import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class LimitTrackingContextTest {
 
-    Product product = new Product("photo-sharing");
-    Feature feature = new Feature(product, "upload-photo");
+	Product product = new Product("photo-sharing");
+	Feature feature = new Feature(product, "upload-photo");
 
-    String limitId = "number-of-photos";
+	String limitId = "number-of-photos";
 
-    @Test
-    void addUsageRecordsShouldAddRecordsToUpdatedList() {
-        LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList());
+	@Test
+	void addUsageRecordsShouldAddRecordsToUpdatedList() {
+		LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList());
 
-        UsageRecord usageRecord = new UsageRecord(limitId, null, null, 3L, null);
-        context.addUpdatedUsageRecords(Collections.singletonList(usageRecord));
+		UsageRecord usageRecord = new UsageRecord(limitId, null, null, 3L, null);
+		context.addUpdatedUsageRecords(Collections.singletonList(usageRecord));
 
-        var updatedRecords = context.getUpdatedUsageRecords();
-        assertEquals(1, updatedRecords.size());
-    }
-    @Test
-    void findUsageRecordsShouldFilterRecords() {
-        ZonedDateTime startTime = ZonedDateTime.now().minusMonths(1);
-        ZonedDateTime endTime = ZonedDateTime.now();
+		var updatedRecords = context.getUpdatedUsageRecords();
+		assertEquals(1, updatedRecords.size());
+	}
 
-        var usageRecords = getCurrentUsageRecords(startTime, endTime);
+	@Test
+	void findUsageRecordsShouldFilterRecords() {
+		ZonedDateTime startTime = ZonedDateTime.now().minusMonths(1);
+		ZonedDateTime endTime = ZonedDateTime.now();
 
-        LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList());
-        context.addCurrentUsageRecords(usageRecords);
+		var usageRecords = getCurrentUsageRecords(startTime, endTime);
 
-        var filteredRecords = context.findUsageRecords(limitId, startTime, endTime);
+		LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList());
+		context.addCurrentUsageRecords(usageRecords);
 
-        assertEquals(3, filteredRecords.size());
-    }
+		var filteredRecords = context.findUsageRecords(limitId, startTime, endTime);
 
-    @Test
-    void findUsageRecordsShouldFilterRecordsWhenParamsEmpty() {
-        ZonedDateTime startTime = ZonedDateTime.now().minusMonths(1);
-        ZonedDateTime endTime = ZonedDateTime.now();
+		assertEquals(3, filteredRecords.size());
+	}
 
-        var usageRecords = getCurrentUsageRecords(startTime, endTime);
+	@Test
+	void findUsageRecordsShouldFilterRecordsWhenParamsEmpty() {
+		ZonedDateTime startTime = ZonedDateTime.now().minusMonths(1);
+		ZonedDateTime endTime = ZonedDateTime.now();
 
-        LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList());
-        context.addCurrentUsageRecords(usageRecords);
+		var usageRecords = getCurrentUsageRecords(startTime, endTime);
 
-        var filteredRecords = context.findUsageRecords(limitId, null, null);
+		LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList());
+		context.addCurrentUsageRecords(usageRecords);
 
-        assertEquals(4, filteredRecords.size());
-    }
+		var filteredRecords = context.findUsageRecords(limitId, null, null);
 
-    private List<UsageRecord> getCurrentUsageRecords (ZonedDateTime startTime, ZonedDateTime endTime){
-        UsageRecord usageRecord1 = new UsageRecord(limitId, null, null, 3L, null);
-        UsageRecord usageRecord2 = new UsageRecord(limitId, null, null, 2L, null);
-        UsageRecord usageRecord3 = new UsageRecord(limitId, null, null, 2L, null);
-        UsageRecord usageRecord4 = new UsageRecord(limitId, startTime.minusHours(1), endTime, 2L, null);
+		assertEquals(4, filteredRecords.size());
+	}
 
-        return Arrays.asList(usageRecord1, usageRecord2, usageRecord3, usageRecord4);
-    }
+	private List<UsageRecord> getCurrentUsageRecords(ZonedDateTime startTime, ZonedDateTime endTime) {
+		UsageRecord usageRecord1 = new UsageRecord(limitId, null, null, 3L, null);
+		UsageRecord usageRecord2 = new UsageRecord(limitId, null, null, 2L, null);
+		UsageRecord usageRecord3 = new UsageRecord(limitId, null, null, 2L, null);
+		UsageRecord usageRecord4 = new UsageRecord(limitId, startTime.minusHours(1), endTime, 2L, null);
+
+		return Arrays.asList(usageRecord1, usageRecord2, usageRecord3, usageRecord4);
+	}
 }
