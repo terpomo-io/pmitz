@@ -24,6 +24,7 @@ subprojects {
         toolVersion = "10.12.7"
         ignoreFailures = true
         showViolations = false
+        configDirectory = file("$rootDir/checkstyle/config")
     }
 
     dependencies {
