@@ -21,10 +21,16 @@ subprojects {
     apply plugin: 'checkstyle'
 
     checkstyle {
-        toolVersion = "10.12.7"
+        toolVersion = "10.15.0"
         ignoreFailures = true
         showViolations = false
-        configDirectory = file("$rootDir/checkstyle/config")
+        configFile = rootProject.file('/checkstyle/config/pmitz-checkstyle.xml')
+        configProperties = [
+                'headerType': 'apache2',
+                'headerCopyrightPattern': '20\\d\\d(-20\\d\\d)?',
+                'projectRootPackage': 'io.terpomo',
+                'avoidStaticImportExcludes': []
+        ]
     }
 
     dependencies {
