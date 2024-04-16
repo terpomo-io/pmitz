@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.repository.userlimit;
+package io.terpomo.pmitz.limits.userlimit;
 
 import java.util.Optional;
 

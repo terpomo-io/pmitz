@@ -16,7 +16,7 @@ package io.terpomo.pmitz.limits.impl;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.limits.UsageLimit;
-import io.terpomo.pmitz.core.repository.userlimit.UserLimitRepository;
+import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.UsageLimitResolver;
@@ -27,6 +27,11 @@ public class UsageLimitResolverImpl implements UsageLimitResolver {
 
     private ProductRepository productRepository;
     private UserLimitRepository userLimitRepository;
+
+    public UsageLimitResolverImpl(ProductRepository productRepository, UserLimitRepository userLimitRepository) {
+        this.productRepository = productRepository;
+        this.userLimitRepository = userLimitRepository;
+    }
 
     @Override
     public Optional<UsageLimit> resolveUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping) {

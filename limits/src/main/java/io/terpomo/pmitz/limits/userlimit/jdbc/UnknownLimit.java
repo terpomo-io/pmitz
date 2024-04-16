@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.repository.userlimit.jdbc;
+package io.terpomo.pmitz.limits.userlimit.jdbc;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;

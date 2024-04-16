@@ -3,7 +3,7 @@ package io.terpomo.pmitz.limits.impl;
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.limits.*;
-import io.terpomo.pmitz.core.limits.UsageLimitVerifier;
+import io.terpomo.pmitz.limits.UsageLimitVerifier;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;

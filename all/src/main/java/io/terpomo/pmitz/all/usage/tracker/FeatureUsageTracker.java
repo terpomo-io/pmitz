@@ -1,4 +1,4 @@
-package io.terpomo.pmitz;
+package io.terpomo.pmitz.all.usage.tracker;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
