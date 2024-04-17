@@ -28,6 +28,10 @@ public class UsageLimitResolverImpl implements UsageLimitResolver {
     private ProductRepository productRepository;
     private UserLimitRepository userLimitRepository;
 
+    public UsageLimitResolverImpl(ProductRepository productRepository) {
+        this(productRepository, new NoOpUserLimitRepository());
+    }
+
     public UsageLimitResolverImpl(ProductRepository productRepository, UserLimitRepository userLimitRepository) {
         this.productRepository = productRepository;
         this.userLimitRepository = userLimitRepository;
@@ -43,5 +47,28 @@ public class UsageLimitResolverImpl implements UsageLimitResolver {
         return userLimitRepository.findUsageLimit(feature, usageLimitId, userGrouping)
                 .or(() -> productRepository.getGlobalLimit(feature, usageLimitId));
 
+    }
+
+    public static class NoOpUserLimitRepository implements UserLimitRepository {
+
+        @Override
+        public Optional<UsageLimit> findUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping) {
+            return Optional.empty();
+        }
+
+        @Override
+        public void addUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping) {
+            // No action
+        }
+
+        @Override
+        public void updateUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping) {
+            // No action
+        }
+
+        @Override
+        public void deleteUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping) {
+            // No action
+        }
     }
 }
