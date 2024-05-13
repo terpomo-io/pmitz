@@ -59,6 +59,149 @@ public class JDBCUserLimitRepositoryTests {
 	private UserLimitRepository repository;
 	private JdbcDataSource dataSource;
 
+	static Stream<Arguments> findUsageLimit_invalidParameter() {
+		return Stream.of(
+				Arguments.of(null,
+						"Maximum picture resolution", new IndividualUser("user1"),
+						"The feature parameter cannot be null"),
+				Arguments.of(new Feature(new Product(null), "f1"),
+						"Maximum picture resolution", new IndividualUser("user1"),
+						"A feature must have a product with identifier"),
+				Arguments.of(new Feature(null, "f1"),
+						"Maximum picture resolution", new IndividualUser("user1"),
+						"A feature must have a product with identifier"),
+				Arguments.of(new Feature(new Product("p1"), null),
+						"Maximum picture resolution", new IndividualUser("user1"),
+						"A feature must have a identifier"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						null, new IndividualUser("user1"),
+						"The 'limitId' parameter cannot be null"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						"Maximum picture resolution", new IndividualUser(null),
+						"A user or group of users must have a identifier"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						"Maximum picture resolution", null,
+						"The user/group parameter cannot be null")
+		);
+	}
+
+	static Stream<Arguments> addUsageLimit_invalidParameter() {
+		return Stream.of(
+				Arguments.of(null,
+						new CountLimit("c1", 10), new IndividualUser("user1"),
+						"The feature parameter cannot be null"),
+				Arguments.of(new Feature(new Product(null), "f1"),
+						new CountLimit("c1", 10), new IndividualUser("user1"),
+						"A feature must have a product with identifier"),
+				Arguments.of(new Feature(null, "f1"),
+						new CountLimit("c1", 10), new IndividualUser("user1"),
+						"A feature must have a product with identifier"),
+				Arguments.of(new Feature(new Product("p1"), null),
+						new CountLimit("c1", 10), new IndividualUser("user1"),
+						"A feature must have a identifier"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						null, new IndividualUser("user1"),
+						"The limit parameter cannot be null"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						new CountLimit(null, 10), new IndividualUser("user1"),
+						"A limit must have a identifier"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						new CountLimit("c1", 10), new IndividualUser(null),
+						"A user or group of users must have a identifier"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						new CountLimit("c1", 10), null,
+						"The user/group parameter cannot be null")
+		);
+	}
+
+	static Stream<Arguments> updateUsageLimit_invalidParameter() {
+		return Stream.of(
+				Arguments.of(null,
+						new CountLimit("c1", 10), new IndividualUser("user1"),
+						"The feature parameter cannot be null"),
+				Arguments.of(new Feature(new Product(null), "f1"),
+						new CountLimit("c1", 10), new IndividualUser("user1"),
+						"A feature must have a product with identifier"),
+				Arguments.of(new Feature(null, "f1"),
+						new CountLimit("c1", 10), new IndividualUser("user1"),
+						"A feature must have a product with identifier"),
+				Arguments.of(new Feature(new Product("p1"), null),
+						new CountLimit("c1", 10), new IndividualUser("user1"),
+						"A feature must have a identifier"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						null, new IndividualUser("user1"),
+						"The limit parameter cannot be null"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						new CountLimit(null, 10), new IndividualUser("user1"),
+						"A limit must have a identifier"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						new CountLimit("c1", 10), new IndividualUser(null),
+						"A user or group of users must have a identifier"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						new CountLimit("c1", 10), null,
+						"The user/group parameter cannot be null")
+		);
+	}
+
+	static Stream<Arguments> deleteUsageLimit_invalidParameter() {
+		return Stream.of(
+				Arguments.of(null,
+						"Maximum picture resolution", new IndividualUser("user1"),
+						"The feature parameter cannot be null"),
+				Arguments.of(new Feature(new Product(null), "f1"),
+						"Maximum picture resolution", new IndividualUser("user1"),
+						"A feature must have a product with identifier"),
+				Arguments.of(new Feature(null, "f1"),
+						"Maximum picture resolution", new IndividualUser("user1"),
+						"A feature must have a product with identifier"),
+				Arguments.of(new Feature(new Product("p1"), null),
+						"Maximum picture resolution", new IndividualUser("user1"),
+						"A feature must have a identifier"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						null, new IndividualUser("user1"),
+						"The 'limitId' parameter cannot be null"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						"Maximum picture resolution", new IndividualUser(null),
+						"A user or group of users must have a identifier"),
+				Arguments.of(new Feature(new Product("p1"), "f1"),
+						"Maximum picture resolution", null,
+						"The user/group parameter cannot be null")
+		);
+	}
+
+	// TODO: Remove
+	public static void printDatabaseContents(DataSource dataSource) {
+		try {
+			try (Connection conn = dataSource.getConnection();
+					Statement stmt = conn.createStatement()) {
+				System.out.println("=========== UsageLimit ==========");
+				ResultSet rs = stmt.executeQuery("SELECT * FROM public.user_usage_limit");
+				while (rs.next()) {
+					long usageId = rs.getLong("usage_id");
+					String limitId = rs.getString("limit_id");
+					String featureId = rs.getString("feature_id");
+					String userGroup = rs.getString("user_group_id");
+					String limitType = rs.getString("limit_type");
+					long limitValue = rs.getLong("limit_value");
+					String limitUnit = rs.getString("limit_unit");
+					String limitInterval = rs.getString("limit_interval");
+					int limitDuration = rs.getInt("limit_duration");
+
+					System.out.printf(
+							"""
+									usage_id=%s, limitId=%s, featureId=%s, userGroup=%s, limitType=%s,
+									limitValue=%d, limitUnit=%s, limitInterval=%s, limitDuration=%d%n
+									""",
+							usageId, limitId, featureId, userGroup, limitType,
+							limitValue, limitUnit, limitInterval, limitDuration
+					);
+				}
+			}
+		}
+		catch (SQLException ex) {
+			ex.printStackTrace();
+		}
+	}
 
 	@BeforeEach
 	void setUp() throws SQLException {
@@ -78,7 +221,7 @@ public class JDBCUserLimitRepositoryTests {
 	void tearDown() throws Exception {
 		String query = String.format("DROP TABLE IF EXISTS %s.%s;", SCHEMA_NAME, TABLE_NAME);
 		try (Connection conn = this.dataSource.getConnection();
-			Statement stmt = conn.createStatement()) {
+				Statement stmt = conn.createStatement()) {
 			stmt.execute(query);
 		}
 	}
@@ -174,32 +317,6 @@ public class JDBCUserLimitRepositoryTests {
 		);
 
 		assertEquals(message, exception.getMessage());
-	}
-
-	static Stream<Arguments> findUsageLimit_invalidParameter() {
-		return Stream.of(
-				Arguments.of(null,
-						"Maximum picture resolution", new IndividualUser("user1"),
-						"The feature parameter cannot be null"),
-				Arguments.of(new Feature(new Product(null), "f1"),
-						"Maximum picture resolution", new IndividualUser("user1"),
-						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(null, "f1"),
-						"Maximum picture resolution", new IndividualUser("user1"),
-						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(new Product("p1"), null),
-						"Maximum picture resolution", new IndividualUser("user1"),
-						"A feature must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						null, new IndividualUser("user1"),
-						"The 'limitId' parameter cannot be null"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						"Maximum picture resolution", new IndividualUser(null),
-						"A user or group of users must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						"Maximum picture resolution", null,
-						"The user/group parameter cannot be null")
-		);
 	}
 
 	@Test
@@ -312,35 +429,6 @@ public class JDBCUserLimitRepositoryTests {
 		assertEquals(message, exception.getMessage());
 	}
 
-	static Stream<Arguments> addUsageLimit_invalidParameter() {
-		return Stream.of(
-				Arguments.of(null,
-						new CountLimit("c1", 10), new IndividualUser("user1"),
-						"The feature parameter cannot be null"),
-				Arguments.of(new Feature(new Product(null), "f1"),
-						new CountLimit("c1", 10), new IndividualUser("user1"),
-						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(null, "f1"),
-						new CountLimit("c1", 10), new IndividualUser("user1"),
-						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(new Product("p1"), null),
-						new CountLimit("c1", 10), new IndividualUser("user1"),
-						"A feature must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						null, new IndividualUser("user1"),
-						"The limit parameter cannot be null"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						new CountLimit(null, 10), new IndividualUser("user1"),
-						"A limit must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						new CountLimit("c1", 10), new IndividualUser(null),
-						"A user or group of users must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						new CountLimit("c1", 10), null,
-						"The user/group parameter cannot be null")
-		);
-	}
-
 	@Test
 	void updateUsageLimit_CountLimitModified() {
 		CountLimit countLimitToModified = new CountLimit("Maximum number of picture", 15);
@@ -424,35 +512,6 @@ public class JDBCUserLimitRepositoryTests {
 		assertEquals(message, exception.getMessage());
 	}
 
-	static Stream<Arguments> updateUsageLimit_invalidParameter() {
-		return Stream.of(
-				Arguments.of(null,
-						new CountLimit("c1", 10), new IndividualUser("user1"),
-						"The feature parameter cannot be null"),
-				Arguments.of(new Feature(new Product(null), "f1"),
-						new CountLimit("c1", 10), new IndividualUser("user1"),
-						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(null, "f1"),
-						new CountLimit("c1", 10), new IndividualUser("user1"),
-						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(new Product("p1"), null),
-						new CountLimit("c1", 10), new IndividualUser("user1"),
-						"A feature must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						null, new IndividualUser("user1"),
-						"The limit parameter cannot be null"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						new CountLimit(null, 10), new IndividualUser("user1"),
-						"A limit must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						new CountLimit("c1", 10), new IndividualUser(null),
-						"A user or group of users must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						new CountLimit("c1", 10), null,
-						"The user/group parameter cannot be null")
-		);
-	}
-
 	@Test
 	void deleteUsageLimit_CountLimitDeleted() {
 		Product product = new Product("Picture hosting service");
@@ -499,36 +558,10 @@ public class JDBCUserLimitRepositoryTests {
 		assertEquals(message, exception.getMessage());
 	}
 
-	static Stream<Arguments> deleteUsageLimit_invalidParameter() {
-		return Stream.of(
-				Arguments.of(null,
-						"Maximum picture resolution", new IndividualUser("user1"),
-						"The feature parameter cannot be null"),
-				Arguments.of(new Feature(new Product(null), "f1"),
-						"Maximum picture resolution", new IndividualUser("user1"),
-						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(null, "f1"),
-						"Maximum picture resolution", new IndividualUser("user1"),
-						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(new Product("p1"), null),
-						"Maximum picture resolution", new IndividualUser("user1"),
-						"A feature must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						null, new IndividualUser("user1"),
-						"The 'limitId' parameter cannot be null"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						"Maximum picture resolution", new IndividualUser(null),
-						"A user or group of users must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						"Maximum picture resolution", null,
-						"The user/group parameter cannot be null")
-		);
-	}
-
 	private void createTable(DataSource dataSource) throws SQLException {
 
 		String createQuery = String.format(
-						"""
+				"""
 						CREATE TABLE %s.%s (
 							usage_id integer AUTO_INCREMENT,
 							limit_id varchar NOT NULL,
@@ -542,17 +575,17 @@ public class JDBCUserLimitRepositoryTests {
 							PRIMARY KEY (usage_id)
 						);
 						""",
-						SCHEMA_NAME, TABLE_NAME);
+				SCHEMA_NAME, TABLE_NAME);
 
 		String addContraintQuery = String.format(
-						"""
+				"""
 						ALTER TABLE %s.%s
 							ADD CONSTRAINT c_limit UNIQUE (limit_id,feature_id, user_group_id)
 						""",
-						SCHEMA_NAME, TABLE_NAME);
+				SCHEMA_NAME, TABLE_NAME);
 
 		try (Connection conn = dataSource.getConnection();
-			Statement stmt = conn.createStatement()) {
+				Statement stmt = conn.createStatement()) {
 			stmt.execute(createQuery);
 			stmt.execute(addContraintQuery);
 		}
@@ -582,16 +615,16 @@ public class JDBCUserLimitRepositoryTests {
 			UsageLimit usageLimit) throws SQLException {
 
 		String query = String.format(
-						"""
+				"""
 						INSERT INTO %s.%s (
 							limit_id, feature_id, user_group_id, limit_type, limit_value,
 							limit_unit, limit_interval, limit_duration
 						) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 						""",
-						SCHEMA_NAME, TABLE_NAME);
+				SCHEMA_NAME, TABLE_NAME);
 
 		try (Connection conn = dataSource.getConnection();
-			PreparedStatement stmt = conn.prepareStatement(query)) {
+				PreparedStatement stmt = conn.prepareStatement(query)) {
 
 			String limitInterval = null;
 			int limitDuration = -1;
@@ -612,40 +645,6 @@ public class JDBCUserLimitRepositoryTests {
 			stmt.setString(7, limitInterval);
 			stmt.setInt(8, limitDuration);
 			stmt.executeUpdate();
-		}
-	}
-
-	// TODO: Remove
-	public static void printDatabaseContents(DataSource dataSource) {
-		try {
-			try (Connection conn = dataSource.getConnection();
-				Statement stmt = conn.createStatement()) {
-				System.out.println("=========== UsageLimit ==========");
-				ResultSet rs = stmt.executeQuery("SELECT * FROM public.user_usage_limit");
-				while (rs.next()) {
-					long usageId = rs.getLong("usage_id");
-					String limitId = rs.getString("limit_id");
-					String featureId = rs.getString("feature_id");
-					String userGroup = rs.getString("user_group_id");
-					String limitType = rs.getString("limit_type");
-					long limitValue = rs.getLong("limit_value");
-					String limitUnit = rs.getString("limit_unit");
-					String limitInterval = rs.getString("limit_interval");
-					int limitDuration = rs.getInt("limit_duration");
-
-					System.out.printf(
-							"""
-							usage_id=%s, limitId=%s, featureId=%s, userGroup=%s, limitType=%s,
-							limitValue=%d, limitUnit=%s, limitInterval=%s, limitDuration=%d%n
-							""",
-							usageId, limitId, featureId, userGroup, limitType,
-							limitValue, limitUnit, limitInterval, limitDuration
-					);
-				}
-			}
-		}
-		catch (SQLException ex) {
-			ex.printStackTrace();
 		}
 	}
 }

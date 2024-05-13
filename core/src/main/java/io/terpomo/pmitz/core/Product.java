@@ -19,20 +19,20 @@ import java.util.List;
 
 public class Product {
 
-    private String productId;
+	private String productId;
 
-    private List<Feature> features = new ArrayList<>();
+	private List<Feature> features = new ArrayList<>();
 
-    public Product(String productId) {
+	public Product(String productId) {
 
-        this.productId = productId;
-    }
+		this.productId = productId;
+	}
 
-    public String getProductId() {
-        return productId;
-    }
+	public String getProductId() {
+		return productId;
+	}
 
-    public List<Feature> getFeatures() {
-        return features;
-    }
+	public List<Feature> getFeatures() {
+		return features;
+	}
 }

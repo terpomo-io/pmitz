@@ -1,5 +1,7 @@
 package io.terpomo.pmitz.all.usage.tracker.impl;
 
+import java.util.Collections;
+
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureStatus;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
@@ -14,103 +16,100 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
-
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class FeatureUsageTrackerImplTest {
 
-    @Mock
-    UsageLimitVerifier limitVerifier;
-    @Mock
-    SubscriptionVerifier subscriptionVerifier;
+	@Mock
+	UsageLimitVerifier limitVerifier;
+	@Mock
+	SubscriptionVerifier subscriptionVerifier;
 
-    Feature feature;
+	Feature feature;
 
-    UserGrouping userGrouping = new IndividualUser("user001");
+	UserGrouping userGrouping = new IndividualUser("user001");
 
-    FeatureUsageTrackerImpl featureUsageTracker;
+	FeatureUsageTrackerImpl featureUsageTracker;
 
-    @BeforeEach
-    void init (){
-        feature = new Feature(null, "FILE_UPLOAD");
+	@BeforeEach
+	void init() {
+		feature = new Feature(null, "FILE_UPLOAD");
 
-        featureUsageTracker = new FeatureUsageTrackerImpl(limitVerifier, subscriptionVerifier);
-    }
+		featureUsageTracker = new FeatureUsageTrackerImpl(limitVerifier, subscriptionVerifier);
+	}
 
-    @Test
-    void givenFeatureNotAllowedWhenRecordFeatureUsageThenThrowFeatureNotAllowedException(){
-        when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(false);
+	@Test
+	void givenFeatureNotAllowedWhenRecordFeatureUsageThenThrowFeatureNotAllowedException() {
+		when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(false);
 
-        assertThrows(FeatureNotAllowedException.class,
-                () -> featureUsageTracker.recordFeatureUsage(feature, userGrouping, Collections.singletonMap("FILE_SIZE", 1000L)));
+		assertThrows(FeatureNotAllowedException.class,
+				() -> featureUsageTracker.recordFeatureUsage(feature, userGrouping, Collections.singletonMap("FILE_SIZE", 1000L)));
 
-    }
+	}
 
-    @Test
-    void givenFeatureAllowedWhenRecordFeatureUsageThenCallLimitVerifier() {
-        when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(true);
+	@Test
+	void givenFeatureAllowedWhenRecordFeatureUsageThenCallLimitVerifier() {
+		when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(true);
 
-        var additionalUnits = Collections.singletonMap("FILE_SIZE", 1000L);
-        featureUsageTracker.recordFeatureUsage(feature, userGrouping, additionalUnits);
+		var additionalUnits = Collections.singletonMap("FILE_SIZE", 1000L);
+		featureUsageTracker.recordFeatureUsage(feature, userGrouping, additionalUnits);
 
-        verify(limitVerifier).recordFeatureUsage(feature, userGrouping, additionalUnits);
-    }
+		verify(limitVerifier).recordFeatureUsage(feature, userGrouping, additionalUnits);
+	}
 
-    @Test
-    void givenFeatureWhenReduceFeatureUsageThenCallLimitVerifier() {
-        var reducedUnits = Collections.singletonMap("UPLOADED_FILES", 1L);
-        featureUsageTracker.reduceFeatureUsage(feature, userGrouping, reducedUnits);
+	@Test
+	void givenFeatureWhenReduceFeatureUsageThenCallLimitVerifier() {
+		var reducedUnits = Collections.singletonMap("UPLOADED_FILES", 1L);
+		featureUsageTracker.reduceFeatureUsage(feature, userGrouping, reducedUnits);
 
-        verify(limitVerifier).reduceFeatureUsage(feature, userGrouping, reducedUnits);
-    }
+		verify(limitVerifier).reduceFeatureUsage(feature, userGrouping, reducedUnits);
+	}
 
-    @Test
-    void givenFeatureNotAllowedWhenVerifyLimitsThenFeatureStatusNotAllowed() {
-        when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(false);
+	@Test
+	void givenFeatureNotAllowedWhenVerifyLimitsThenFeatureStatusNotAllowed() {
+		when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(false);
 
-        var additionalUnits = Collections.singletonMap("FILE_SIZE", 1000L);
-        var featureInfo = featureUsageTracker.verifyLimits(feature, userGrouping, additionalUnits);
+		var additionalUnits = Collections.singletonMap("FILE_SIZE", 1000L);
+		var featureInfo = featureUsageTracker.verifyLimits(feature, userGrouping, additionalUnits);
 
-        assertEquals(FeatureStatus.NOT_ALLOWED, featureInfo.featureStatus());
-        assertTrue(featureInfo.remainingUsageUnits().isEmpty());
-    }
+		assertEquals(FeatureStatus.NOT_ALLOWED, featureInfo.featureStatus());
+		assertTrue(featureInfo.remainingUsageUnits().isEmpty());
+	}
 
-    @Test
-    void givenAnyLimitExceededWhenVerifyLimitsThenFeatureStatusNotAllowed() {
-        String limitId = "FILE_UPLOAD";
-        when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(true);
-        when(limitVerifier.getLimitsRemainingUnits(feature, userGrouping)).thenReturn(Collections.singletonMap(limitId, 1L));
+	@Test
+	void givenAnyLimitExceededWhenVerifyLimitsThenFeatureStatusNotAllowed() {
+		String limitId = "FILE_UPLOAD";
+		when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(true);
+		when(limitVerifier.getLimitsRemainingUnits(feature, userGrouping)).thenReturn(Collections.singletonMap(limitId, 1L));
 
-        var additionalUnits = Collections.singletonMap(limitId, 2L);
-        var featureInfo = featureUsageTracker.verifyLimits(feature, userGrouping, additionalUnits);
+		var additionalUnits = Collections.singletonMap(limitId, 2L);
+		var featureInfo = featureUsageTracker.verifyLimits(feature, userGrouping, additionalUnits);
 
-        assertEquals(FeatureStatus.LIMIT_EXCEEDED, featureInfo.featureStatus());
-        assertEquals(-1, featureInfo.remainingUsageUnits().get(limitId));
-    }
+		assertEquals(FeatureStatus.LIMIT_EXCEEDED, featureInfo.featureStatus());
+		assertEquals(-1, featureInfo.remainingUsageUnits().get(limitId));
+	}
 
-    @Test
-    void givenFeatureNotAllowedWhenGetUsageInfoThenReturnUsageInfo() {
-        when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(false);
+	@Test
+	void givenFeatureNotAllowedWhenGetUsageInfoThenReturnUsageInfo() {
+		when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(false);
 
-        FeatureUsageInfo featureUsageInfo = featureUsageTracker.getUsageInfo(feature, userGrouping);
-        assertEquals(FeatureStatus.NOT_ALLOWED, featureUsageInfo.featureStatus());
-        assertTrue(featureUsageInfo.remainingUsageUnits().isEmpty());
-    }
+		FeatureUsageInfo featureUsageInfo = featureUsageTracker.getUsageInfo(feature, userGrouping);
+		assertEquals(FeatureStatus.NOT_ALLOWED, featureUsageInfo.featureStatus());
+		assertTrue(featureUsageInfo.remainingUsageUnits().isEmpty());
+	}
 
-    @Test
-    void givenFeatureAllowedWhenGetUsageInfoThenReturnRemainingUnits() {
-        String limitId = "ADD_USER";
-        when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(true);
-        when(limitVerifier.getLimitsRemainingUnits(feature, userGrouping)).thenReturn(Collections.singletonMap(limitId, 1L));
+	@Test
+	void givenFeatureAllowedWhenGetUsageInfoThenReturnRemainingUnits() {
+		String limitId = "ADD_USER";
+		when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(true);
+		when(limitVerifier.getLimitsRemainingUnits(feature, userGrouping)).thenReturn(Collections.singletonMap(limitId, 1L));
 
-        var featureInfo = featureUsageTracker.getUsageInfo(feature, userGrouping);
+		var featureInfo = featureUsageTracker.getUsageInfo(feature, userGrouping);
 
-        assertEquals(FeatureStatus.AVAILABLE, featureInfo.featureStatus());
-        assertEquals(1L, featureInfo.remainingUsageUnits().get(limitId));
-    }
+		assertEquals(FeatureStatus.AVAILABLE, featureInfo.featureStatus());
+		assertEquals(1L, featureInfo.remainingUsageUnits().get(limitId));
+	}
 
 }

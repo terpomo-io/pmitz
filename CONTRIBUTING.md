@@ -191,8 +191,8 @@ Updating, improving and correcting the documentation
 
 Coding convention rules are described in our [code style page](CODE_STYLE.md).
 
-Guidelines for configuring the IntelliJ IDEA IDE to follow this Code Style are explained
-in [Spring IntelliJ IDEA Editor Settings](https://github.com/spring-projects/spring-framework/wiki/IntelliJ-IDEA-Editor-Settings). Or take the `Spring_Code_Style.xml` file and import it into IntelliJ IDEA.
+To configure source formatting according to Pmitz style rules, you can import the 
+`Pmitz_Code_style.xml` configuration file into IntelliJ IDEA (**`Settings`**/**`Editor`**/**`Code Style`**/**`Java`**).
 
 ### Commit Messages
 

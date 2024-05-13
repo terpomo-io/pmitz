@@ -4,19 +4,19 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
-public class SlidingWindowRateLimit extends RateLimit{
+public class SlidingWindowRateLimit extends RateLimit {
 
-    public SlidingWindowRateLimit(String limitId, long quota, ChronoUnit interval, int duration) {
-        super(limitId, quota, interval, duration);
-    }
+	public SlidingWindowRateLimit(String limitId, long quota, ChronoUnit interval, int duration) {
+		super(limitId, quota, interval, duration);
+	}
 
-    @Override
-    public Optional<ZonedDateTime> getWindowStart(ZonedDateTime referenceDate) {
-        return Optional.of(referenceDate.minus(getDuration(), getInterval()));
-    }
+	@Override
+	public Optional<ZonedDateTime> getWindowStart(ZonedDateTime referenceDate) {
+		return Optional.of(referenceDate.minus(getDuration(), getInterval()));
+	}
 
-    @Override
-    public Optional<ZonedDateTime> getWindowEnd(ZonedDateTime referenceDate) {
-        return Optional.of(referenceDate);
-    }
+	@Override
+	public Optional<ZonedDateTime> getWindowEnd(ZonedDateTime referenceDate) {
+		return Optional.of(referenceDate);
+	}
 }
