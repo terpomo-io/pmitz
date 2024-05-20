@@ -23,11 +23,11 @@ import io.terpomo.pmitz.core.limits.UsageLimit;
 
 public class Feature {
 
-	private String featureId;
+	private final String featureId;
 
-	private Product product;
+	private final Product product;
 
-	private List<UsageLimit> limits = new ArrayList<>();
+	private final List<UsageLimit> limits = new ArrayList<>();
 
 	public Feature(Product product, String featureId) {
 
@@ -48,7 +48,7 @@ public class Feature {
 	}
 
 	public List<String> getLimitsIds() {
-		return limits == null ? Collections.emptyList() :
-				limits.stream().map(UsageLimit::getId).collect(Collectors.toList());
+		return (limits != null) ? limits.stream().map(UsageLimit::getId).collect(Collectors.toList())
+				: Collections.emptyList();
 	}
 }

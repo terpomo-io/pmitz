@@ -32,6 +32,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.9.0'
+    testImplementation 'org.assertj:assertj-core:3.25.3'
 
     // SLF4J Log4j Implementation
     testImplementation 'org.slf4j:slf4j-log4j12:2.0.9'
