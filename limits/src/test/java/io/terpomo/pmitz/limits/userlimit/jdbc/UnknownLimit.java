@@ -14,14 +14,34 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core;
+package io.terpomo.pmitz.limits.userlimit.jdbc;
 
-import java.util.Map;
+import java.time.ZonedDateTime;
+import java.util.Optional;
 
-public record FeatureUsageInfo(FeatureStatus featureStatus, Map<String, Long> remainingUsageUnits) {
+import io.terpomo.pmitz.core.limits.UsageLimit;
 
-	public boolean isLimitReached() {
-		return remainingUsageUnits != null && remainingUsageUnits.values().stream().anyMatch(v -> v <= 0);
+public class UnknownLimit extends UsageLimit {
+
+	private final long value;
+
+	public UnknownLimit(String id, long value) {
+		super(id);
+		this.value = value;
 	}
 
+	@Override
+	public long getValue() {
+		return this.value;
+	}
+
+	@Override
+	public Optional<ZonedDateTime> getWindowStart(ZonedDateTime referenceDate) {
+		return Optional.empty();
+	}
+
+	@Override
+	public Optional<ZonedDateTime> getWindowEnd(ZonedDateTime referenceDate) {
+		return Optional.empty();
+	}
 }

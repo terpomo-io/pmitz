@@ -14,29 +14,61 @@
 
 package io.terpomo.pmitz.limits.impl;
 
-import java.util.Optional;
-
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
-import io.terpomo.pmitz.core.repository.userlimit.UserLimitRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.UsageLimitResolver;
 
+import java.util.Optional;
+
 public class UsageLimitResolverImpl implements UsageLimitResolver {
 
-	private ProductRepository productRepository;
-	private UserLimitRepository userLimitRepository;
+    private ProductRepository productRepository;
+    private UserLimitRepository userLimitRepository;
 
-	@Override
-	public Optional<UsageLimit> resolveUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping) {
-		//TODO verify interfaces' specs
-		// 1- find limit specific to userGrouping
-		// 2- find limit for plan --> 2.1 find plan, 2.2 find limit for plan
-		// 3- find global limit
+    public UsageLimitResolverImpl(ProductRepository productRepository) {
+        this(productRepository, new NoOpUserLimitRepository());
+    }
 
-		return userLimitRepository.findUsageLimit(feature, usageLimitId, userGrouping)
-				.or(() -> productRepository.getGlobalLimit(feature, usageLimitId));
+    public UsageLimitResolverImpl(ProductRepository productRepository, UserLimitRepository userLimitRepository) {
+        this.productRepository = productRepository;
+        this.userLimitRepository = userLimitRepository;
+    }
 
-	}
+    @Override
+    public Optional<UsageLimit> resolveUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping) {
+        //TODO verify interfaces' specs
+        // 1- find limit specific to userGrouping
+        // 2- find limit for plan --> 2.1 find plan, 2.2 find limit for plan
+        // 3- find global limit
+
+        return userLimitRepository.findUsageLimit(feature, usageLimitId, userGrouping)
+                .or(() -> productRepository.getGlobalLimit(feature, usageLimitId));
+
+    }
+
+    public static class NoOpUserLimitRepository implements UserLimitRepository {
+
+        @Override
+        public Optional<UsageLimit> findUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping) {
+            return Optional.empty();
+        }
+
+        @Override
+        public void addUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping) {
+            // No action
+        }
+
+        @Override
+        public void updateUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping) {
+            // No action
+        }
+
+        @Override
+        public void deleteUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping) {
+            // No action
+        }
+    }
 }

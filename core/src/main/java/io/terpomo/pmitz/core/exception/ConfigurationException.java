@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core;
+package io.terpomo.pmitz.core.exception;
 
-import java.util.Map;
+public class ConfigurationException extends RuntimeException {
 
-public record FeatureUsageInfo(FeatureStatus featureStatus, Map<String, Long> remainingUsageUnits) {
-
-	public boolean isLimitReached() {
-		return remainingUsageUnits != null && remainingUsageUnits.values().stream().anyMatch(v -> v <= 0);
+	public ConfigurationException(String message) {
+		super(message);
 	}
 
+	public ConfigurationException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

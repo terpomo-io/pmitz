@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.repository.userlimit;
+package io.terpomo.pmitz.limits;
 
-import java.util.Optional;
+import java.util.Map;
 
 import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 
-public interface UserLimitRepository {
+public interface UsageLimitVerifier {
 
-	Optional<UsageLimit> findUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping);
+	boolean isWithinLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
 
-	void addUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping);
+	void recordFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
 
-	void updateUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping);
+	void reduceFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> reducedUnits);
 
-	void deleteUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping);
+	Map<String, Long> getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping);
 }

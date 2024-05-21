@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.integration;
+package io.terpomo.pmitz.limits.userlimit.integration;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -28,18 +28,20 @@ import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
-import io.terpomo.pmitz.core.repository.userlimit.jdbc.JDBCUserLimitRepository;
+import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUserLimitRepositoryIntegrationTests {
+public class SQLServerJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUserLimitRepositoryIntegrationTests {
+
+	protected static final String SCHEMA_NAME = "dbo";
 
 	@Container
-	private static final PostgreSQLContainer<?> mysqlContainer =
-			new PostgreSQLContainer<>("postgres:latest").withEnv("TZ", "Europe/Berlin");
-
+	private static final MSSQLServerContainer<?> mysqlContainer =
+			new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:latest")
+					.withEnv("TZ", "Europe/Berlin");
 
 	@Override
 	protected void setupDataSource() {
@@ -53,10 +55,12 @@ public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJ
 
 	@Override
 	protected void setupDatabase() throws SQLException {
+
 		String createQuery = String.format(
 				"""
-						CREATE TABLE IF NOT EXISTS %s.%s (
-							usage_id SERIAL PRIMARY KEY,
+						IF OBJECT_ID(N'%s.%s', N'U') IS NULL
+						CREATE TABLE %s.[%s] (
+							usage_id INT PRIMARY KEY IDENTITY(1,1),
 							limit_id VARCHAR(255),
 							feature_id VARCHAR(255),
 							user_group_id VARCHAR(255),
@@ -67,7 +71,7 @@ public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJ
 							limit_duration INT
 						);
 						""",
-				SCHEMA_NAME, TABLE_NAME);
+				SCHEMA_NAME, TABLE_NAME, SCHEMA_NAME, TABLE_NAME);
 
 		String addContraintQuery = String.format(
 				"""

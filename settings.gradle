@@ -2,4 +2,5 @@ rootProject.name = 'pmitz'
 include 'core'
 include 'subscriptions'
 include 'limits'
+include 'all'
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.repository.userlimit.jdbc;
+package io.terpomo.pmitz.limits.userlimit.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -34,7 +34,7 @@ import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
-import io.terpomo.pmitz.core.repository.userlimit.UserLimitRepository;
+import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import org.h2.jdbcx.JdbcDataSource;

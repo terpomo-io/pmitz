@@ -1,4 +1,4 @@
-package io.terpomo.pmitz.impl;
+package io.terpomo.pmitz.all.usage.tracker.impl;
 
 import java.util.Collections;
 
@@ -6,10 +6,10 @@ import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureStatus;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.exception.FeatureNotAllowedException;
-import io.terpomo.pmitz.core.limits.UsageLimitVerifier;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
+import io.terpomo.pmitz.limits.UsageLimitVerifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

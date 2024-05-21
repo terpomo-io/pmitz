@@ -14,34 +14,21 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.repository.userlimit.jdbc;
+package io.terpomo.pmitz.limits.userlimit;
 
-import java.time.ZonedDateTime;
 import java.util.Optional;
 
+import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.subjects.UserGrouping;
 
-public class UnknownLimit extends UsageLimit {
+public interface UserLimitRepository {
 
-	private final long value;
+	Optional<UsageLimit> findUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping);
 
-	public UnknownLimit(String id, long value) {
-		super(id);
-		this.value = value;
-	}
+	void addUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping);
 
-	@Override
-	public long getValue() {
-		return this.value;
-	}
+	void updateUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping);
 
-	@Override
-	public Optional<ZonedDateTime> getWindowStart(ZonedDateTime referenceDate) {
-		return Optional.empty();
-	}
-
-	@Override
-	public Optional<ZonedDateTime> getWindowEnd(ZonedDateTime referenceDate) {
-		return Optional.empty();
-	}
+	void deleteUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping);
 }

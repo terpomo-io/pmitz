@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.integration;
+package io.terpomo.pmitz.limits.userlimit.integration;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -28,20 +28,20 @@ import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
-import io.terpomo.pmitz.core.repository.userlimit.jdbc.JDBCUserLimitRepository;
+import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.testcontainers.containers.MSSQLServerContainer;
+import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-public class SQLServerJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUserLimitRepositoryIntegrationTests {
-
-	protected static final String SCHEMA_NAME = "dbo";
+public class MySQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUserLimitRepositoryIntegrationTests {
 
 	@Container
-	private static final MSSQLServerContainer<?> mysqlContainer =
-			new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:latest")
-					.withEnv("TZ", "Europe/Berlin");
+	private static final MySQLContainer<?> mysqlContainer =
+			new MySQLContainer<>("mysql:latest")
+					.withDatabaseName(SCHEMA_NAME)
+					.withEnv("TZ", "America/New_York");
+
 
 	@Override
 	protected void setupDataSource() {
@@ -55,12 +55,10 @@ public class SQLServerJDBCUserLimitRepositoryIntegrationTests extends AbstractJD
 
 	@Override
 	protected void setupDatabase() throws SQLException {
-
 		String createQuery = String.format(
 				"""
-						IF OBJECT_ID(N'%s.%s', N'U') IS NULL
-						CREATE TABLE %s.[%s] (
-							usage_id INT PRIMARY KEY IDENTITY(1,1),
+						CREATE TABLE IF NOT EXISTS %s.%s (
+							usage_id INT AUTO_INCREMENT PRIMARY KEY,
 							limit_id VARCHAR(255),
 							feature_id VARCHAR(255),
 							user_group_id VARCHAR(255),
@@ -69,9 +67,9 @@ public class SQLServerJDBCUserLimitRepositoryIntegrationTests extends AbstractJD
 							limit_unit VARCHAR(255),
 							limit_interval VARCHAR(255),
 							limit_duration INT
-						);
+						) ENGINE=InnoDB;
 						""",
-				SCHEMA_NAME, TABLE_NAME, SCHEMA_NAME, TABLE_NAME);
+				SCHEMA_NAME, TABLE_NAME);
 
 		String addContraintQuery = String.format(
 				"""
