@@ -39,7 +39,7 @@ pmitz.
 ```
 
 ## Requirements
-* Java 8
+* Java 17
 
 ## Reporting Issues
 

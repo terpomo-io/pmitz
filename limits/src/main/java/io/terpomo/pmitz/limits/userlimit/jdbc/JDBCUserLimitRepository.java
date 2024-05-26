@@ -31,8 +31,8 @@ import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
-import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 
 public class JDBCUserLimitRepository implements UserLimitRepository {
 

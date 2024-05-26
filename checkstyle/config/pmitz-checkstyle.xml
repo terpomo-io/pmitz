@@ -162,7 +162,10 @@
 		<module name="io.spring.javaformat.checkstyle.check.SpringAvoidStaticImportCheck" >
 			<property name="excludes" value="${avoidStaticImportExcludes}"/>
 		</module>
-		<module name="io.spring.javaformat.checkstyle.check.SpringLambdaCheck" />
+		<!-- Suppress single argument parentheses check for lambda expression -->
+		<module name="io.spring.javaformat.checkstyle.check.SpringLambdaCheck">
+			<property name="singleArgumentParentheses" value="false" />
+		</module>
 		<module name="io.spring.javaformat.checkstyle.check.SpringTernaryCheck" />
 		<module name="io.spring.javaformat.checkstyle.check.SpringCatchCheck" />
 		<module name="io.spring.javaformat.checkstyle.check.SpringJavadocCheck" />

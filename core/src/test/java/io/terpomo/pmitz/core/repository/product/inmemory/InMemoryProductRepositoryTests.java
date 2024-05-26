@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.RepositoryException;
@@ -40,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for {@link InMemoryProductRepository}.
  *
+ * @author Jean-Yves Desjardins
  * @since 1.0
  */
 public class InMemoryProductRepositoryTests {
@@ -95,9 +97,8 @@ public class InMemoryProductRepositoryTests {
 	@Test
 	void getProductById_productIdNull() {
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.getProductById(null);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.getProductById(null));
 
 		assertEquals("ProductId must not be 'null'", exception.getMessage());
 	}
@@ -125,9 +126,8 @@ public class InMemoryProductRepositoryTests {
 	@Test
 	void addProduct_productNull() {
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.addProduct(null);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.addProduct(null));
 
 		assertEquals("Product must not be 'null'", exception.getMessage());
 	}
@@ -137,9 +137,8 @@ public class InMemoryProductRepositoryTests {
 
 		Product p1 = new Product(null);
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.addProduct(p1);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.addProduct(p1));
 
 		assertEquals("ProductId must not be 'null'", exception.getMessage());
 	}
@@ -162,9 +161,8 @@ public class InMemoryProductRepositoryTests {
 		Product p1 = new Product("p1");
 		this.repository.addProduct(p1);
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.addProduct(p1);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+				this.repository.addProduct(p1));
 
 		assertEquals("Product 'p1' already exists", exception.getMessage());
 	}
@@ -172,9 +170,8 @@ public class InMemoryProductRepositoryTests {
 	@Test
 	void removeProduct_productNull() {
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.removeProduct(null);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.removeProduct(null));
 
 		assertEquals("Product must not be 'null'", exception.getMessage());
 	}
@@ -184,9 +181,8 @@ public class InMemoryProductRepositoryTests {
 
 		Product p1 = new Product(null);
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.removeProduct(p1);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.removeProduct(p1));
 
 		assertEquals("ProductId must not be 'null'", exception.getMessage());
 	}
@@ -196,9 +192,8 @@ public class InMemoryProductRepositoryTests {
 
 		Product p1 = new Product("p1");
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.removeProduct(p1);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.removeProduct(p1));
 
 		assertEquals("Product 'p1' not found", exception.getMessage());
 	}
@@ -219,9 +214,8 @@ public class InMemoryProductRepositoryTests {
 	@Test
 	void addFeature_featureNull() {
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.addFeature(null);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.addFeature(null));
 
 		assertEquals("Feature must not be 'null'", exception.getMessage());
 	}
@@ -232,9 +226,8 @@ public class InMemoryProductRepositoryTests {
 		Product p1 = new Product("p1");
 		Feature f1 = new Feature(p1, null);
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.addFeature(f1);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.addFeature(f1));
 
 		assertEquals("FeatureId must not be 'null'", exception.getMessage());
 	}
@@ -245,9 +238,8 @@ public class InMemoryProductRepositoryTests {
 		Product p1 = new Product(null);
 		Feature f1 = new Feature(p1, "f1");
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.addFeature(f1);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.addFeature(f1));
 
 		assertEquals("ProductId must not be 'null'", exception.getMessage());
 	}
@@ -258,9 +250,8 @@ public class InMemoryProductRepositoryTests {
 		Product p1 = new Product("p1");
 		Feature f1 = new Feature(p1, "f1");
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.addFeature(f1);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.addFeature(f1));
 
 		assertEquals("Product 'p1' not found", exception.getMessage());
 	}
@@ -291,9 +282,8 @@ public class InMemoryProductRepositoryTests {
 
 		this.repository.addFeature(f1);
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.addFeature(f1);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.addFeature(f1));
 
 		assertEquals("Feature 'f1' already exists", exception.getMessage());
 	}
@@ -301,9 +291,8 @@ public class InMemoryProductRepositoryTests {
 	@Test
 	void getFeature_invalidProduct() {
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.getFeature(null, "f1");
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.getFeature(null, "f1"));
 
 		assertEquals("Product must not be 'null'", exception.getMessage());
 	}
@@ -313,9 +302,8 @@ public class InMemoryProductRepositoryTests {
 
 		Product p1 = new Product("p1");
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.getFeature(p1, null);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+				this.repository.getFeature(p1, null));
 
 		assertEquals("FeatureId must not be 'null'", exception.getMessage());
 	}
@@ -364,9 +352,8 @@ public class InMemoryProductRepositoryTests {
 	@Test
 	void getFeatures_invalidProduct() {
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.getFeatures(null);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.getFeatures(null));
 
 		assertEquals("Product must not be 'null'", exception.getMessage());
 	}
@@ -376,9 +363,8 @@ public class InMemoryProductRepositoryTests {
 
 		Product p1 = new Product(null);
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.getFeatures(p1);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.getFeatures(p1));
 
 		assertEquals("ProductId must not be 'null'", exception.getMessage());
 	}
@@ -389,9 +375,8 @@ public class InMemoryProductRepositoryTests {
 		Product p1 = new Product("p1");
 		Feature f1 = new Feature(p1, "f1");
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.updateFeature(f1);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.updateFeature(f1));
 
 		assertEquals("Product 'p1' not found", exception.getMessage());
 	}
@@ -403,9 +388,8 @@ public class InMemoryProductRepositoryTests {
 		this.repository.addProduct(p1);
 		Feature f1 = new Feature(p1, "f1");
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.updateFeature(f1);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.updateFeature(f1));
 
 		assertEquals("Feature 'f1' not found for product 'p1'", exception.getMessage());
 	}
@@ -413,9 +397,8 @@ public class InMemoryProductRepositoryTests {
 	@Test
 	void updateFeature_invalidFeature() {
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.updateFeature(null);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.updateFeature(null));
 
 		assertEquals("Feature must not be 'null'", exception.getMessage());
 	}
@@ -472,9 +455,8 @@ public class InMemoryProductRepositoryTests {
 		Product p1 = new Product("p1");
 		Feature f1 = new Feature(p1, "f1");
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.removeFeature(f1);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.removeFeature(f1));
 
 		assertEquals("Product 'p1' not found", exception.getMessage());
 	}
@@ -486,9 +468,8 @@ public class InMemoryProductRepositoryTests {
 		this.repository.addProduct(p1);
 		Feature f1 = new Feature(p1, "f1");
 
-		RepositoryException exception = assertThrows(RepositoryException.class, () -> {
-			this.repository.removeFeature(f1);
-		});
+		RepositoryException exception = assertThrows(RepositoryException.class, () ->
+			this.repository.removeFeature(f1));
 
 		assertEquals("Feature 'f1' not found for product 'p1'", exception.getMessage());
 	}

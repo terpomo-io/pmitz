@@ -27,7 +27,7 @@ import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 
-public class UsageLimitVerifierBuilder {
+public final class UsageLimitVerifierBuilder {
 
 	private UsageLimitVerifierBuilder() {
 		// private constructor
@@ -65,7 +65,7 @@ public class UsageLimitVerifierBuilder {
 		UsageLimitVerifier build();
 	}
 
-	public static class Builder implements UsageLimitResolverSpec, UsageRepositorySpec,
+	public static final class Builder implements UsageLimitResolverSpec, UsageRepositorySpec,
 			LimitVerificationStrategySpec, Creator {
 
 		private final ProductRepository productRepository;
