@@ -27,16 +27,6 @@ import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
-import io.terpomo.pmitz.core.exception.RepositoryException;
-import io.terpomo.pmitz.core.limits.UsageLimit;
-import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
-import io.terpomo.pmitz.core.limits.types.CountLimit;
-import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
-import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
-import io.terpomo.pmitz.core.subjects.IndividualUser;
-import io.terpomo.pmitz.core.subjects.UserGrouping;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +34,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Product;
+import io.terpomo.pmitz.core.exception.RepositoryException;
+import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
+import io.terpomo.pmitz.core.limits.types.CountLimit;
+import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
+import io.terpomo.pmitz.core.subjects.IndividualUser;
+import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 
 import static org.junit.jupiter.api.Assertions.*;
 

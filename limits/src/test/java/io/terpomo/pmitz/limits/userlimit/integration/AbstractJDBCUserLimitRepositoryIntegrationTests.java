@@ -19,17 +19,18 @@ package io.terpomo.pmitz.limits.userlimit.integration;
 import java.sql.SQLException;
 import java.util.Optional;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
-import io.terpomo.pmitz.core.limits.UsageLimit;
-import io.terpomo.pmitz.core.limits.types.CountLimit;
-import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
-import io.terpomo.pmitz.core.subjects.IndividualUser;
-import io.terpomo.pmitz.core.subjects.UserGrouping;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Product;
+import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.types.CountLimit;
+import io.terpomo.pmitz.core.subjects.IndividualUser;
+import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 
 import static org.junit.jupiter.api.Assertions.*;
 

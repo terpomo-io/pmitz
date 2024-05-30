@@ -21,17 +21,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
-import io.terpomo.pmitz.core.limits.UsageLimit;
-import io.terpomo.pmitz.core.limits.types.CountLimit;
-import io.terpomo.pmitz.core.subjects.IndividualUser;
-import io.terpomo.pmitz.core.subjects.UserGrouping;
-import io.terpomo.pmitz.limits.UsageLimitResolver;
-import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
-import io.terpomo.pmitz.limits.UsageLimitVerificationStrategyResolver;
-import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
-import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,6 +32,18 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Product;
+import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.types.CountLimit;
+import io.terpomo.pmitz.core.subjects.IndividualUser;
+import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.limits.UsageLimitResolver;
+import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
+import io.terpomo.pmitz.limits.UsageLimitVerificationStrategyResolver;
+import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
+import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

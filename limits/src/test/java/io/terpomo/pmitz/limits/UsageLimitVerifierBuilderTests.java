@@ -18,16 +18,17 @@ package io.terpomo.pmitz.limits;
 
 import javax.sql.DataSource;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import io.terpomo.pmitz.limits.impl.UsageLimitResolverImpl;
 import io.terpomo.pmitz.limits.impl.UsageLimitVerifierImpl;
 import io.terpomo.pmitz.limits.impl.strategy.UsageLimitVerificationStrategyDefaultResolver;
 import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;

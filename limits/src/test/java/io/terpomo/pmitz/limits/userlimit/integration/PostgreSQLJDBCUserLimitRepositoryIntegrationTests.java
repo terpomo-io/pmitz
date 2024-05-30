@@ -23,16 +23,17 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.temporal.ChronoUnit;
 
+import org.apache.commons.dbcp2.BasicDataSource;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
-import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
-import org.apache.commons.dbcp2.BasicDataSource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
+import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 
 public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUserLimitRepositoryIntegrationTests {
 

@@ -18,12 +18,13 @@ package io.terpomo.pmitz.limits.impl.strategy;
 
 import java.time.temporal.ChronoUnit;
 
+import org.junit.jupiter.api.Test;
+
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
 import io.terpomo.pmitz.limits.UsageLimitVerificationStrategyResolver;
-import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
