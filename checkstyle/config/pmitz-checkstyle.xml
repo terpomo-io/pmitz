@@ -24,9 +24,7 @@
 			<property name="elementStyle" value="compact" />
 		</module>
 		<module name="com.puppycrawl.tools.checkstyle.checks.annotation.MissingOverrideCheck" />
-<!--
 		<module name="com.puppycrawl.tools.checkstyle.checks.annotation.PackageAnnotationCheck" />
--->
 		<module name="com.puppycrawl.tools.checkstyle.checks.annotation.AnnotationLocationCheck">
 			<property name="allowSamelineSingleParameterlessAnnotation"
 				value="false" />
@@ -70,6 +68,9 @@
 		</module>
 		<module name="com.puppycrawl.tools.checkstyle.checks.coding.MultipleVariableDeclarationsCheck" />
 		<module name="com.puppycrawl.tools.checkstyle.checks.coding.RequireThisCheck">
+<!--
+			<property name="checkFields" value="true" />
+-->
 			<property name="checkFields" value="false" />
 			<property name="checkMethods" value="false" />
 			<property name="validateOnlyOverlapping" value="false" />
@@ -78,7 +79,9 @@
 		<module name="com.puppycrawl.tools.checkstyle.checks.coding.UnnecessarySemicolonInEnumerationCheck"/>
 
 		<!-- Imports -->
+<!--
 		<module name="com.puppycrawl.tools.checkstyle.checks.imports.AvoidStarImportCheck" />
+-->
 		<module name="com.puppycrawl.tools.checkstyle.checks.imports.RedundantImportCheck" />
 		<module name="com.puppycrawl.tools.checkstyle.checks.imports.UnusedImportsCheck">
 			<property name="processJavadoc" value="true" />
@@ -134,6 +137,7 @@
 				value="Please use BDD-style (given, when, then) using BDDMockito imports." />
 			<property name="ignoreComments" value="true" />
 		</module>
+<!--
 		<module name="com.puppycrawl.tools.checkstyle.checks.regexp.RegexpSinglelineJavaCheck">
 			<property name="maximum" value="0"/>
 			<property name="format" value="org\.junit\.(Assert|jupiter\.api\.Assertions)" />
@@ -141,6 +145,7 @@
 				value="Please use AssertJ imports." />
 			<property name="ignoreComments" value="true" />
 		</module>
+-->
 		<module name="com.puppycrawl.tools.checkstyle.checks.regexp.RegexpCheck">
 			<property name="format" value="[ \t]+$" />
 			<property name="illegalPattern" value="true" />
@@ -159,7 +164,7 @@
 		<module name="com.puppycrawl.tools.checkstyle.checks.whitespace.WhitespaceAroundCheck" />
 
 		<!-- Spring Conventions -->
-		<module name="io.spring.javaformat.checkstyle.check.SpringAvoidStaticImportCheck" >
+		<module name="io.spring.javaformat.checkstyle.check.SpringAvoidStaticImportCheck">
 			<property name="excludes" value="${avoidStaticImportExcludes}"/>
 		</module>
 		<!-- Suppress single argument parentheses check for lambda expression -->

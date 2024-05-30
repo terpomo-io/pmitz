@@ -26,4 +26,23 @@ Each source file must specify the following license at the very top of the file 
  */
  ```
 
+### Changed CheckStyle module configuration
+
+#### `JavadocPackageCheck`
+
+CheckStyle's `JavadocPackageCheck` module checks that each Java package has a `package-info.java` file used for comments.
+This check has been disabled.
+
+#### `RequireThisCheck`
+
+CheckStyle's `RequireThisCheck` module ensures that references to instance variables and methods of the current object 
+are explicitly in the form this.VariableName or this.MethodeName(args). It checks that these references do not depend 
+on the default behavior when `this.` is absent.
+This check has been disabled for instance variables.
+
+#### `JavadocVariableCheck`
+
+The CheckStyle `JavadocVariableCheck` module checks that a variable has a Javadoc comment.
+This check has been disabled.
+
 
