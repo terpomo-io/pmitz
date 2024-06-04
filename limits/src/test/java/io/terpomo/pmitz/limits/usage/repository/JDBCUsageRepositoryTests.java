@@ -40,7 +40,7 @@ import io.terpomo.pmitz.limits.UsageRecord;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRecordRepoMetadata;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class JDBCUsageRepositoryTests {
 
@@ -95,9 +95,9 @@ class JDBCUsageRepositoryTests {
 		repository.loadUsageData(context);
 
 		List<UsageRecord> records = context.getCurrentUsageRecords();
-		assertFalse(records.isEmpty());
+		assertThat(records.isEmpty()).isFalse();
 		UsageRecord record = records.get(0);
-		assertEquals("limit1", record.limitId());
+		assertThat(record.limitId()).isEqualTo("limit1");
 	}
 
 	@Test
@@ -127,7 +127,7 @@ class JDBCUsageRepositoryTests {
 				PreparedStatement stmt = conn.prepareStatement("SELECT * FROM public.\"Usage\" WHERE usage_id = ?")) {
 			stmt.setInt(1, 1);
 			ResultSet rs = stmt.executeQuery();
-			assertTrue(rs.next());
+			assertThat(rs.next()).isTrue();
 
 			Timestamp dbWindowStart = rs.getTimestamp("window_start");
 			Timestamp dbWindowEnd = rs.getTimestamp("window_end");
@@ -138,8 +138,8 @@ class JDBCUsageRepositoryTests {
 			LocalDateTime actualStart = dbWindowStart.toLocalDateTime().truncatedTo(ChronoUnit.SECONDS);
 			LocalDateTime actualEnd = dbWindowEnd.toLocalDateTime().truncatedTo(ChronoUnit.SECONDS);
 
-			assertEquals(expectedStart, actualStart);
-			assertEquals(expectedEnd, actualEnd);
+			assertThat(actualStart).isEqualTo(expectedStart);
+			assertThat(actualEnd).isEqualTo(expectedEnd);
 		}
 	}
 
@@ -151,7 +151,7 @@ class JDBCUsageRepositoryTests {
 		repository.loadUsageData(context);
 
 		List<UsageRecord> records = context.getCurrentUsageRecords();
-		assertTrue(records.isEmpty());
+		assertThat(records.isEmpty()).isTrue();
 	}
 
 	@Test
@@ -165,7 +165,7 @@ class JDBCUsageRepositoryTests {
 		repository.loadUsageData(context);
 
 		List<UsageRecord> records = context.getCurrentUsageRecords();
-		assertEquals(2, records.size());
+		assertThat(records.size()).isEqualTo(2);
 	}
 
 	@Test
@@ -180,7 +180,7 @@ class JDBCUsageRepositoryTests {
 		repository.loadUsageData(context);
 
 		List<UsageRecord> records = context.getCurrentUsageRecords();
-		assertTrue(records.isEmpty(), "No records should be fetched as they fall just outside the boundary");
+		assertThat(records.isEmpty()).as("No records should be fetched as they fall just outside the boundary").isTrue();
 	}
 
 
@@ -198,28 +198,25 @@ class JDBCUsageRepositoryTests {
 		repository.loadUsageData(context);
 
 		List<UsageRecord> records = context.getCurrentUsageRecords();
-		assertFalse(records.isEmpty(), "Records should be fetched");
+		assertThat(records.isEmpty()).as("Records should be fetched").isFalse();
 
 		UsageRecord record = records.get(0);
 
-		assertEquals("limit1", record.limitId());
-		assertEquals(units, record.units());
+		assertThat(record.limitId()).isEqualTo("limit1");
+		assertThat(record.units()).isEqualTo(units);
 
 		ZonedDateTime expectedStartTime = windowStart.withZoneSameInstant(ZoneId.of("UTC"));
 		ZonedDateTime expectedEndTime = now.withZoneSameInstant(ZoneId.of("UTC"));
 		ZonedDateTime expectedExpirationDate = expirationDate.withZoneSameInstant(ZoneId.of("UTC"));
 
-		assertEquals(expectedStartTime.toLocalDateTime().truncatedTo(ChronoUnit.SECONDS),
-				record.startTime().toLocalDateTime().truncatedTo(ChronoUnit.SECONDS));
-		assertEquals(expectedEndTime.toLocalDateTime().truncatedTo(ChronoUnit.SECONDS),
-				record.endTime().toLocalDateTime().truncatedTo(ChronoUnit.SECONDS));
-		assertEquals(expectedExpirationDate.toLocalDateTime().truncatedTo(ChronoUnit.SECONDS),
-				record.expirationDate().toLocalDateTime().truncatedTo(ChronoUnit.SECONDS));
+		assertThat(record.startTime().toLocalDateTime().truncatedTo(ChronoUnit.SECONDS)).isEqualTo(expectedStartTime.toLocalDateTime().truncatedTo(ChronoUnit.SECONDS));
+		assertThat(record.endTime().toLocalDateTime().truncatedTo(ChronoUnit.SECONDS)).isEqualTo(expectedEndTime.toLocalDateTime().truncatedTo(ChronoUnit.SECONDS));
+		assertThat(record.expirationDate().toLocalDateTime().truncatedTo(ChronoUnit.SECONDS)).isEqualTo(expectedExpirationDate.toLocalDateTime().truncatedTo(ChronoUnit.SECONDS));
 
 		JDBCUsageRecordRepoMetadata metadata = (JDBCUsageRecordRepoMetadata) record.repoMetadata();
-		assertNotNull(metadata);
-		assertEquals(1, metadata.usageId());
-		assertNotNull(metadata.updatedAt());
+		assertThat(metadata).isNotNull();
+		assertThat(metadata.usageId()).isEqualTo(1);
+		assertThat(metadata.updatedAt()).isNotNull();
 	}
 
 	// TODO: Remove

@@ -33,7 +33,8 @@ import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.limits.UsageLimitVerifier;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,8 +62,7 @@ class FeatureUsageTrackerImplTests {
 	void givenFeatureNotAllowedWhenRecordFeatureUsageThenThrowFeatureNotAllowedException() {
 		when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(false);
 
-		assertThrows(FeatureNotAllowedException.class,
-				() -> featureUsageTracker.recordFeatureUsage(feature, userGrouping, Collections.singletonMap("FILE_SIZE", 1000L)));
+		assertThatExceptionOfType(FeatureNotAllowedException.class).isThrownBy(() -> featureUsageTracker.recordFeatureUsage(feature, userGrouping, Collections.singletonMap("FILE_SIZE", 1000L)));
 
 	}
 
@@ -91,8 +91,8 @@ class FeatureUsageTrackerImplTests {
 		var additionalUnits = Collections.singletonMap("FILE_SIZE", 1000L);
 		var featureInfo = featureUsageTracker.verifyLimits(feature, userGrouping, additionalUnits);
 
-		assertEquals(FeatureStatus.NOT_ALLOWED, featureInfo.featureStatus());
-		assertTrue(featureInfo.remainingUsageUnits().isEmpty());
+		assertThat(featureInfo.featureStatus()).isEqualTo(FeatureStatus.NOT_ALLOWED);
+		assertThat(featureInfo.remainingUsageUnits().isEmpty()).isTrue();
 	}
 
 	@Test
@@ -104,8 +104,8 @@ class FeatureUsageTrackerImplTests {
 		var additionalUnits = Collections.singletonMap(limitId, 2L);
 		var featureInfo = featureUsageTracker.verifyLimits(feature, userGrouping, additionalUnits);
 
-		assertEquals(FeatureStatus.LIMIT_EXCEEDED, featureInfo.featureStatus());
-		assertEquals(-1, featureInfo.remainingUsageUnits().get(limitId));
+		assertThat(featureInfo.featureStatus()).isEqualTo(FeatureStatus.LIMIT_EXCEEDED);
+		assertThat(featureInfo.remainingUsageUnits().get(limitId)).isEqualTo(-1);
 	}
 
 	@Test
@@ -113,8 +113,8 @@ class FeatureUsageTrackerImplTests {
 		when(subscriptionVerifier.isFeatureAllowed(feature, userGrouping)).thenReturn(false);
 
 		FeatureUsageInfo featureUsageInfo = featureUsageTracker.getUsageInfo(feature, userGrouping);
-		assertEquals(FeatureStatus.NOT_ALLOWED, featureUsageInfo.featureStatus());
-		assertTrue(featureUsageInfo.remainingUsageUnits().isEmpty());
+		assertThat(featureUsageInfo.featureStatus()).isEqualTo(FeatureStatus.NOT_ALLOWED);
+		assertThat(featureUsageInfo.remainingUsageUnits().isEmpty()).isTrue();
 	}
 
 	@Test
@@ -125,8 +125,8 @@ class FeatureUsageTrackerImplTests {
 
 		var featureInfo = featureUsageTracker.getUsageInfo(feature, userGrouping);
 
-		assertEquals(FeatureStatus.AVAILABLE, featureInfo.featureStatus());
-		assertEquals(1L, featureInfo.remainingUsageUnits().get(limitId));
+		assertThat(featureInfo.featureStatus()).isEqualTo(FeatureStatus.AVAILABLE);
+		assertThat(featureInfo.remainingUsageUnits().get(limitId)).isEqualTo(1L);
 	}
 
 }

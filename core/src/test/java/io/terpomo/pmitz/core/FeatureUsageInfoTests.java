@@ -21,7 +21,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class FeatureUsageInfoTests {
 
@@ -33,7 +33,7 @@ class FeatureUsageInfoTests {
 
 		var info = new FeatureUsageInfo(FeatureStatus.AVAILABLE, remainingUnits);
 
-		assertTrue(info.isLimitReached());
+		assertThat(info.isLimitReached()).isTrue();
 	}
 
 	@Test
@@ -44,6 +44,6 @@ class FeatureUsageInfoTests {
 
 		var info = new FeatureUsageInfo(FeatureStatus.AVAILABLE, remainingUnits);
 
-		assertFalse(info.isLimitReached());
+		assertThat(info.isLimitReached()).isFalse();
 	}
 }

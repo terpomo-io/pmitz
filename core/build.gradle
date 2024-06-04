@@ -29,6 +29,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-junit-jupiter:5.9.0'
     testImplementation 'com.jayway.jsonpath:json-path:2.9.0'
     testImplementation 'com.h2database:h2:2.2.220'
+    testImplementation 'org.assertj:assertj-core:3.25.3'
 
     testImplementation 'org.apache.commons:commons-dbcp2:2.9.0'
 

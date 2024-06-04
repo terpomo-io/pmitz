@@ -32,7 +32,7 @@ import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
 
@@ -79,10 +79,11 @@ public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
 		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum number of picture", this.user);
 
-		assertTrue(userLimit.isPresent());
-		CountLimit countLimitDb = assertInstanceOf(CountLimit.class, userLimit.get());
-		assertEquals("Maximum number of picture", countLimitDb.getId());
-		assertEquals(15, countLimitDb.getValue());
+		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit.get()).isInstanceOf(CountLimit.class)
+				.extracting(UsageLimit::getId).isEqualTo("Maximum number of picture");
+		assertThat(userLimit.get()).isInstanceOf(CountLimit.class)
+				.extracting(UsageLimit::getValue).isEqualTo(15L);
 
 		printDatabaseContents();
 	}

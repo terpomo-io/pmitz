@@ -21,7 +21,7 @@ import java.time.temporal.ChronoUnit;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class SlidingWindowRateLimitTests {
 
@@ -30,7 +30,7 @@ class SlidingWindowRateLimitTests {
 	@Test
 	void getWindowStart() {
 
-		assertNotNull(rateLimit.getWindowStart(ZonedDateTime.now()));
+		assertThat(rateLimit.getWindowStart(ZonedDateTime.now())).isNotNull();
 	}
 
 	@Test

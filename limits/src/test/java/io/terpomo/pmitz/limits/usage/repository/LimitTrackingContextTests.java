@@ -28,7 +28,7 @@ import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.limits.UsageRecord;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class LimitTrackingContextTests {
 
@@ -45,7 +45,7 @@ class LimitTrackingContextTests {
 		context.addUpdatedUsageRecords(Collections.singletonList(usageRecord));
 
 		var updatedRecords = context.getUpdatedUsageRecords();
-		assertEquals(1, updatedRecords.size());
+		assertThat(updatedRecords.size()).isEqualTo(1);
 	}
 
 	@Test
@@ -60,7 +60,7 @@ class LimitTrackingContextTests {
 
 		var filteredRecords = context.findUsageRecords(limitId, startTime, endTime);
 
-		assertEquals(3, filteredRecords.size());
+		assertThat(filteredRecords.size()).isEqualTo(3);
 	}
 
 	@Test
@@ -75,7 +75,7 @@ class LimitTrackingContextTests {
 
 		var filteredRecords = context.findUsageRecords(limitId, null, null);
 
-		assertEquals(4, filteredRecords.size());
+		assertThat(filteredRecords.size()).isEqualTo(4);
 	}
 
 	private List<UsageRecord> getCurrentUsageRecords(ZonedDateTime startTime, ZonedDateTime endTime) {

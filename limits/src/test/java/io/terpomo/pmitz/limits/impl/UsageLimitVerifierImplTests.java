@@ -45,7 +45,8 @@ import io.terpomo.pmitz.limits.UsageLimitVerificationStrategyResolver;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -101,19 +102,19 @@ class UsageLimitVerifierImplTests {
 		verify(limitVerificationStrategy).recordFeatureUsage(contextArgCaptor.capture(), usageLimitArgCaptor.capture(), eq(2L));
 
 		var capturedUsageLimit = usageLimitArgCaptor.getValue();
-		assertEquals(usageLimit, capturedUsageLimit);
+		assertThat(capturedUsageLimit).isEqualTo(usageLimit);
 
 		var capturedContext = contextArgCaptor.getValue();
 
 		var searchCriteriaList = capturedContext.getSearchCriteria();
-		assertEquals(1, searchCriteriaList.size());
+		assertThat(searchCriteriaList.size()).isEqualTo(1);
 		var searchCriteria = searchCriteriaList.get(0);
-		assertEquals("MAX_FILES", searchCriteria.limitId());
-		assertNull(searchCriteria.windowStart());
-		assertNull(searchCriteria.windowEnd());
+		assertThat(searchCriteria.limitId()).isEqualTo("MAX_FILES");
+		assertThat(searchCriteria.windowStart()).isNull();
+		assertThat(searchCriteria.windowEnd()).isNull();
 
-		assertEquals(feature, capturedContext.getFeature());
-		assertEquals(userGrouping, capturedContext.getUserGrouping());
+		assertThat(capturedContext.getFeature()).isEqualTo(feature);
+		assertThat(capturedContext.getUserGrouping()).isEqualTo(userGrouping);
 
 		verify(usageRepo).updateUsageRecords(capturedContext);
 	}
@@ -130,19 +131,19 @@ class UsageLimitVerifierImplTests {
 		verify(limitVerificationStrategy).reduceFeatureUsage(contextArgCaptor.capture(), usageLimitArgCaptor.capture(), eq(2L));
 
 		var capturedUsageLimit = usageLimitArgCaptor.getValue();
-		assertEquals(usageLimit, capturedUsageLimit);
+		assertThat(capturedUsageLimit).isEqualTo(usageLimit);
 
 		var capturedContext = contextArgCaptor.getValue();
 
 		var searchCriteriaList = capturedContext.getSearchCriteria();
-		assertEquals(1, searchCriteriaList.size());
+		assertThat(searchCriteriaList.size()).isEqualTo(1);
 		var searchCriteria = searchCriteriaList.get(0);
-		assertEquals("MAX_FILES", searchCriteria.limitId());
-		assertNull(searchCriteria.windowStart());
-		assertNull(searchCriteria.windowEnd());
+		assertThat(searchCriteria.limitId()).isEqualTo("MAX_FILES");
+		assertThat(searchCriteria.windowStart()).isNull();
+		assertThat(searchCriteria.windowEnd()).isNull();
 
-		assertEquals(feature, capturedContext.getFeature());
-		assertEquals(userGrouping, capturedContext.getUserGrouping());
+		assertThat(capturedContext.getFeature()).isEqualTo(feature);
+		assertThat(capturedContext.getUserGrouping()).isEqualTo(userGrouping);
 
 		verify(usageRepo).updateUsageRecords(capturedContext);
 	}
@@ -156,8 +157,8 @@ class UsageLimitVerifierImplTests {
 			mockedLocalDateTime.when(ZonedDateTime::now).thenReturn(zonedDateTime);
 
 			var remainingUnitsMap = usageLimitVerifier.getLimitsRemainingUnits(feature, userGrouping);
-			assertEquals(1, remainingUnitsMap.size());
-			assertEquals(2L, remainingUnitsMap.get(usageLimit.getId()));
+			assertThat(remainingUnitsMap.size()).isEqualTo(1);
+			assertThat(remainingUnitsMap.get(usageLimit.getId())).isEqualTo(2L);
 		}
 		verify(usageRepo).loadUsageData(contextArgCaptor.capture());
 
@@ -177,7 +178,7 @@ class UsageLimitVerifierImplTests {
 			mockedLocalDateTime.when(ZonedDateTime::now).thenReturn(zonedDateTime);
 
 			var isWithinLimits = usageLimitVerifier.isWithinLimits(feature, userGrouping, Collections.singletonMap(usageLimit.getId(), requiredAdditionalUnits));
-			assertEquals(expectedResult, isWithinLimits);
+			assertThat(isWithinLimits).isEqualTo(expectedResult);
 		}
 		verify(usageRepo).loadUsageData(contextArgCaptor.capture());
 
@@ -190,7 +191,7 @@ class UsageLimitVerifierImplTests {
 	@NullAndEmptySource
 	void recordUsageWhenAdditionalUnitsEmptyShouldThrowException(Map<String, Long> additionalUnits) {
 
-		assertThrows(IllegalArgumentException.class, () -> usageLimitVerifier.recordFeatureUsage(feature, userGrouping, additionalUnits));
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> usageLimitVerifier.recordFeatureUsage(feature, userGrouping, additionalUnits));
 
 	}
 
@@ -198,7 +199,7 @@ class UsageLimitVerifierImplTests {
 	void recordUsageWhenAdditionalUnitsNegativeShouldThrowException() {
 
 		var additionalUnits = Collections.singletonMap("MAX_FILES", -1L);
-		assertThrows(IllegalArgumentException.class, () -> usageLimitVerifier.recordFeatureUsage(feature, userGrouping, additionalUnits));
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> usageLimitVerifier.recordFeatureUsage(feature, userGrouping, additionalUnits));
 
 	}
 
@@ -206,7 +207,7 @@ class UsageLimitVerifierImplTests {
 	@NullAndEmptySource
 	void reduceUsageWhenReducedUnitsEmptyShouldThrowException(Map<String, Long> additionalUnits) {
 
-		assertThrows(IllegalArgumentException.class, () -> usageLimitVerifier.reduceFeatureUsage(feature, userGrouping, additionalUnits));
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> usageLimitVerifier.reduceFeatureUsage(feature, userGrouping, additionalUnits));
 
 	}
 
@@ -214,7 +215,7 @@ class UsageLimitVerifierImplTests {
 	void reduceUsageWhenReducedlUnitsNegativeShouldThrowException() {
 
 		var additionalUnits = Collections.singletonMap("MAX_FILES", -1L);
-		assertThrows(IllegalArgumentException.class, () -> usageLimitVerifier.reduceFeatureUsage(feature, userGrouping, additionalUnits));
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> usageLimitVerifier.reduceFeatureUsage(feature, userGrouping, additionalUnits));
 
 	}
 

@@ -36,7 +36,7 @@ import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRecordRepoMetadata;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 
@@ -93,7 +93,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			// TODO: Remove
 			System.out.println("Debug - recordToUpdate: " + recordToUpdate);
 
-			assertEquals(100, recordToUpdate.units());
+			assertThat(recordToUpdate.units()).isEqualTo(100);
 
 			UsageRecord updatedRecord = getUpdatedUsageRecord(recordToUpdate);
 
@@ -129,7 +129,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			// TODO: Remove
 			System.out.println("Debug - reloadedRecord: " + reloadedRecord);
 
-			assertEquals(150, reloadedRecord.units());
+			assertThat(reloadedRecord.units()).isEqualTo(150);
 
 		}
 		finally {

@@ -21,7 +21,7 @@ import java.time.ZonedDateTime;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class CalendarPeriodRateLimitTests {
 
@@ -35,7 +35,7 @@ class CalendarPeriodRateLimitTests {
 
 		ZonedDateTime expectedStartTime = ZonedDateTime.of(2024, 2, 20, 10, 0, 0, 0, ZoneId.of("UTC"));
 
-		assertTrue(expectedStartTime.isEqual(rateLimit.getWindowStart(referenceDate).get()));
+		assertThat(expectedStartTime.isEqual(rateLimit.getWindowStart(referenceDate).get())).isTrue();
 	}
 
 	@Test
@@ -44,7 +44,7 @@ class CalendarPeriodRateLimitTests {
 
 		ZonedDateTime expectedStartTime = ZonedDateTime.of(2024, 2, 20, 0, 0, 0, 0, ZoneId.of("UTC"));
 
-		assertTrue(expectedStartTime.isEqual(rateLimit.getWindowStart(referenceDate).get()));
+		assertThat(expectedStartTime.isEqual(rateLimit.getWindowStart(referenceDate).get())).isTrue();
 	}
 
 	@Test
@@ -54,7 +54,7 @@ class CalendarPeriodRateLimitTests {
 		//2024-02-20 falls on Tuesday, first day of week is Monday 2024-02-19
 		ZonedDateTime expectedStartTime = ZonedDateTime.of(2024, 2, 19, 0, 0, 0, 0, ZoneId.of("UTC"));
 
-		assertTrue(expectedStartTime.isEqual(rateLimit.getWindowStart(referenceDate).get()));
+		assertThat(expectedStartTime.isEqual(rateLimit.getWindowStart(referenceDate).get())).isTrue();
 	}
 
 	@Test
@@ -64,7 +64,7 @@ class CalendarPeriodRateLimitTests {
 		var mondayReferenceDate = referenceDate.minusDays(1); //Monday 2024-02-19
 		ZonedDateTime expectedStartTime = ZonedDateTime.of(2024, 2, 19, 0, 0, 0, 0, ZoneId.of("UTC"));
 
-		assertTrue(expectedStartTime.isEqual(rateLimit.getWindowStart(referenceDate).get()));
+		assertThat(expectedStartTime.isEqual(rateLimit.getWindowStart(referenceDate).get())).isTrue();
 	}
 
 	@Test
@@ -73,7 +73,7 @@ class CalendarPeriodRateLimitTests {
 
 		ZonedDateTime expectedStartTime = ZonedDateTime.of(2024, 2, 1, 0, 0, 0, 0, ZoneId.of("UTC"));
 
-		assertTrue(expectedStartTime.isEqual(rateLimit.getWindowStart(referenceDate).get()));
+		assertThat(expectedStartTime.isEqual(rateLimit.getWindowStart(referenceDate).get())).isTrue();
 	}
 
 	@Test
@@ -82,7 +82,7 @@ class CalendarPeriodRateLimitTests {
 
 		ZonedDateTime expectedStartTime = ZonedDateTime.of(2024, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC"));
 
-		assertTrue(expectedStartTime.isEqual(rateLimit.getWindowStart(referenceDate).get()));
+		assertThat(expectedStartTime.isEqual(rateLimit.getWindowStart(referenceDate).get())).isTrue();
 	}
 
 	@Test
@@ -91,7 +91,7 @@ class CalendarPeriodRateLimitTests {
 
 		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 20, 10, 59, 59, 999_999_999, ZoneId.of("UTC"));
 
-		assertTrue(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get()));
+		assertThat(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get())).isTrue();
 	}
 
 	@Test
@@ -100,7 +100,7 @@ class CalendarPeriodRateLimitTests {
 
 		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 20, 23, 59, 59, 999_999_999, ZoneId.of("UTC"));
 
-		assertTrue(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get()));
+		assertThat(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get())).isTrue();
 	}
 
 	@Test
@@ -110,7 +110,7 @@ class CalendarPeriodRateLimitTests {
 		//2024-02-20 falls on Tuesday, next last day of week (Sunday) is 2024-02-25
 		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 25, 23, 59, 59, 999_999_999, ZoneId.of("UTC"));
 
-		assertTrue(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get()));
+		assertThat(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get())).isTrue();
 	}
 
 	@Test
@@ -121,7 +121,7 @@ class CalendarPeriodRateLimitTests {
 
 		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 25, 23, 59, 59, 999_999_999, ZoneId.of("UTC"));
 
-		assertTrue(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDateOnSunday).get()));
+		assertThat(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDateOnSunday).get())).isTrue();
 	}
 
 	@Test
@@ -130,7 +130,7 @@ class CalendarPeriodRateLimitTests {
 
 		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 29, 23, 59, 59, 999_999_999, ZoneId.of("UTC"));
 
-		assertTrue(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get()));
+		assertThat(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get())).isTrue();
 	}
 
 	@Test
@@ -139,7 +139,7 @@ class CalendarPeriodRateLimitTests {
 
 		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 12, 31, 23, 59, 59, 999_999_999, ZoneId.of("UTC"));
 
-		assertTrue(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get()));
+		assertThat(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get())).isTrue();
 	}
 
 }
