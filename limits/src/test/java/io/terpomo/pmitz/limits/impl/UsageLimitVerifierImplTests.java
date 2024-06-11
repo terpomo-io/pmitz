@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023-2024 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.terpomo.pmitz.limits.impl;
 
 import java.time.ZonedDateTime;
@@ -5,17 +21,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
-import io.terpomo.pmitz.core.limits.UsageLimit;
-import io.terpomo.pmitz.core.limits.types.CountLimit;
-import io.terpomo.pmitz.core.subjects.IndividualUser;
-import io.terpomo.pmitz.core.subjects.UserGrouping;
-import io.terpomo.pmitz.limits.UsageLimitResolver;
-import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
-import io.terpomo.pmitz.limits.UsageLimitVerificationStrategyResolver;
-import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
-import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,11 +33,24 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.*;
+import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Product;
+import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.types.CountLimit;
+import io.terpomo.pmitz.core.subjects.IndividualUser;
+import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.limits.UsageLimitResolver;
+import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
+import io.terpomo.pmitz.limits.UsageLimitVerificationStrategyResolver;
+import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
+import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class UsageLimitVerifierImplTest {
+class UsageLimitVerifierImplTests {
 
 	@Mock
 	UsageLimitResolver usageLimitResolver;
@@ -84,19 +102,19 @@ class UsageLimitVerifierImplTest {
 		verify(limitVerificationStrategy).recordFeatureUsage(contextArgCaptor.capture(), usageLimitArgCaptor.capture(), eq(2L));
 
 		var capturedUsageLimit = usageLimitArgCaptor.getValue();
-		assertEquals(usageLimit, capturedUsageLimit);
+		assertThat(capturedUsageLimit).isEqualTo(usageLimit);
 
 		var capturedContext = contextArgCaptor.getValue();
 
 		var searchCriteriaList = capturedContext.getSearchCriteria();
-		assertEquals(1, searchCriteriaList.size());
+		assertThat(searchCriteriaList.size()).isEqualTo(1);
 		var searchCriteria = searchCriteriaList.get(0);
-		assertEquals("MAX_FILES", searchCriteria.limitId());
-		assertNull(searchCriteria.windowStart());
-		assertNull(searchCriteria.windowEnd());
+		assertThat(searchCriteria.limitId()).isEqualTo("MAX_FILES");
+		assertThat(searchCriteria.windowStart()).isNull();
+		assertThat(searchCriteria.windowEnd()).isNull();
 
-		assertEquals(feature, capturedContext.getFeature());
-		assertEquals(userGrouping, capturedContext.getUserGrouping());
+		assertThat(capturedContext.getFeature()).isEqualTo(feature);
+		assertThat(capturedContext.getUserGrouping()).isEqualTo(userGrouping);
 
 		verify(usageRepo).updateUsageRecords(capturedContext);
 	}
@@ -113,19 +131,19 @@ class UsageLimitVerifierImplTest {
 		verify(limitVerificationStrategy).reduceFeatureUsage(contextArgCaptor.capture(), usageLimitArgCaptor.capture(), eq(2L));
 
 		var capturedUsageLimit = usageLimitArgCaptor.getValue();
-		assertEquals(usageLimit, capturedUsageLimit);
+		assertThat(capturedUsageLimit).isEqualTo(usageLimit);
 
 		var capturedContext = contextArgCaptor.getValue();
 
 		var searchCriteriaList = capturedContext.getSearchCriteria();
-		assertEquals(1, searchCriteriaList.size());
+		assertThat(searchCriteriaList.size()).isEqualTo(1);
 		var searchCriteria = searchCriteriaList.get(0);
-		assertEquals("MAX_FILES", searchCriteria.limitId());
-		assertNull(searchCriteria.windowStart());
-		assertNull(searchCriteria.windowEnd());
+		assertThat(searchCriteria.limitId()).isEqualTo("MAX_FILES");
+		assertThat(searchCriteria.windowStart()).isNull();
+		assertThat(searchCriteria.windowEnd()).isNull();
 
-		assertEquals(feature, capturedContext.getFeature());
-		assertEquals(userGrouping, capturedContext.getUserGrouping());
+		assertThat(capturedContext.getFeature()).isEqualTo(feature);
+		assertThat(capturedContext.getUserGrouping()).isEqualTo(userGrouping);
 
 		verify(usageRepo).updateUsageRecords(capturedContext);
 	}
@@ -139,8 +157,8 @@ class UsageLimitVerifierImplTest {
 			mockedLocalDateTime.when(ZonedDateTime::now).thenReturn(zonedDateTime);
 
 			var remainingUnitsMap = usageLimitVerifier.getLimitsRemainingUnits(feature, userGrouping);
-			assertEquals(1, remainingUnitsMap.size());
-			assertEquals(2L, remainingUnitsMap.get(usageLimit.getId()));
+			assertThat(remainingUnitsMap.size()).isEqualTo(1);
+			assertThat(remainingUnitsMap.get(usageLimit.getId())).isEqualTo(2L);
 		}
 		verify(usageRepo).loadUsageData(contextArgCaptor.capture());
 
@@ -160,7 +178,7 @@ class UsageLimitVerifierImplTest {
 			mockedLocalDateTime.when(ZonedDateTime::now).thenReturn(zonedDateTime);
 
 			var isWithinLimits = usageLimitVerifier.isWithinLimits(feature, userGrouping, Collections.singletonMap(usageLimit.getId(), requiredAdditionalUnits));
-			assertEquals(expectedResult, isWithinLimits);
+			assertThat(isWithinLimits).isEqualTo(expectedResult);
 		}
 		verify(usageRepo).loadUsageData(contextArgCaptor.capture());
 
@@ -173,7 +191,7 @@ class UsageLimitVerifierImplTest {
 	@NullAndEmptySource
 	void recordUsageWhenAdditionalUnitsEmptyShouldThrowException(Map<String, Long> additionalUnits) {
 
-		assertThrows(IllegalArgumentException.class, () -> usageLimitVerifier.recordFeatureUsage(feature, userGrouping, additionalUnits));
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> usageLimitVerifier.recordFeatureUsage(feature, userGrouping, additionalUnits));
 
 	}
 
@@ -181,7 +199,7 @@ class UsageLimitVerifierImplTest {
 	void recordUsageWhenAdditionalUnitsNegativeShouldThrowException() {
 
 		var additionalUnits = Collections.singletonMap("MAX_FILES", -1L);
-		assertThrows(IllegalArgumentException.class, () -> usageLimitVerifier.recordFeatureUsage(feature, userGrouping, additionalUnits));
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> usageLimitVerifier.recordFeatureUsage(feature, userGrouping, additionalUnits));
 
 	}
 
@@ -189,7 +207,7 @@ class UsageLimitVerifierImplTest {
 	@NullAndEmptySource
 	void reduceUsageWhenReducedUnitsEmptyShouldThrowException(Map<String, Long> additionalUnits) {
 
-		assertThrows(IllegalArgumentException.class, () -> usageLimitVerifier.reduceFeatureUsage(feature, userGrouping, additionalUnits));
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> usageLimitVerifier.reduceFeatureUsage(feature, userGrouping, additionalUnits));
 
 	}
 
@@ -197,7 +215,7 @@ class UsageLimitVerifierImplTest {
 	void reduceUsageWhenReducedlUnitsNegativeShouldThrowException() {
 
 		var additionalUnits = Collections.singletonMap("MAX_FILES", -1L);
-		assertThrows(IllegalArgumentException.class, () -> usageLimitVerifier.reduceFeatureUsage(feature, userGrouping, additionalUnits));
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> usageLimitVerifier.reduceFeatureUsage(feature, userGrouping, additionalUnits));
 
 	}
 

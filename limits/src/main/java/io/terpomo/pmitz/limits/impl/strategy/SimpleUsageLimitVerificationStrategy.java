@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023-2024 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.terpomo.pmitz.limits.impl.strategy;
 
 import java.time.ZonedDateTime;
@@ -38,7 +54,7 @@ public class SimpleUsageLimitVerificationStrategy<T extends UsageLimit> implemen
 
 		var alreadyUsedUnits = optExistingUsageRecord.isEmpty() ? 0 : optExistingUsageRecord.get().units();
 
-		var newUnits = alreadyUsedUnits > reducedUnits ? alreadyUsedUnits - reducedUnits : 0;
+		var newUnits = (alreadyUsedUnits > reducedUnits) ? alreadyUsedUnits - reducedUnits : 0;
 
 		var windowEnd = getWindowEnd(usageLimit, now).orElse(null);
 		var updatedRecord = optExistingUsageRecord.map(usageRecord -> UsageRecord.updage(usageRecord, newUnits, usageRecord.expirationDate()))
@@ -70,7 +86,7 @@ public class SimpleUsageLimitVerificationStrategy<T extends UsageLimit> implemen
 	}
 
 	private ZonedDateTime calculateExpirationDate(ZonedDateTime windowEnd) {
-		return windowEnd == null ? null : windowEnd.plusMonths(3);
+		return (windowEnd != null) ? windowEnd.plusMonths(3) : null;
 	}
 
 	private Optional<UsageRecord> findCurrentUsage(LimitTrackingContext context, T usageLimit, ZonedDateTime referenceDate) {

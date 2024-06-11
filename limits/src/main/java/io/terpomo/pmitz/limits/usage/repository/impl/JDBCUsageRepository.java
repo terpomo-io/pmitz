@@ -100,7 +100,7 @@ public class JDBCUsageRepository implements UsageRepository {
 				}
 			}
 		}
-		catch (SQLException e) {
+		catch (SQLException ex) {
 			// TODO: Handle exceptions
 		}
 	}
@@ -176,9 +176,9 @@ public class JDBCUsageRepository implements UsageRepository {
 
 			statement.executeBatch();
 		}
-		catch (SQLException e) {
+		catch (SQLException ex) {
 			// TODO: Handle exceptions
-			e.printStackTrace();
+			ex.printStackTrace();
 		}
 	}
 
@@ -195,7 +195,7 @@ public class JDBCUsageRepository implements UsageRepository {
 	// TODO: Remove
 	private String debugPreparedStatement(String baseQuery, List<Object> parameters) {
 		for (Object param : parameters) {
-			String value = param instanceof String ? "'" + param + "'" : param.toString();
+			String value = (param instanceof String) ? "'" + param + "'" : param.toString();
 			baseQuery = baseQuery.replaceFirst("\\?", value);
 		}
 		return baseQuery;

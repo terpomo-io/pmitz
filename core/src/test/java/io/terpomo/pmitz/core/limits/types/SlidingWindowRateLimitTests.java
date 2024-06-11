@@ -14,14 +14,26 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core;
+package io.terpomo.pmitz.core.limits.types;
 
-import java.util.Map;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 
-public record FeatureUsageInfo(FeatureStatus featureStatus, Map<String, Long> remainingUsageUnits) {
+import org.junit.jupiter.api.Test;
 
-	public boolean isLimitReached() {
-		return remainingUsageUnits != null && remainingUsageUnits.values().stream().anyMatch(v -> v <= 0);
+import static org.assertj.core.api.Assertions.assertThat;
+
+class SlidingWindowRateLimitTests {
+
+	SlidingWindowRateLimit rateLimit = new SlidingWindowRateLimit("photos-uploaded", 10, ChronoUnit.DAYS, 30);
+
+	@Test
+	void getWindowStart() {
+
+		assertThat(rateLimit.getWindowStart(ZonedDateTime.now())).isNotNull();
 	}
 
+	@Test
+	void getWindowEnd() {
+	}
 }

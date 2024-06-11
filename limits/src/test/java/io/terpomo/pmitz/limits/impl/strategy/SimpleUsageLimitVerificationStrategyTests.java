@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023-2024 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.terpomo.pmitz.limits.impl.strategy;
 
 import java.time.ZonedDateTime;
@@ -5,6 +21,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.terpomo.pmitz.core.exception.LimitExceededException;
 import io.terpomo.pmitz.core.limits.UsageLimit;
@@ -15,20 +40,13 @@ import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
 import io.terpomo.pmitz.limits.UsageRecord;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.UsageRecordRepoMetadata;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class SimpleUsageLimitVerificationStrategyTest {
+class SimpleUsageLimitVerificationStrategyTests {
 	static String limitId = "numer-of-photos";
 	UsageLimitVerificationStrategy<UsageLimit> verificationStrategy = new SimpleUsageLimitVerificationStrategy<>();
 	@Captor
@@ -55,12 +73,12 @@ class SimpleUsageLimitVerificationStrategyTest {
 
 		var updatedRecordList = updatedRecordArgCaptor.getValue();
 
-		assertEquals(1, updatedRecordList.size());
+		assertThat(updatedRecordList.size()).isEqualTo(1);
 		UsageRecord updatedUsageRecord = updatedRecordList.get(0);
-		assertEquals(previouslyConsumedUnits + 5, updatedUsageRecord.units());
-		assertNull(updatedUsageRecord.startTime());
-		assertNull(updatedUsageRecord.endTime());
-		assertEquals(limitId, updatedUsageRecord.limitId());
+		assertThat(updatedUsageRecord.units()).isEqualTo(previouslyConsumedUnits + 5);
+		assertThat(updatedUsageRecord.startTime()).isNull();
+		assertThat(updatedUsageRecord.endTime()).isNull();
+		assertThat(updatedUsageRecord.limitId()).isEqualTo(limitId);
 	}
 
 	@Test
@@ -81,14 +99,14 @@ class SimpleUsageLimitVerificationStrategyTest {
 
 		var updatedRecordList = updatedRecordArgCaptor.getValue();
 
-		assertEquals(1, updatedRecordList.size());
+		assertThat(updatedRecordList.size()).isEqualTo(1);
 		UsageRecord updatedUsageRecord = updatedRecordList.get(0);
-		assertEquals(5 + 5, updatedUsageRecord.units());
-		assertEquals(existingRecord.repoMetadata(), updatedUsageRecord.repoMetadata());
-		assertEquals(existingRecord.startTime(), updatedUsageRecord.startTime());
-		assertEquals(existingRecord.endTime(), updatedUsageRecord.endTime());
-		assertEquals(existingRecord.expirationDate(), updatedUsageRecord.expirationDate());
-		assertEquals(limitId, updatedUsageRecord.limitId());
+		assertThat(updatedUsageRecord.units()).isEqualTo(5 + 5);
+		assertThat(updatedUsageRecord.repoMetadata()).isEqualTo(existingRecord.repoMetadata());
+		assertThat(updatedUsageRecord.startTime()).isEqualTo(existingRecord.startTime());
+		assertThat(updatedUsageRecord.endTime()).isEqualTo(existingRecord.endTime());
+		assertThat(updatedUsageRecord.expirationDate()).isEqualTo(existingRecord.expirationDate());
+		assertThat(updatedUsageRecord.limitId()).isEqualTo(limitId);
 	}
 
 	@ParameterizedTest
@@ -108,12 +126,12 @@ class SimpleUsageLimitVerificationStrategyTest {
 
 		var updatedRecordList = updatedRecordArgCaptor.getValue();
 
-		assertEquals(1, updatedRecordList.size());
+		assertThat(updatedRecordList.size()).isEqualTo(1);
 		UsageRecord updatedUsageRecord = updatedRecordList.get(0);
-		assertEquals(10, updatedUsageRecord.units());
-		assertEquals(windowStart, updatedUsageRecord.startTime());
-		assertEquals(windowEnd, updatedUsageRecord.endTime());
-		assertEquals(limitId, updatedUsageRecord.limitId());
+		assertThat(updatedUsageRecord.units()).isEqualTo(10);
+		assertThat(updatedUsageRecord.startTime()).isEqualTo(windowStart);
+		assertThat(updatedUsageRecord.endTime()).isEqualTo(windowEnd);
+		assertThat(updatedUsageRecord.limitId()).isEqualTo(limitId);
 	}
 
 	@Test
@@ -124,7 +142,7 @@ class SimpleUsageLimitVerificationStrategyTest {
 
 		CountLimit usageLimit = new CountLimit(limitId, 10);
 
-		assertThrows(LimitExceededException.class, () -> verificationStrategy.recordFeatureUsage(context, usageLimit, 6));
+		assertThatExceptionOfType(LimitExceededException.class).isThrownBy(() -> verificationStrategy.recordFeatureUsage(context, usageLimit, 6));
 	}
 
 	@ParameterizedTest
@@ -140,12 +158,12 @@ class SimpleUsageLimitVerificationStrategyTest {
 
 		var updatedRecordList = updatedRecordArgCaptor.getValue();
 
-		assertEquals(1, updatedRecordList.size());
+		assertThat(updatedRecordList.size()).isEqualTo(1);
 		UsageRecord updatedUsageRecord = updatedRecordList.get(0);
-		assertEquals(previouslyConsumedUnits == 0 ? 0 : previouslyConsumedUnits - 5, updatedUsageRecord.units());
-		assertNull(updatedUsageRecord.startTime());
-		assertNull(updatedUsageRecord.endTime());
-		assertEquals(limitId, updatedUsageRecord.limitId());
+		assertThat(updatedUsageRecord.units()).isEqualTo((previouslyConsumedUnits == 0) ? 0 : previouslyConsumedUnits - 5);
+		assertThat(updatedUsageRecord.startTime()).isNull();
+		assertThat(updatedUsageRecord.endTime()).isNull();
+		assertThat(updatedUsageRecord.limitId()).isEqualTo(limitId);
 	}
 
 	@Test
@@ -166,14 +184,14 @@ class SimpleUsageLimitVerificationStrategyTest {
 
 		var updatedRecordList = updatedRecordArgCaptor.getValue();
 
-		assertEquals(1, updatedRecordList.size());
+		assertThat(updatedRecordList.size()).isEqualTo(1);
 		UsageRecord updatedUsageRecord = updatedRecordList.get(0);
-		assertEquals(5 - 4, updatedUsageRecord.units());
-		assertEquals(existingRecord.repoMetadata(), updatedUsageRecord.repoMetadata());
-		assertEquals(existingRecord.startTime(), updatedUsageRecord.startTime());
-		assertEquals(existingRecord.endTime(), updatedUsageRecord.endTime());
-		assertEquals(existingRecord.expirationDate(), updatedUsageRecord.expirationDate());
-		assertEquals(limitId, updatedUsageRecord.limitId());
+		assertThat(updatedUsageRecord.units()).isEqualTo(5 - 4);
+		assertThat(updatedUsageRecord.repoMetadata()).isEqualTo(existingRecord.repoMetadata());
+		assertThat(updatedUsageRecord.startTime()).isEqualTo(existingRecord.startTime());
+		assertThat(updatedUsageRecord.endTime()).isEqualTo(existingRecord.endTime());
+		assertThat(updatedUsageRecord.expirationDate()).isEqualTo(existingRecord.expirationDate());
+		assertThat(updatedUsageRecord.limitId()).isEqualTo(limitId);
 	}
 
 	@Test
@@ -192,13 +210,13 @@ class SimpleUsageLimitVerificationStrategyTest {
 
 		var updatedRecordList = updatedRecordArgCaptor.getValue();
 
-		assertEquals(1, updatedRecordList.size());
+		assertThat(updatedRecordList.size()).isEqualTo(1);
 		UsageRecord updatedUsageRecord = updatedRecordList.get(0);
-		assertEquals(0, updatedUsageRecord.units());
-		assertEquals(windowStart, updatedUsageRecord.startTime());
-		assertEquals(windowEnd, updatedUsageRecord.endTime());
-		assertEquals(windowEnd.plusMonths(3), updatedUsageRecord.expirationDate());
-		assertEquals(limitId, updatedUsageRecord.limitId());
+		assertThat(updatedUsageRecord.units()).isEqualTo(0);
+		assertThat(updatedUsageRecord.startTime()).isEqualTo(windowStart);
+		assertThat(updatedUsageRecord.endTime()).isEqualTo(windowEnd);
+		assertThat(updatedUsageRecord.expirationDate()).isEqualTo(windowEnd.plusMonths(3));
+		assertThat(updatedUsageRecord.limitId()).isEqualTo(limitId);
 	}
 
 	@ParameterizedTest
@@ -208,7 +226,7 @@ class SimpleUsageLimitVerificationStrategyTest {
 
 		CountLimit usageLimit = new CountLimit(limitId, 10);
 
-		assertTrue(verificationStrategy.isWithinLimits(context, usageLimit, 5));
+		assertThat(verificationStrategy.isWithinLimits(context, usageLimit, 5)).isTrue();
 	}
 
 	@Test
@@ -218,7 +236,7 @@ class SimpleUsageLimitVerificationStrategyTest {
 
 		CountLimit usageLimit = new CountLimit(limitId, 10);
 
-		assertFalse(verificationStrategy.isWithinLimits(context, usageLimit, 6));
+		assertThat(verificationStrategy.isWithinLimits(context, usageLimit, 6)).isFalse();
 	}
 
 	@ParameterizedTest
@@ -228,7 +246,7 @@ class SimpleUsageLimitVerificationStrategyTest {
 
 		CountLimit usageLimit = new CountLimit(limitId, 10);
 
-		assertEquals(10 - previouslyConsumedUnits, verificationStrategy.getRemainingUnits(context, usageLimit));
+		assertThat(verificationStrategy.getRemainingUnits(context, usageLimit)).isEqualTo(10 - previouslyConsumedUnits);
 	}
 
 	@Test
@@ -237,7 +255,7 @@ class SimpleUsageLimitVerificationStrategyTest {
 		RateLimit usageLimit = mock(CalendarPeriodRateLimit.class);
 		when(usageLimit.getWindowStart(any())).thenReturn(Optional.of(windowStart));
 
-		assertEquals(windowStart, verificationStrategy.getWindowStart(usageLimit, ZonedDateTime.now()).orElse(null));
+		assertThat(verificationStrategy.getWindowStart(usageLimit, ZonedDateTime.now()).orElse(null)).isEqualTo(windowStart);
 	}
 
 	@Test
@@ -246,7 +264,7 @@ class SimpleUsageLimitVerificationStrategyTest {
 		RateLimit usageLimit = mock(CalendarPeriodRateLimit.class);
 		when(usageLimit.getWindowStart(any())).thenReturn(Optional.of(windowEnd));
 
-		assertEquals(windowEnd, verificationStrategy.getWindowStart(usageLimit, ZonedDateTime.now()).orElse(null));
+		assertThat(verificationStrategy.getWindowStart(usageLimit, ZonedDateTime.now()).orElse(null)).isEqualTo(windowEnd);
 	}
 
 	private LimitTrackingContext initContextMock(ZonedDateTime windowStart, ZonedDateTime windowEnd, List<UsageRecord> existingUsageRecord) {

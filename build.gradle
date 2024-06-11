@@ -23,13 +23,13 @@ subprojects {
     checkstyle {
         toolVersion = "10.15.0"
         ignoreFailures = true
-        showViolations = false
+        showViolations = true
         configFile = rootProject.file('/checkstyle/config/pmitz-checkstyle.xml')
         configProperties = [
                 'headerType': 'apache2',
                 'headerCopyrightPattern': '20\\d\\d(-20\\d\\d)?',
                 'projectRootPackage': 'io.terpomo',
-                'avoidStaticImportExcludes': []
+                'avoidStaticImportExcludes': "org.assertj.core.api.AssertionsForClassTypes.*"
         ]
     }
 
