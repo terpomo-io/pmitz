@@ -17,6 +17,7 @@
 package io.terpomo.pmitz.limits.usage.repository.impl;
 
 import java.sql.Connection;
+import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -153,18 +154,22 @@ public class JDBCUsageRepository implements UsageRepository {
 				statement.setString(3, limitTrackingContext.getUserGrouping().getId());
 				statement.setString(4, record.limitId());
 
-				Timestamp startTimestamp = Timestamp.from(record.startTime().toInstant());
+				Timestamp startTimestamp = record.startTime() != null ? Timestamp.from(record.startTime().toInstant()) : null;
 				statement.setTimestamp(5, startTimestamp);
 
-				Timestamp endTimestamp = Timestamp.from(record.endTime().toInstant());
+				Timestamp endTimestamp = record.endTime() != null ? Timestamp.from(record.endTime().toInstant()) : null;
 				statement.setTimestamp(6, endTimestamp);
 
 				statement.setLong(7, record.units());
 
-				Timestamp expirationTimestamp = Timestamp.from(record.expirationDate().toInstant());
+				Timestamp expirationTimestamp = record.expirationDate() != null ? Timestamp.from(record.expirationDate().toInstant()) : null;
 				statement.setTimestamp(8, expirationTimestamp);
 
-				statement.setLong(9, ((JDBCUsageRecordRepoMetadata) record.repoMetadata()).usageId());
+				if (record.repoMetadata() != null) {
+					statement.setLong(9, ((JDBCUsageRecordRepoMetadata) record.repoMetadata()).usageId());
+				} else {
+					statement.setNull(9, JDBCType.NUMERIC.getVendorTypeNumber());
+				}
 
 				// TODO: Remove
 				logTimestampDetails("Update - Window Start", record.startTime());

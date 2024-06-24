@@ -33,7 +33,7 @@ public final class UsageLimitVerifierBuilder {
 		// private constructor
 	}
 
-	public static Builder of(ProductRepository productRepository) {
+	public static UsageLimitResolverSpec of(ProductRepository productRepository) {
 		return new Builder(productRepository);
 	}
 

@@ -3,4 +3,5 @@ include 'core'
 include 'subscriptions'
 include 'limits'
 include 'all'
+include 'examples'
 
