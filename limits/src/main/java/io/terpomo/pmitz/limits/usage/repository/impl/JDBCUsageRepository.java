@@ -154,20 +154,21 @@ public class JDBCUsageRepository implements UsageRepository {
 				statement.setString(3, limitTrackingContext.getUserGrouping().getId());
 				statement.setString(4, record.limitId());
 
-				Timestamp startTimestamp = record.startTime() != null ? Timestamp.from(record.startTime().toInstant()) : null;
+				Timestamp startTimestamp = (record.startTime() != null) ? Timestamp.from(record.startTime().toInstant()) : null;
 				statement.setTimestamp(5, startTimestamp);
 
-				Timestamp endTimestamp = record.endTime() != null ? Timestamp.from(record.endTime().toInstant()) : null;
+				Timestamp endTimestamp = (record.endTime() != null) ? Timestamp.from(record.endTime().toInstant()) : null;
 				statement.setTimestamp(6, endTimestamp);
 
 				statement.setLong(7, record.units());
 
-				Timestamp expirationTimestamp = record.expirationDate() != null ? Timestamp.from(record.expirationDate().toInstant()) : null;
+				Timestamp expirationTimestamp = (record.expirationDate() != null) ? Timestamp.from(record.expirationDate().toInstant()) : null;
 				statement.setTimestamp(8, expirationTimestamp);
 
 				if (record.repoMetadata() != null) {
 					statement.setLong(9, ((JDBCUsageRecordRepoMetadata) record.repoMetadata()).usageId());
-				} else {
+				}
+				else {
 					statement.setNull(9, JDBCType.NUMERIC.getVendorTypeNumber());
 				}
 
