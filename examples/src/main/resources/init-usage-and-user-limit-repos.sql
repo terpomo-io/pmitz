@@ -24,8 +24,3 @@ CREATE TABLE dbo.user_limit (
     limit_duration INT,
     PRIMARY KEY (usage_id)
 );
-INSERT INTO dbo.user_limit (
-    limit_id, feature_id, user_group_id,
-    limit_type, limit_value, limit_unit, limit_interval, limit_duration)
-	VALUES ('Maximum books reserved', 'Reserving books', 'user001',
-	        'CountLimit', 4, NULL, NULL, 0);
