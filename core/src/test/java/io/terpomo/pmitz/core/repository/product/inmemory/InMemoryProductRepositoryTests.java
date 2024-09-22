@@ -432,7 +432,7 @@ public class InMemoryProductRepositoryTests {
 	}
 
 	@Test
-	void removeFeature_productNotFounc() {
+	void removeFeature_productNotFound() {
 
 		Product p1 = new Product("p1");
 		Feature f1 = new Feature(p1, "f1");
@@ -443,7 +443,7 @@ public class InMemoryProductRepositoryTests {
 	}
 
 	@Test
-	void removeFeature_featureNotFounc() {
+	void removeFeature_featureNotFound() {
 
 		Product p1 = new Product("p1");
 		this.repository.addProduct(p1);

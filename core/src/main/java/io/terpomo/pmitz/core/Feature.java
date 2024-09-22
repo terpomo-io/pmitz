@@ -17,7 +17,6 @@
 package io.terpomo.pmitz.core;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,7 +49,6 @@ public class Feature {
 	}
 
 	public List<String> getLimitsIds() {
-		return (limits != null) ? limits.stream().map(UsageLimit::getId).collect(Collectors.toList())
-				: Collections.emptyList();
+		return limits.stream().map(UsageLimit::getId).collect(Collectors.toList());
 	}
 }

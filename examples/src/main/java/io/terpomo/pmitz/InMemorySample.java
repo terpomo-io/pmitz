@@ -134,7 +134,6 @@ public class InMemorySample {
 			throw new RuntimeException("Product Repository file not found", ex);
 		}
 
-		var productOpt = productRepo.getProductById(PRODUCT_ID);
 		product = productRepo
 				.getProductById(PRODUCT_ID)
 				.orElseThrow(() -> new RuntimeException("Product not found: %s".formatted(PRODUCT_ID)));
