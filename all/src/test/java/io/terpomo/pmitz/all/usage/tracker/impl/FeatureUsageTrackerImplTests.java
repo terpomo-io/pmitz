@@ -92,7 +92,7 @@ class FeatureUsageTrackerImplTests {
 		var featureInfo = featureUsageTracker.verifyLimits(feature, userGrouping, additionalUnits);
 
 		assertThat(featureInfo.featureStatus()).isEqualTo(FeatureStatus.NOT_ALLOWED);
-		assertThat(featureInfo.remainingUsageUnits().isEmpty()).isTrue();
+		assertThat(featureInfo.remainingUsageUnits()).isEmpty();
 	}
 
 	@Test
@@ -105,7 +105,7 @@ class FeatureUsageTrackerImplTests {
 		var featureInfo = featureUsageTracker.verifyLimits(feature, userGrouping, additionalUnits);
 
 		assertThat(featureInfo.featureStatus()).isEqualTo(FeatureStatus.LIMIT_EXCEEDED);
-		assertThat(featureInfo.remainingUsageUnits().get(limitId)).isEqualTo(-1);
+		assertThat(featureInfo.remainingUsageUnits()).containsEntry(limitId, -1L);
 	}
 
 	@Test
@@ -114,7 +114,7 @@ class FeatureUsageTrackerImplTests {
 
 		FeatureUsageInfo featureUsageInfo = featureUsageTracker.getUsageInfo(feature, userGrouping);
 		assertThat(featureUsageInfo.featureStatus()).isEqualTo(FeatureStatus.NOT_ALLOWED);
-		assertThat(featureUsageInfo.remainingUsageUnits().isEmpty()).isTrue();
+		assertThat(featureUsageInfo.remainingUsageUnits()).isEmpty();
 	}
 
 	@Test
@@ -126,7 +126,7 @@ class FeatureUsageTrackerImplTests {
 		var featureInfo = featureUsageTracker.getUsageInfo(feature, userGrouping);
 
 		assertThat(featureInfo.featureStatus()).isEqualTo(FeatureStatus.AVAILABLE);
-		assertThat(featureInfo.remainingUsageUnits().get(limitId)).isEqualTo(1L);
+		assertThat(featureInfo.remainingUsageUnits()).containsEntry(limitId, 1L);
 	}
 
 }

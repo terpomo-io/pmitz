@@ -28,4 +28,12 @@ public class FeatureNotAllowedException extends RuntimeException {
 		this.feature = feature;
 		this.userGrouping = userGrouping;
 	}
+
+	public Feature getFeature() {
+		return feature;
+	}
+
+	public UserGrouping getUserGrouping() {
+		return userGrouping;
+	}
 }

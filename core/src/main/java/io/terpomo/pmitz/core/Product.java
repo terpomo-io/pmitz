@@ -16,10 +16,11 @@
 
 package io.terpomo.pmitz.core;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Product {
+public class Product implements Serializable {
 
 	private String productId;
 

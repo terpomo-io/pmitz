@@ -35,5 +35,6 @@ class SlidingWindowRateLimitTests {
 
 	@Test
 	void getWindowEnd() {
+		assertThat(rateLimit.getWindowEnd(ZonedDateTime.now())).isNotNull();
 	}
 }

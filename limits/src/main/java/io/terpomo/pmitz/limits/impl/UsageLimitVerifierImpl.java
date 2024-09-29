@@ -122,7 +122,7 @@ public class UsageLimitVerifierImpl implements UsageLimitVerifier {
 	private List<RecordSearchCriteria> gatherSearchCriteria(Map<UsageLimit, UsageLimitVerificationStrategy> verificationStrategyMap) {
 		return verificationStrategyMap.entrySet().stream()
 				.map(entry -> getLimitSearchCriteria(entry.getValue(), entry.getKey()))
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	private Map<UsageLimit, UsageLimitVerificationStrategy> findVerificationStrategiesByLimit(Feature feature, UserGrouping userGrouping) {
