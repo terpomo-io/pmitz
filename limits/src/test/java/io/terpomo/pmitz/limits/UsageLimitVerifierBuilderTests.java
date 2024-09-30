@@ -68,7 +68,7 @@ class UsageLimitVerifierBuilderTests {
 	void builderShouldCreateUsageLimitVerifierWithUserLimitRespository() {
 		var productRepo = UsageLimitVerifierBuilder.inMemoryProductRepo();
 		var builder = UsageLimitVerifierBuilder.of(productRepo)
-				.withDefaultUsageLimitResolver(userLimitRepository)
+				.withUserLimitRepository(userLimitRepository)
 				.withJdbcUsageRepository(dataSource, "schema", "table");
 
 		var usageLimitVerifierImpl = builder.build();

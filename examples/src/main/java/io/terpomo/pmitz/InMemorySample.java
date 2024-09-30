@@ -39,7 +39,6 @@ import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.UsageLimitVerifier;
 import io.terpomo.pmitz.limits.UsageLimitVerifierBuilder;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
-import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 
 public class InMemorySample {
 
@@ -138,10 +137,10 @@ public class InMemorySample {
 				.getProductById(PRODUCT_ID)
 				.orElseThrow(() -> new RuntimeException("Product not found: %s".formatted(PRODUCT_ID)));
 
-		userLimitRepository = new JDBCUserLimitRepository(usageRepoDataSource, DB_SCHEMA_NAME, DB_USER_LIMIT_TABLE_NAME);
+		userLimitRepository = UserLimitRepository.builder().jdbcRepository(usageRepoDataSource, DB_SCHEMA_NAME, DB_USER_LIMIT_TABLE_NAME);
 
 		usageLimitVerifier = UsageLimitVerifierBuilder.of(productRepo)
-				.withDefaultUsageLimitResolver(userLimitRepository)
+				.withUserLimitRepository(userLimitRepository)
 				.withJdbcUsageRepository(usageRepoDataSource, DB_SCHEMA_NAME, DB_USER_USAGE_TABLE_NAME)
 				.build();
 	}

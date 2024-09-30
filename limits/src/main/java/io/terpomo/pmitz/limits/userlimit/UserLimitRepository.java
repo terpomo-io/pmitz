@@ -18,6 +18,8 @@ package io.terpomo.pmitz.limits.userlimit;
 
 import java.util.Optional;
 
+import javax.sql.DataSource;
+
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
@@ -31,4 +33,14 @@ public interface UserLimitRepository {
 	void updateUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping);
 
 	void deleteUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping);
+
+	static UserLimitRepository.Builder builder() {
+		return new DefaultUserLimitRepositoryBuilder();
+	}
+
+	interface Builder {
+		UserLimitRepository jdbcRepository(DataSource dataSource, String dbSchema, String tableName);
+
+		UserLimitRepository noOpRepository();
+	}
 }
