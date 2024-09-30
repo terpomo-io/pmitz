@@ -25,13 +25,12 @@ import java.util.TimeZone;
 
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 
 public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
 
-	@Container
 	private static final PostgreSQLContainer<?> postgresqlContainer =
 			new PostgreSQLContainer<>("postgres:latest")
 					.withEnv("TZ", "UTC")
@@ -39,24 +38,31 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 
 	@BeforeAll
 	public static void setUpClass() {
+		// Start the container before all tests
+		postgresqlContainer.start();
+		// Set timezone to UTC
 		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+	}
+
+	@AfterAll
+	public static void tearDownClass() {
+		// Stop the container after all tests
+		if (postgresqlContainer != null) {
+			postgresqlContainer.stop();
+		}
 	}
 
 	@Override
 	protected void setupDataSource() {
-		postgresqlContainer.start();
+		// Set up the data source using the container's JDBC URL
 		dataSource = new BasicDataSource();
-
-		// Modify the JDBC URL to include the `serverTimezone=UTC` parameter
 		String jdbcUrlWithTimezone = postgresqlContainer.getJdbcUrl() + "?sessionTimezone=UTC";
-
 		dataSource.setUrl(jdbcUrlWithTimezone);
 		dataSource.setUsername(postgresqlContainer.getUsername());
 		dataSource.setPassword(postgresqlContainer.getPassword());
 
 		repository = new JDBCUsageRepository(dataSource, CUSTOM_SCHEMA, getTableName());
 	}
-
 
 	@Override
 	protected String getTimeZoneQuery() {
@@ -104,15 +110,17 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 	}
 
 	@Override
-	protected void tearDownDatabase() throws SQLException {
+	protected void tearDownDatabase() {
 		try (Connection conn = dataSource.getConnection();
 				Statement statement = conn.createStatement()) {
 			statement.execute("TRUNCATE TABLE " + getFullTableName() + " RESTART IDENTITY CASCADE");
+		} catch (SQLException ex) {
+			System.out.println("Error during tearDownDatabase: " + ex.getMessage());
 		}
 	}
 
 	@Override
-	protected void printDatabaseContents(String message) throws SQLException {
+	protected void printDatabaseContents(String message) {
 		System.out.println("---- " + message + " ----");
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
@@ -136,7 +144,7 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 						+ ", UpdatedAt: " + updatedAt);
 			}
 		} catch (SQLException ex) {
-			ex.printStackTrace();
+			System.out.println("Error while printing database contents: " + ex.getMessage());
 		}
 	}
 }
