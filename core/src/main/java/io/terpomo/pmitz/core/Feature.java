@@ -16,14 +16,13 @@
 
 package io.terpomo.pmitz.core;
 
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import io.terpomo.pmitz.core.limits.UsageLimit;
 
-public class Feature {
+public class Feature implements Serializable {
 
 	private final String featureId;
 
@@ -50,7 +49,6 @@ public class Feature {
 	}
 
 	public List<String> getLimitsIds() {
-		return (limits != null) ? limits.stream().map(UsageLimit::getId).collect(Collectors.toList())
-				: Collections.emptyList();
+		return limits.stream().map(UsageLimit::getId).toList();
 	}
 }

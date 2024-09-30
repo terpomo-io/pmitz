@@ -53,7 +53,7 @@ public class CalendarPeriodRateLimit extends RateLimit {
 	@Override
 	public Optional<ZonedDateTime> getWindowEnd(ZonedDateTime referenceDate) {
 		ZonedDateTime adjustedDateTime = switch (periodicity) {
-			case HOUR -> referenceDate.plusHours(1).truncatedTo(ChronoUnit.HOURS).minus(1, ChronoUnit.NANOS);
+			case HOUR -> referenceDate.plusHours(1).truncatedTo(ChronoUnit.HOURS).minusNanos(1);
 			case DAY -> lastNanosecondOfDay(referenceDate);
 			case WEEK -> lastNanosecondOfDay(referenceDate.with(TemporalAdjusters.nextOrSame(getLastDayOfWeek())));
 			case MONTH -> lastNanosecondOfDay(referenceDate.with(TemporalAdjusters.lastDayOfMonth()));

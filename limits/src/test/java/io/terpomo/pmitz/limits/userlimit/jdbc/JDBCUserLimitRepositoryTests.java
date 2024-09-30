@@ -18,7 +18,6 @@ package io.terpomo.pmitz.limits.userlimit.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.temporal.ChronoUnit;
@@ -169,40 +168,6 @@ public class JDBCUserLimitRepositoryTests {
 						"Maximum picture resolution", null,
 						"The user/group parameter cannot be null")
 		);
-	}
-
-	// TODO: Remove
-	public static void printDatabaseContents(DataSource dataSource) {
-		try {
-			try (Connection conn = dataSource.getConnection();
-					Statement stmt = conn.createStatement()) {
-				System.out.println("=========== UsageLimit ==========");
-				ResultSet rs = stmt.executeQuery("SELECT * FROM public.user_usage_limit");
-				while (rs.next()) {
-					long usageId = rs.getLong("usage_id");
-					String limitId = rs.getString("limit_id");
-					String featureId = rs.getString("feature_id");
-					String userGroup = rs.getString("user_group_id");
-					String limitType = rs.getString("limit_type");
-					long limitValue = rs.getLong("limit_value");
-					String limitUnit = rs.getString("limit_unit");
-					String limitInterval = rs.getString("limit_interval");
-					int limitDuration = rs.getInt("limit_duration");
-
-					System.out.printf(
-							"""
-									usage_id=%s, limitId=%s, featureId=%s, userGroup=%s, limitType=%s,
-									limitValue=%d, limitUnit=%s, limitInterval=%s, limitDuration=%d%n
-									""",
-							usageId, limitId, featureId, userGroup, limitType,
-							limitValue, limitUnit, limitInterval, limitDuration
-					);
-				}
-			}
-		}
-		catch (SQLException ex) {
-			ex.printStackTrace();
-		}
 	}
 
 	@BeforeEach

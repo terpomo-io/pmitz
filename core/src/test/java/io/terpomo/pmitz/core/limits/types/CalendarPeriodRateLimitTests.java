@@ -64,7 +64,7 @@ class CalendarPeriodRateLimitTests {
 		var mondayReferenceDate = referenceDate.minusDays(1); //Monday 2024-02-19
 		ZonedDateTime expectedStartTime = ZonedDateTime.of(2024, 2, 19, 0, 0, 0, 0, ZoneId.of("UTC"));
 
-		assertThat(expectedStartTime.isEqual(rateLimit.getWindowStart(referenceDate).get())).isTrue();
+		assertThat(expectedStartTime.isEqual(rateLimit.getWindowStart(mondayReferenceDate).get())).isTrue();
 	}
 
 	@Test

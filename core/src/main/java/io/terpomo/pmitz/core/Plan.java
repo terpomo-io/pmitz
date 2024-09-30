@@ -16,7 +16,9 @@
 
 package io.terpomo.pmitz.core;
 
-public class Plan {
+import java.io.Serializable;
+
+public class Plan implements Serializable {
 
 	private Product product;
 
@@ -25,5 +27,13 @@ public class Plan {
 	public Plan(Product product, String planId) {
 		this.planId = planId;
 		this.product = product;
+	}
+
+	public Product getProduct() {
+		return product;
+	}
+
+	public String getPlanId() {
+		return planId;
 	}
 }

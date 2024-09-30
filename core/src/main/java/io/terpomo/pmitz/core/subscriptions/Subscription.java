@@ -50,4 +50,16 @@ public class Subscription extends UserGrouping {
 	public Plan getPlan() {
 		return plan;
 	}
+
+	public String getSubscriptionId() {
+		return getId();
+	}
+
+	public SubscriptionStatus getStatus() {
+		return status;
+	}
+
+	public ZonedDateTime getExpirationDate() {
+		return expirationDate;
+	}
 }

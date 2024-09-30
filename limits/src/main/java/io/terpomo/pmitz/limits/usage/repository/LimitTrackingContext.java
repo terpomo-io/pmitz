@@ -20,7 +20,6 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
@@ -79,6 +78,6 @@ public class LimitTrackingContext {
 				&& (startTime == null || usageRecord.startTime() == null || usageRecord.startTime().isAfter(startTime) || usageRecord.startTime().isEqual(startTime))
 				&& (endTime == null || usageRecord.endTime() == null || usageRecord.endTime().isBefore(endTime) || usageRecord.endTime().isEqual(endTime));
 
-		return getCurrentUsageRecords().stream().filter(filterCondition).collect(Collectors.toList());
+		return getCurrentUsageRecords().stream().filter(filterCondition).toList();
 	}
 }

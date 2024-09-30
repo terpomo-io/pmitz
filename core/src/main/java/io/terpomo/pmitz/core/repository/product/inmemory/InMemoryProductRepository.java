@@ -43,6 +43,7 @@ import io.terpomo.pmitz.core.repository.product.ProductRepository;
 
 public class InMemoryProductRepository implements ProductRepository {
 
+	public static final String PRODUCT_NOT_FOUND = "Product '%s' not found";
 	private final ObjectMapper mapper;
 	private Map<String, Product> products = new HashMap<>();
 
@@ -64,7 +65,7 @@ public class InMemoryProductRepository implements ProductRepository {
 
 		return this.products.values().stream()
 				.map(Product::getProductId)
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	@Override
@@ -97,7 +98,7 @@ public class InMemoryProductRepository implements ProductRepository {
 				.ifPresentOrElse(
 						existingProduct -> this.products.remove(product.getProductId()),
 						() -> {
-							throw new RepositoryException(String.format("Product '%s' not found", product.getProductId()));
+							throw new RepositoryException(String.format(PRODUCT_NOT_FOUND, product.getProductId()));
 						}
 				);
 	}
@@ -109,7 +110,7 @@ public class InMemoryProductRepository implements ProductRepository {
 
 		return this.getProductById(product.getProductId())
 				.map(Product::getFeatures)
-				.orElseThrow(() -> new RepositoryException(String.format("Product '%s' not found", product.getProductId())));
+				.orElseThrow(() -> new RepositoryException(String.format(PRODUCT_NOT_FOUND, product.getProductId())));
 	}
 
 	@Override
@@ -150,7 +151,7 @@ public class InMemoryProductRepository implements ProductRepository {
 		Product existingProduct = this.products.get(productId);
 
 		if (existingProduct == null) {
-			throw new RepositoryException(String.format("Product '%s' not found", productId));
+			throw new RepositoryException(String.format(PRODUCT_NOT_FOUND, productId));
 		}
 
 		if (existingProduct.getFeatures().contains(feature)) {
@@ -170,7 +171,7 @@ public class InMemoryProductRepository implements ProductRepository {
 		this.products.compute(productId, (key, existingProduct) -> {
 
 			if (existingProduct == null) {
-				throw new RepositoryException(String.format("Product '%s' not found", productId));
+				throw new RepositoryException(String.format(PRODUCT_NOT_FOUND, productId));
 			}
 
 			OptionalInt indexOpt = IntStream.range(0, existingProduct.getFeatures().size())
@@ -195,7 +196,7 @@ public class InMemoryProductRepository implements ProductRepository {
 		String productId = feature.getProduct().getProductId();
 
 		if (!this.products.containsKey(productId)) {
-			throw new RepositoryException(String.format("Product '%s' not found", productId));
+			throw new RepositoryException(String.format(PRODUCT_NOT_FOUND, productId));
 		}
 
 		this.products.computeIfPresent(productId, (key, existingProduct) -> {

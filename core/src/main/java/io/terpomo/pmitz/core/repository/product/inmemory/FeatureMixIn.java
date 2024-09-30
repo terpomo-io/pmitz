@@ -38,6 +38,7 @@ public class FeatureMixIn {
 
 	@JsonIgnore
 	public void getLimitsIds() {
+		// Method added to ignore attribute by json library
 	}
 
 	@JsonIgnore

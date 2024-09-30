@@ -45,7 +45,7 @@ class LimitTrackingContextTests {
 		context.addUpdatedUsageRecords(Collections.singletonList(usageRecord));
 
 		var updatedRecords = context.getUpdatedUsageRecords();
-		assertThat(updatedRecords.size()).isEqualTo(1);
+		assertThat(updatedRecords).hasSize(1);
 	}
 
 	@Test
@@ -60,7 +60,7 @@ class LimitTrackingContextTests {
 
 		var filteredRecords = context.findUsageRecords(limitId, startTime, endTime);
 
-		assertThat(filteredRecords.size()).isEqualTo(3);
+		assertThat(filteredRecords).hasSize(3);
 	}
 
 	@Test
@@ -75,7 +75,7 @@ class LimitTrackingContextTests {
 
 		var filteredRecords = context.findUsageRecords(limitId, null, null);
 
-		assertThat(filteredRecords.size()).isEqualTo(4);
+		assertThat(filteredRecords).hasSize(4);
 	}
 
 	private List<UsageRecord> getCurrentUsageRecords(ZonedDateTime startTime, ZonedDateTime endTime) {
