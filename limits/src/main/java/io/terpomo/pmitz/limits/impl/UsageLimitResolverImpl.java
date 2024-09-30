@@ -59,11 +59,6 @@ public class UsageLimitResolverImpl implements UsageLimitResolver {
 		}
 
 		@Override
-		public void addUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping) {
-			// No action
-		}
-
-		@Override
 		public void updateUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping) {
 			// No action
 		}

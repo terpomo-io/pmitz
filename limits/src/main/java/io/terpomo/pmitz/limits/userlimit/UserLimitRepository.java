@@ -28,8 +28,6 @@ public interface UserLimitRepository {
 
 	Optional<UsageLimit> findUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping);
 
-	void addUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping);
-
 	void updateUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping);
 
 	void deleteUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping);

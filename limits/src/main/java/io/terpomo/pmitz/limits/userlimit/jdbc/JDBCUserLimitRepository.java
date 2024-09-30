@@ -132,9 +132,21 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 
 	public void updateUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGroup) {
 
-		this.validateFeature(feature);
 		this.validateUsageLimit(usageLimit);
-		this.validateUserGrouping(userGroup);
+
+		Optional<UsageLimit> existingLimit = findUsageLimit(feature, usageLimit.getId(), userGroup);
+
+		if (existingLimit.isPresent()) {
+			// Update existing limit
+			updateUsageLimitInternal(feature, usageLimit, userGroup);
+		}
+		else {
+			// Add new limit
+			addUsageLimit(feature, usageLimit, userGroup);
+		}
+	}
+
+	private void updateUsageLimitInternal(Feature feature, UsageLimit usageLimit, UserGrouping userGroup) {
 
 		try {
 			String query = String.format(
