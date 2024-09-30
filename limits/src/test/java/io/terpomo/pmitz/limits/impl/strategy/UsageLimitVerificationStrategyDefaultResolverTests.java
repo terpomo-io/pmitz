@@ -36,21 +36,21 @@ class UsageLimitVerificationStrategyDefaultResolverTests {
 	@Test
 	void resolveLimitVerificationStrategyShouldReturnSimpleStrategyWhenCountLimit() {
 		CountLimit countLimit = new CountLimit(limitId, 10);
-		UsageLimitVerificationStrategy<CountLimit> countLimitVerifStrategy = strategyResolver.resolveLimitVerificationStrategy(countLimit);
+		UsageLimitVerificationStrategy countLimitVerifStrategy = strategyResolver.resolveLimitVerificationStrategy(countLimit);
 		assertThat(countLimitVerifStrategy).isNotNull();
 	}
 
 	@Test
 	void resolveLimitVerificationStrategyShouldReturnSimpleStrategyWhenCalendarPeriodRateLimit() {
 		CalendarPeriodRateLimit rateLimit = new CalendarPeriodRateLimit(limitId, 10, CalendarPeriodRateLimit.Periodicity.WEEK);
-		UsageLimitVerificationStrategy<CalendarPeriodRateLimit> verifStrategy = strategyResolver.resolveLimitVerificationStrategy(rateLimit);
+		UsageLimitVerificationStrategy verifStrategy = strategyResolver.resolveLimitVerificationStrategy(rateLimit);
 		assertThat(verifStrategy).isNotNull();
 	}
 
 	@Test
 	void resolveLimitVerificationStrategyShouldReturnSimpleStrategyWhenSlidingWindowRateLimit() {
 		SlidingWindowRateLimit rateLimit = new SlidingWindowRateLimit(limitId, 10, ChronoUnit.MONTHS, 1);
-		UsageLimitVerificationStrategy<SlidingWindowRateLimit> verifStrategy = strategyResolver.resolveLimitVerificationStrategy(rateLimit);
+		UsageLimitVerificationStrategy verifStrategy = strategyResolver.resolveLimitVerificationStrategy(rateLimit);
 		assertThat(verifStrategy).isNotNull();
 	}
 

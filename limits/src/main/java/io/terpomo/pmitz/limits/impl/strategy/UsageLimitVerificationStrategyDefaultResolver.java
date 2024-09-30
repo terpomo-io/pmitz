@@ -33,7 +33,7 @@ public class UsageLimitVerificationStrategyDefaultResolver implements UsageLimit
 	}
 
 	@Override
-	public <T extends UsageLimit> UsageLimitVerificationStrategy<T> resolveLimitVerificationStrategy(T usageLimit) {
+	public UsageLimitVerificationStrategy resolveLimitVerificationStrategy(UsageLimit usageLimit) {
 		return defaultVerificationStrategy;
 	}
 }

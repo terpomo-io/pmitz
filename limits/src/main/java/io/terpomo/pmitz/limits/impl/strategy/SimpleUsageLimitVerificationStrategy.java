@@ -26,7 +26,7 @@ import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
 import io.terpomo.pmitz.limits.UsageRecord;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 
-public class SimpleUsageLimitVerificationStrategy implements UsageLimitVerificationStrategy<UsageLimit> {
+public class SimpleUsageLimitVerificationStrategy implements UsageLimitVerificationStrategy {
 
 	@Override
 	public void recordFeatureUsage(LimitTrackingContext context, UsageLimit usageLimit, long additionalUnits) {

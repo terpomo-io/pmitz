@@ -32,7 +32,6 @@ import org.mockito.Captor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.terpomo.pmitz.core.exception.LimitExceededException;
-import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.RateLimit;
@@ -48,7 +47,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SimpleUsageLimitVerificationStrategyTests {
 	static String limitId = "numer-of-photos";
-	UsageLimitVerificationStrategy<UsageLimit> verificationStrategy = new SimpleUsageLimitVerificationStrategy();
+	UsageLimitVerificationStrategy verificationStrategy = new SimpleUsageLimitVerificationStrategy();
 	@Captor
 	ArgumentCaptor<List<UsageRecord>> updatedRecordArgCaptor;
 

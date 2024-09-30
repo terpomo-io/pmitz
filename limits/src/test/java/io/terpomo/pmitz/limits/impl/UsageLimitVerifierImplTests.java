@@ -59,7 +59,7 @@ class UsageLimitVerifierImplTests {
 	UsageRepository usageRepo;
 
 	@Mock
-	UsageLimitVerificationStrategy<UsageLimit> limitVerificationStrategy;
+	UsageLimitVerificationStrategy limitVerificationStrategy;
 
 	@Mock
 	UsageLimitVerificationStrategyResolver limitVerificationStrategyResolver;
