@@ -16,6 +16,16 @@
 
 package io.terpomo.pmitz.limits.integration;
 
+import java.sql.*;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
+import org.apache.commons.dbcp2.BasicDataSource;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
@@ -23,15 +33,6 @@ import io.terpomo.pmitz.limits.UsageRecord;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
-import org.apache.commons.dbcp2.BasicDataSource;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.sql.*;
-import java.time.*;
-import java.util.List;
-import java.time.temporal.ChronoUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -85,7 +86,8 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 						timezone = "UTC";
 					}
 					assertThat(timezone).isEqualTo("UTC");
-				} else {
+				}
+				else {
 					String globalTimezone = rs.getString(1);
 					String sessionTimezone = rs.getString(2);
 
@@ -246,8 +248,8 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 				ResultSet rs = stmt.executeQuery("SELECT * FROM " + repository.getFullTableName())) {
 			while (rs.next()) {
 				String limitId = rs.getString("limit_id");
-				LocalDateTime startTime = rs.getTimestamp("window_start") != null ? rs.getTimestamp("window_start").toLocalDateTime() : null;
-				LocalDateTime endTime = rs.getTimestamp("window_end") != null ? rs.getTimestamp("window_end").toLocalDateTime() : null;
+				LocalDateTime startTime = (rs.getTimestamp("window_start") != null) ? rs.getTimestamp("window_start").toLocalDateTime() : null;
+				LocalDateTime endTime = (rs.getTimestamp("window_end") != null) ? rs.getTimestamp("window_end").toLocalDateTime() : null;
 
 				if ("limit1".equals(limitId)) {
 					assertThat(startTime).isNotNull();
@@ -319,8 +321,8 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			while (rs.next()) {
 				count++;
 				String limitId = rs.getString("limit_id");
-				LocalDateTime startTime = rs.getTimestamp("window_start") != null ? rs.getTimestamp("window_start").toLocalDateTime() : null;
-				LocalDateTime endTime = rs.getTimestamp("window_end") != null ? rs.getTimestamp("window_end").toLocalDateTime() : null;
+				LocalDateTime startTime = (rs.getTimestamp("window_start") != null) ? rs.getTimestamp("window_start").toLocalDateTime() : null;
+				LocalDateTime endTime = (rs.getTimestamp("window_end") != null) ? rs.getTimestamp("window_end").toLocalDateTime() : null;
 				long units = rs.getLong("units");
 
 				if ("limit1".equals(limitId)) {

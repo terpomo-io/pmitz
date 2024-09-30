@@ -23,11 +23,12 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.TimeZone;
 
-import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.PostgreSQLContainer;
+
+import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
 public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
 
@@ -114,7 +115,8 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 		try (Connection conn = dataSource.getConnection();
 				Statement statement = conn.createStatement()) {
 			statement.execute("TRUNCATE TABLE " + getFullTableName() + " RESTART IDENTITY CASCADE");
-		} catch (SQLException ex) {
+		}
+		catch (SQLException ex) {
 			System.out.println("Error during tearDownDatabase: " + ex.getMessage());
 		}
 	}
@@ -143,7 +145,8 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 						+ ", WindowEnd: " + windowEnd + ", Units: " + units + ", ExpirationDate: " + expirationDate
 						+ ", UpdatedAt: " + updatedAt);
 			}
-		} catch (SQLException ex) {
+		}
+		catch (SQLException ex) {
 			System.out.println("Error while printing database contents: " + ex.getMessage());
 		}
 	}

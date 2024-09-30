@@ -22,10 +22,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 
-import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+
+import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
 public class MySQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
 

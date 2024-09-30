@@ -95,8 +95,9 @@ public class JDBCUsageRepository implements UsageRepository {
 				}
 			}
 
-		} catch (SQLException e) {
-			throw new RuntimeException("Failed to load usage data", e);
+		}
+		catch (SQLException ex) {
+			throw new RuntimeException("Failed to load usage data", ex);
 		}
 	}
 
@@ -105,15 +106,15 @@ public class JDBCUsageRepository implements UsageRepository {
 		String limitId = resultSet.getString("limit_id");
 
 		// Convert result to UTC ZonedDateTime
-		ZonedDateTime windowStart = resultSet.getTimestamp("window_start") != null
+		ZonedDateTime windowStart = (resultSet.getTimestamp("window_start") != null)
 				? resultSet.getTimestamp("window_start").toLocalDateTime().atZone(ZoneOffset.UTC)
 				: null;
 
-		ZonedDateTime windowEnd = resultSet.getTimestamp("window_end") != null
+		ZonedDateTime windowEnd = (resultSet.getTimestamp("window_end") != null)
 				? resultSet.getTimestamp("window_end").toLocalDateTime().atZone(ZoneOffset.UTC)
 				: null;
 
-		ZonedDateTime expirationDate = resultSet.getTimestamp("expiration_date") != null
+		ZonedDateTime expirationDate = (resultSet.getTimestamp("expiration_date") != null)
 				? resultSet.getTimestamp("expiration_date").toLocalDateTime().atZone(ZoneOffset.UTC)
 				: null;
 
@@ -151,13 +152,13 @@ public class JDBCUsageRepository implements UsageRepository {
 							", ExpirationDate=" + record.expirationDate());
 
 					// Convert ZonedDateTime to LocalDateTime for UTC storage, if not null
-					LocalDateTime startTime = record.startTime() != null
+					LocalDateTime startTime = (record.startTime() != null)
 							? record.startTime().withZoneSameInstant(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).toLocalDateTime()
 							: null;
-					LocalDateTime endTime = record.endTime() != null
+					LocalDateTime endTime = (record.endTime() != null)
 							? record.endTime().withZoneSameInstant(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).toLocalDateTime()
 							: null;
-					LocalDateTime expirationDate = record.expirationDate() != null
+					LocalDateTime expirationDate = (record.expirationDate() != null)
 							? record.expirationDate().withZoneSameInstant(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).toLocalDateTime()
 							: null;
 
@@ -186,7 +187,8 @@ public class JDBCUsageRepository implements UsageRepository {
 							updateStatement.setLong(9, usageId);
 
 							updateStatement.addBatch();
-						} else {
+						}
+						else {
 							System.out.println("No existing record found for limitId: " + record.limitId() +
 									" and startTime: " + startTime + ". Inserting new record.");
 
@@ -209,15 +211,17 @@ public class JDBCUsageRepository implements UsageRepository {
 				connection.commit();
 			}
 
-		} catch (SQLException e) {
-			throw new RuntimeException("Failed to update usage records", e);
+		}
+		catch (SQLException ex) {
+			throw new RuntimeException("Failed to update usage records", ex);
 		}
 	}
 
 	private void setNullableTimestamp(PreparedStatement statement, int parameterIndex, LocalDateTime dateTime) throws SQLException {
 		if (dateTime != null) {
 			statement.setTimestamp(parameterIndex, Timestamp.valueOf(dateTime));
-		} else {
+		}
+		else {
 			statement.setNull(parameterIndex, Types.TIMESTAMP);
 		}
 	}
@@ -230,8 +234,9 @@ public class JDBCUsageRepository implements UsageRepository {
 				statement.setObject(1, Timestamp.valueOf(expirationDate.atZone(ZoneOffset.UTC).toLocalDateTime()));
 				statement.executeUpdate();
 			}
-		} catch (SQLException e) {
-			throw new RuntimeException("Failed to delete old records", e);
+		}
+		catch (SQLException ex) {
+			throw new RuntimeException("Failed to delete old records", ex);
 		}
 	}
 }
