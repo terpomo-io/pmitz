@@ -21,62 +21,85 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
+import java.util.TimeZone;
 
+import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
-
-public class PostgreSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
+public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
 
 	@Container
 	private static final PostgreSQLContainer<?> postgresqlContainer =
-			new PostgreSQLContainer<>("postgres:latest").withEnv("TZ", "Europe/Berlin");
+			new PostgreSQLContainer<>("postgres:latest")
+					.withEnv("TZ", "UTC")
+					.withCommand("postgres", "-c", "timezone=UTC");
+
+	@BeforeAll
+	public static void setUpClass() {
+		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+	}
 
 	@Override
 	protected void setupDataSource() {
 		postgresqlContainer.start();
 		dataSource = new BasicDataSource();
-		dataSource.setUrl(postgresqlContainer.getJdbcUrl());
+
+		// Modify the JDBC URL to include the `serverTimezone=UTC` parameter
+		String jdbcUrlWithTimezone = postgresqlContainer.getJdbcUrl() + "?sessionTimezone=UTC";
+
+		dataSource.setUrl(jdbcUrlWithTimezone);
 		dataSource.setUsername(postgresqlContainer.getUsername());
 		dataSource.setPassword(postgresqlContainer.getPassword());
-		repository = new JDBCUsageRepository(dataSource, "public", "\"Usage\"");
+
+		repository = new JDBCUsageRepository(dataSource, CUSTOM_SCHEMA, getTableName());
+	}
+
+
+	@Override
+	protected String getTimeZoneQuery() {
+		return "SHOW timezone";
+	}
+
+	@Override
+	protected boolean isSingleTimeZoneQuery() {
+		return true; // PostgreSQL only returns one value
+	}
+
+	@Override
+	protected String getTableName() {
+		return "\"Usage\"";
 	}
 
 	@Override
 	protected void setupDatabase() throws SQLException {
 		try (Connection conn = dataSource.getConnection();
-				Statement statement = conn.createStatement()) {
-			statement.execute("CREATE TABLE IF NOT EXISTS public.\"Usage\" ("
-					+ "usage_id SERIAL PRIMARY KEY, "
-					+ "feature_id VARCHAR(255), "
-					+ "product_id VARCHAR(255), "
-					+ "user_grouping VARCHAR(255), "
-					+ "limit_id VARCHAR(255), "
-					+ "window_start TIMESTAMP WITH TIME ZONE, "
-					+ "window_end TIMESTAMP WITH TIME ZONE, "
-					+ "units INTEGER, "
-					+ "expiration_date TIMESTAMP WITH TIME ZONE, "
-					+ "updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP"
-					+ ");");
+				Statement stmt = conn.createStatement()) {
 
-			ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC")).truncatedTo(ChronoUnit.DAYS);
-			ZonedDateTime windowStart = now.plusHours(9);
-			ZonedDateTime windowEnd = now.plusHours(17);
+			// Set session timezone for the current connection
+			stmt.execute("SET LOCAL TIME ZONE 'UTC';");
 
-			String insertSQL = String.format(
-					"INSERT INTO public.\"Usage\" " +
-							"(feature_id, product_id, user_grouping, limit_id, window_start, window_end, units, expiration_date) " +
-							"VALUES ('featureX', 'productY', 'groupZ', 'limitA', '%s', '%s', 100, '%s')",
-					Timestamp.from(windowStart.toInstant()),
-					Timestamp.from(windowEnd.toInstant()),
-					Timestamp.from(windowStart.plusDays(1).toInstant())
-			);
-			statement.execute(insertSQL);
+			// Create schema and tables
+			stmt.execute("CREATE SCHEMA IF NOT EXISTS " + CUSTOM_SCHEMA);
+			stmt.execute("CREATE TABLE IF NOT EXISTS " + CUSTOM_SCHEMA + ".\"Usage\" (" +
+					"usage_id SERIAL PRIMARY KEY, " +
+					"feature_id VARCHAR(255), " +
+					"product_id VARCHAR(255), " +
+					"user_grouping VARCHAR(255), " +
+					"limit_id VARCHAR(255), " +
+					"window_start TIMESTAMP, " +
+					"window_end TIMESTAMP, " +
+					"units INT, " +
+					"expiration_date TIMESTAMP, " +
+					"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+					");");
+
+			ResultSet rs = stmt.executeQuery("SHOW timezone;");
+			if (rs.next()) {
+				System.out.println("PostgreSQL Timezone: " + rs.getString(1));
+			}
 		}
 	}
 
@@ -84,15 +107,16 @@ public class PostgreSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCU
 	protected void tearDownDatabase() throws SQLException {
 		try (Connection conn = dataSource.getConnection();
 				Statement statement = conn.createStatement()) {
-			statement.execute("DROP TABLE IF EXISTS public.\"Usage\"");
+			statement.execute("TRUNCATE TABLE " + getFullTableName() + " RESTART IDENTITY CASCADE");
 		}
 	}
 
-	// TODO: Remove
-	protected void printDatabaseContents() {
+	@Override
+	protected void printDatabaseContents(String message) throws SQLException {
+		System.out.println("---- " + message + " ----");
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM public.\"Usage\"");
+			ResultSet rs = stmt.executeQuery("SELECT * FROM " + CUSTOM_SCHEMA + "." + getTableName());
 			while (rs.next()) {
 				int usageId = rs.getInt("usage_id");
 				String featureId = rs.getString("feature_id");
@@ -105,15 +129,13 @@ public class PostgreSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCU
 				Timestamp expirationDate = rs.getTimestamp("expiration_date");
 				Timestamp updatedAt = rs.getTimestamp("updated_at");
 
-				// TODO: Remove
+				// Simply print the timestamp values as-is
 				System.out.println("UsageId: " + usageId + ", FeatureId: " + featureId + ", ProductId: " + productId
 						+ ", UserGrouping: " + userGrouping + ", LimitId: " + limitId + ", WindowStart: " + windowStart
 						+ ", WindowEnd: " + windowEnd + ", Units: " + units + ", ExpirationDate: " + expirationDate
 						+ ", UpdatedAt: " + updatedAt);
 			}
-		}
-		catch (SQLException ex) {
-			// TODO: handle exceptions
+		} catch (SQLException ex) {
 			ex.printStackTrace();
 		}
 	}
