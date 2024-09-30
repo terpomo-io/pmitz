@@ -77,53 +77,53 @@ class JDBCUsageRepositoryTests {
 	}
 
 	@Test
-	void testLoadUsageData() throws SQLException {
+	void testLoadUsageDataWithDifferentValues() throws SQLException {
 		ZonedDateTime fixedTime = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS);
-		insertUsageRecord("feature1", "product1", "group1", "limit1",
-				fixedTime.minusDays(30).toLocalDateTime(),
-				fixedTime.minusDays(10).toLocalDateTime(),
-				100, fixedTime.plusMonths(3).toLocalDateTime());
+		insertUsageRecord("feature2", "product2", "group2", "limit2",
+				fixedTime.minusDays(15).toLocalDateTime(),
+				fixedTime.minusDays(5).toLocalDateTime(),
+				200, fixedTime.plusMonths(2).toLocalDateTime());
 
-		LimitTrackingContext context = createContext("limit1", fixedTime.minusDays(30), fixedTime.minusDays(10));
+		LimitTrackingContext context = createContext("limit2", fixedTime.minusDays(15), fixedTime.minusDays(5));
 		repository.loadUsageData(context);
 
 		List<UsageRecord> records = context.getCurrentUsageRecords();
 		assertThat(records.isEmpty()).isFalse();
 		UsageRecord record = records.get(0);
-		assertThat(record.limitId()).isEqualTo("limit1");
+		assertThat(record.limitId()).isEqualTo("limit2");
 	}
 
 	@Test
-	void testUpdateUsageRecords() throws SQLException {
+	void testUpdateUsageRecordsWithDifferentValues() throws SQLException {
 		ZonedDateTime now = ZonedDateTime.of(2024, 8, 9, 3, 7, 54, 0, ZoneOffset.UTC);
 
 		System.out.println("Inserting record with StartTime: " + now);
 
-		insertUsageRecord("feature1", "product1", "group1", "limit1",
-				now.minusDays(30).toLocalDateTime(),
-				now.minusDays(10).toLocalDateTime(),
-				100, now.plusMonths(3).toLocalDateTime());
+		insertUsageRecord("feature3", "product3", "group3", "limit3",
+				now.minusDays(40).toLocalDateTime(),
+				now.minusDays(20).toLocalDateTime(),
+				300, now.plusMonths(4).toLocalDateTime());
 
-		System.out.println("Inserted record: windowStart=" + now.minusDays(30).toLocalDateTime()
-				+ ", windowEnd=" + now.minusDays(10).toLocalDateTime());
+		System.out.println("Inserted record: windowStart=" + now.minusDays(40).toLocalDateTime()
+				+ ", windowEnd=" + now.minusDays(20).toLocalDateTime());
 
-		checkInsertedRecord(now.minusDays(30).toLocalDateTime(), now.minusDays(10).toLocalDateTime());
+		checkInsertedRecord(now.minusDays(40).toLocalDateTime(), now.minusDays(20).toLocalDateTime());
 
-		Feature feature = new Feature(new Product("product1"), "feature1");
+		Feature feature = new Feature(new Product("product3"), "feature3");
 		UserGrouping userGrouping = new UserGrouping() {
 			@Override
 			public String getId() {
-				return "user1";
+				return "user3";
 			}
 		};
 
 		UsageRecord updatedRecord = new UsageRecord(
 				new JDBCUsageRecordRepoMetadata(1, now),
-				"limit1",
-				now.minusDays(25),
-				now.minusDays(5),
-				150L,
-				now.plusMonths(3)
+				"limit3",
+				now.minusDays(35),
+				now.minusDays(15),
+				350L,
+				now.plusMonths(4)
 		);
 
 		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of());
@@ -134,7 +134,7 @@ class JDBCUsageRepositoryTests {
 
 		repository.updateUsageRecords(context);
 
-		checkInsertedRecord(now.minusDays(25).toLocalDateTime(), now.minusDays(5).toLocalDateTime());
+		checkInsertedRecord(now.minusDays(35).toLocalDateTime(), now.minusDays(15).toLocalDateTime());
 	}
 
 	private void checkInsertedRecord(LocalDateTime expectedStart, LocalDateTime expectedEnd) throws SQLException {
@@ -183,11 +183,11 @@ class JDBCUsageRepositoryTests {
 		UserGrouping userGrouping = new UserGrouping() {
 			@Override
 			public String getId() {
-				return "user1";
+				return "user2";
 			}
 		};
 		return new LimitTrackingContext(
-				new Feature(new Product("product1"), "feature1"),
+				new Feature(new Product("product2"), "feature2"),
 				userGrouping,
 				List.of(new RecordSearchCriteria(limitId, windowStart, windowEnd))
 		);
@@ -207,20 +207,33 @@ class JDBCUsageRepositoryTests {
 	@Test
 	void testLoadUsageDataWithMultipleRecords() throws SQLException {
 		ZonedDateTime time = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS);
-		insertUsageRecord("feature1", "product1", "group1", "limit1",
+
+		// Insert two records with different start and end times
+		insertUsageRecord("feature4", "product4", "group4", "limit4",
 				time.minusDays(30).toLocalDateTime(),
 				time.minusDays(10).toLocalDateTime(),
 				100, time.plusMonths(3).toLocalDateTime());
-		insertUsageRecord("feature1", "product1", "group1", "limit1",
+
+		insertUsageRecord("feature5", "product5", "group5", "limit4",
 				time.minusDays(60).toLocalDateTime(),
 				time.minusDays(40).toLocalDateTime(),
 				200, time.plusMonths(6).toLocalDateTime());
 
-		LimitTrackingContext context = createContext("limit1", time.minusDays(60), time);
+		// Print out the inserted records for debugging
+		System.out.println("Inserted record 1: windowStart=" + time.minusDays(30).toLocalDateTime()
+				+ ", windowEnd=" + time.minusDays(10).toLocalDateTime());
+		System.out.println("Inserted record 2: windowStart=" + time.minusDays(60).toLocalDateTime()
+				+ ", windowEnd=" + time.minusDays(40).toLocalDateTime());
 
+		// Use a time range that should include both records
+		LimitTrackingContext context = createContext("limit4", time.minusDays(90), time.plusDays(10));
+
+		// Execute the query and check results
 		repository.loadUsageData(context);
 
 		List<UsageRecord> records = context.getCurrentUsageRecords();
-		assertThat(records.size()).isEqualTo(2);
+		assertThat(records.size()).isEqualTo(2);  // Expect 2 records
 	}
+
+
 }
