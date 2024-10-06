@@ -107,6 +107,8 @@ public class UsageLimitVerifierImpl implements UsageLimitVerifier {
 
 		var context = new LimitTrackingContext(feature, userGrouping, limitSearchCriteriaList);
 
+		usageRepository.loadUsageData(context);
+
 		if (isRecord) {
 			limitVerificationStrategiesMap
 					.forEach((usageLimit, verifStrategy) -> verifStrategy.recordFeatureUsage(context, usageLimit, units.get(usageLimit.getId())));
