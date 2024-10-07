@@ -26,7 +26,10 @@ import java.util.Optional;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
@@ -45,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
  * @author Jean-Yves Desjardins
  * @since 1.0
  */
+@TestMethodOrder(OrderAnnotation.class)
 class InMemoryProductRepositoryTests {
 
 	private InMemoryProductRepository repository;
@@ -494,7 +498,8 @@ class InMemoryProductRepositoryTests {
 	}
 
 	@Test
-	void store_repository_to_json() throws IOException {
+	@Order(1)
+	void store_products_and_features_to_json() throws IOException {
 
 		this.populateRepository();
 
@@ -512,16 +517,32 @@ class InMemoryProductRepositoryTests {
 		assertThat((String) dc.read("$[0].features[0].featureId")).isEqualTo("Reserving books");
 		assertThat((int) dc.read("$[0].features[0].limits.length()")).isEqualTo(1);
 
-		assertThat((String) dc.read("$[0].features[0].limits[0].type")).isEqualTo("CountLimit");
-		assertThat((String) dc.read("$[0].features[0].limits[0].id")).isEqualTo("Maximum books reserved");
-		assertThat((int) dc.read("$[0].features[0].limits[0].count")).isEqualTo(5);
-
-
 		assertThat((String) dc.read("$[1].productId")).isEqualTo("Picture hosting service");
 		assertThat((int) dc.read("$[1].features.length()")).isEqualTo(2);
 
 		assertThat((String) dc.read("$[1].features[0].featureId")).isEqualTo("Uploading pictures");
 		assertThat((int) dc.read("$[1].features[0].limits.length()")).isEqualTo(2);
+
+		assertThat((String) dc.read("$[1].features[1].featureId")).isEqualTo("Downloading pictures");
+		assertThat((int) dc.read("$[1].features[1].limits.length()")).isEqualTo(2);
+	}
+
+	@Test
+	@Order(2)
+	void store_limits_to_json() throws IOException {
+
+		this.populateRepository();
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		this.repository.store(baos);
+		baos.close();
+
+		DocumentContext dc = JsonPath.parse(baos.toString());
+
+		assertThat((String) dc.read("$[0].features[0].limits[0].type")).isEqualTo("CountLimit");
+		assertThat((String) dc.read("$[0].features[0].limits[0].id")).isEqualTo("Maximum books reserved");
+		assertThat((int) dc.read("$[0].features[0].limits[0].count")).isEqualTo(5);
+
 
 		assertThat((String) dc.read("$[1].features[0].limits[0].type")).isEqualTo("CountLimit");
 		assertThat((String) dc.read("$[1].features[0].limits[0].id")).isEqualTo("Maximum picture size");
@@ -550,7 +571,8 @@ class InMemoryProductRepositoryTests {
 	}
 
 	@Test
-	void load_repository_from_json() throws IOException {
+	@Order(10)
+	void load_products_and_features_from_json() throws IOException {
 
 		InputStream ioStream = this.getClass()
 				.getClassLoader()
@@ -568,6 +590,38 @@ class InMemoryProductRepositoryTests {
 		assertThat(uploadingPicture.get().getProduct().getProductId()).isEqualTo("Picture hosting service");
 		assertThat(uploadingPicture.get().getLimits()).hasSize(2);
 
+		Optional<Feature> downloadingPicture = this.repository.getFeature(pictureHostingService, "Downloading pictures");
+		assertThat(downloadingPicture).isPresent();
+		assertThat(downloadingPicture.get().getFeatureId()).isEqualTo("Downloading pictures");
+		assertThat(downloadingPicture.get().getProduct().getProductId()).isEqualTo("Picture hosting service");
+		assertThat(downloadingPicture.get().getLimits()).hasSize(2);
+
+
+		Product library = new Product("Library");
+
+		Optional<Feature> reservingBooks = this.repository.getFeature(library, "Reserving books");
+		assertThat(reservingBooks).isPresent();
+		assertThat(reservingBooks.get().getFeatureId()).isEqualTo("Reserving books");
+		assertThat(reservingBooks.get().getProduct().getProductId()).isEqualTo("Library");
+		assertThat(reservingBooks.get().getLimits()).hasSize(1);
+	}
+
+	@Test
+	@Order(11)
+	void load_limits_from_json() throws IOException {
+
+		InputStream ioStream = this.getClass()
+				.getClassLoader()
+				.getResourceAsStream("products_repository.json");
+		this.repository.load(ioStream);
+		if (ioStream != null) {
+			ioStream.close();
+		}
+
+		Product pictureHostingService = new Product("Picture hosting service");
+
+		Optional<Feature> uploadingPicture = this.repository.getFeature(pictureHostingService, "Uploading pictures");
+		assertThat(uploadingPicture).isPresent();
 		assertThat(uploadingPicture.get().getLimits().get(0)).isInstanceOf(CountLimit.class);
 		CountLimit maximumPictureSize = (CountLimit) uploadingPicture.get().getLimits().get(0);
 		assertThat(maximumPictureSize.getId()).isEqualTo("Maximum picture size");
@@ -583,9 +637,6 @@ class InMemoryProductRepositoryTests {
 
 		Optional<Feature> downloadingPicture = this.repository.getFeature(pictureHostingService, "Downloading pictures");
 		assertThat(downloadingPicture).isPresent();
-		assertThat(downloadingPicture.get().getFeatureId()).isEqualTo("Downloading pictures");
-		assertThat(downloadingPicture.get().getProduct().getProductId()).isEqualTo("Picture hosting service");
-		assertThat(downloadingPicture.get().getLimits()).hasSize(2);
 
 		assertThat(downloadingPicture.get().getLimits().get(0)).isInstanceOf(SlidingWindowRateLimit.class);
 		maximumPicturesInMonth = (SlidingWindowRateLimit) downloadingPicture.get().getLimits().get(0);
@@ -599,21 +650,6 @@ class InMemoryProductRepositoryTests {
 		assertThat(maximumPicturesInCalendarMonth.getId()).isEqualTo("Maximum of pictures downloaded by calendar month");
 		assertThat(maximumPicturesInCalendarMonth.getValue()).isEqualTo(10);
 		assertThat(maximumPicturesInCalendarMonth.getPeriodicity()).isEqualTo(CalendarPeriodRateLimit.Periodicity.MONTH);
-
-
-		Product library = new Product("Library");
-
-		Optional<Feature> reservingBooks = this.repository.getFeature(library, "Reserving books");
-		assertThat(reservingBooks).isPresent();
-		assertThat(reservingBooks.get().getFeatureId()).isEqualTo("Reserving books");
-		assertThat(reservingBooks.get().getProduct().getProductId()).isEqualTo("Library");
-		assertThat(reservingBooks.get().getLimits()).hasSize(1);
-
-		assertThat(reservingBooks.get().getLimits().get(0)).isInstanceOf(CountLimit.class);
-		CountLimit maximumBooksReserved = (CountLimit) reservingBooks.get().getLimits().get(0);
-		assertThat(maximumBooksReserved.getId()).isEqualTo("Maximum books reserved");
-		assertThat(maximumBooksReserved.getValue()).isEqualTo(5);
-		assertThat(maximumBooksReserved.getUnit()).isNull();
 	}
 
 	private void populateRepository() {

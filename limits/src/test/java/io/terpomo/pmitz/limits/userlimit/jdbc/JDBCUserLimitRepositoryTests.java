@@ -48,7 +48,7 @@ import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-public class JDBCUserLimitRepositoryTests {
+class JDBCUserLimitRepositoryTests {
 
 	private static final String SCHEMA_NAME = "public";
 	private static final String TABLE_NAME = "user_usage_limit";
@@ -170,7 +170,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> usageLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum picture size", this.user);
 
-		assertThat(usageLimit.isPresent()).isTrue();
+		assertThat(usageLimit).isPresent();
 		assertThat(usageLimit.get()).isInstanceOf(CountLimit.class);
 		CountLimit countLimit = (CountLimit) usageLimit.get();
 		assertThat(countLimit.getId()).isEqualTo("Maximum picture size");
@@ -184,7 +184,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> usageLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum number of picture uploaded in calendar month", this.user);
 
-		assertThat(usageLimit.isPresent()).isTrue();
+		assertThat(usageLimit).isPresent();
 		assertThat(usageLimit.get()).isInstanceOf(CalendarPeriodRateLimit.class);
 		CalendarPeriodRateLimit calendarPeriodRateLimit = (CalendarPeriodRateLimit) usageLimit.get();
 		assertThat(calendarPeriodRateLimit.getId()).isEqualTo("Maximum number of picture uploaded in calendar month");
@@ -198,7 +198,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> usageLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum number of picture uploaded by day", this.user);
 
-		assertThat(usageLimit.isPresent()).isTrue();
+		assertThat(usageLimit).isPresent();
 		assertThat(usageLimit.get()).isInstanceOf(SlidingWindowRateLimit.class);
 		SlidingWindowRateLimit slidingWindowRateLimit = (SlidingWindowRateLimit) usageLimit.get();
 		assertThat(slidingWindowRateLimit.getId()).isEqualTo("Maximum number of picture uploaded by day");
@@ -213,7 +213,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> usageLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum picture resolution", this.user);
 
-		assertThat(usageLimit.isPresent()).isFalse();
+		assertThat(usageLimit).isNotPresent();
 	}
 
 	@Test
@@ -264,7 +264,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum picture resolution", this.user);
 
-		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit).isPresent();
 		assertThat(userLimit.get()).isInstanceOf(CountLimit.class);
 		CountLimit countLimitDB = (CountLimit) userLimit.get();
 		assertThat(countLimitDB.getId()).isEqualTo(limitId);
@@ -290,7 +290,7 @@ public class JDBCUserLimitRepositoryTests {
 				this.repository.findUsageLimit(this.feature,
 						"Maximum number of picture uploaded in calendar week", this.user);
 
-		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit).isPresent();
 		assertThat(userLimit.get()).isInstanceOf(CalendarPeriodRateLimit.class);
 		CalendarPeriodRateLimit calendarPeriodRateLimitDb = (CalendarPeriodRateLimit) userLimit.get();
 		assertThat(calendarPeriodRateLimitDb.getId()).isEqualTo(limitId);
@@ -318,7 +318,7 @@ public class JDBCUserLimitRepositoryTests {
 				this.repository.findUsageLimit(this.feature,
 						"Maximum number of picture uploaded by year", this.user);
 
-		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit).isPresent();
 		assertThat(userLimit.get()).isInstanceOf(SlidingWindowRateLimit.class);
 		SlidingWindowRateLimit slidingWindowRateLimitDb = (SlidingWindowRateLimit) userLimit.get();
 		assertThat(slidingWindowRateLimitDb.getId()).isEqualTo(limitId);
@@ -337,7 +337,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum number of picture", this.user);
 
-		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit).isPresent();
 		assertThat(userLimit.get()).isInstanceOf(CountLimit.class);
 		CountLimit countLimitDb = (CountLimit) userLimit.get();
 		assertThat(countLimitDb.getId()).isEqualTo("Maximum number of picture");
@@ -355,7 +355,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum number of picture uploaded in calendar month", this.user);
 
-		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit).isPresent();
 		assertThat(userLimit.get()).isInstanceOf(CalendarPeriodRateLimit.class);
 		CalendarPeriodRateLimit calendarPeriodRateLimitDb = (CalendarPeriodRateLimit) userLimit.get();
 		assertThat(calendarPeriodRateLimitDb.getId()).isEqualTo("Maximum number of picture uploaded in calendar month");
@@ -373,7 +373,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum number of picture uploaded by day", this.user);
 
-		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit).isPresent();
 		assertThat(userLimit.get()).isInstanceOf(SlidingWindowRateLimit.class);
 		SlidingWindowRateLimit slidingWindowRateLimitDb = (SlidingWindowRateLimit) userLimit.get();
 		assertThat(slidingWindowRateLimitDb.getId()).isEqualTo("Maximum number of picture uploaded by day");
@@ -406,9 +406,6 @@ public class JDBCUserLimitRepositoryTests {
 
 	@Test
 	void deleteUsageLimit_CountLimitDeleted() {
-		Product product = new Product("Picture hosting service");
-		Feature feature = new Feature(product, "Uploading pictures");
-
 		IndividualUser user1 = new IndividualUser("User2");
 
 		CountLimit countLimit = new CountLimit("Maximum number of picture", 10);
@@ -419,7 +416,7 @@ public class JDBCUserLimitRepositoryTests {
 
 		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(feature, "Maximum number of picture", user1);
 
-		assertThat(userLimit.isEmpty()).isTrue();
+		assertThat(userLimit).isEmpty();
 	}
 
 	@Test
