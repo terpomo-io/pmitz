@@ -51,7 +51,7 @@ If you then still feel the need to ask a question and need clarification, we rec
 
 - Open an [Issue](https://github.com/terpomo-io/pmitz/issues/new).
 - Provide as much context as you can about what you're running into.
-- Provide project and platform versions (nodejs, npm, etc), depending on what seems relevant.
+- Provide project and platform versions (jvm, etc), depending on what seems relevant.
 
 We will then take care of the issue as soon as possible.
 
@@ -173,17 +173,107 @@ Enhancement suggestions are tracked as [GitHub issues](https://github.com/terpom
 
 ### Your First Code Contribution
 
-<!-- TODO
-include Setup of env, IDE and typical getting started instructions?
+We are excited to help you make your first code contribution! Follow these steps to set up your environment, configure your IDE, and get started with your first contribution.
 
--->
+#### Setting Up Your Environment
+
+1. Install Java Development Kit (JDK):
+    * Download and install the version of the JDK (Java 17 or higher).
+    * Verify the installation by running ```java -version``` in your terminal.
+
+1. Clone the Repository:
+    * Fork the repository on GitHub.
+    * Clone your forked repository to your local machine:
+      ```
+      git clone https://github.com/terpomo-io/pmitz.git
+      cd pmitz
+      ```
+
+#### Configuring IntelliJ IDEA
+
+1. Download and Install IntelliJ IDEA:
+    * Download IntelliJ IDEA from the JetBrains website.
+    * Install and launch IntelliJ IDEA.
+
+1. Import the Project:
+    * Open IntelliJ IDEA and select File > New > Project from Existing Sources.
+    * Navigate to the cloned repository directory and select it.
+    * Follow the prompts to import the project as a Gradle project.
+
+1. Configure the JDK:
+    * Go to File > Project Structure > Project.
+    * Set the Project SDK to the JDK you installed earlier.
+
+1. Import Code Style Settings:
+    * Our project includes a code style configuration file to ensure consistent formatting.
+    * Go to File > Settings > Editor > Code Style.
+    * Click on the gear icon and select Import Scheme > IntelliJ IDEA code style XML.
+    * Navigate to the code style file in the project directory (```./checkstyle/Pmitz_Code_Style.xml```) and import it.
+
+#### Getting Started
+
+1. Build the Project:
+    * Open the terminal in IntelliJ IDEA and run the following command to build the project:
+      ```
+      ./gradlew build
+      ```
+    * Ensure that the build completes successfully without errors.
+
+1. Run the Example Application:
+    * Our repository includes an example application to help you learn how to use the product.
+    * Locate the main class of the example application (```./examples```).
+    * Right-click on the main class and select Run.
+
+3. Explore the Codebase:
+    * Familiarize yourself with the project structure and codebase.
+
+#### Making Your First Contribution
+
+1. Create a New Branch:
+    * Create a new branch for your contribution:
+      ```
+      git checkout -b your-branch-name
+      ```
+
+1. Make Your Changes:
+    * Implement your changes in the codebase.
+    * Ensure your code follows the project’s coding standards and guidelines.
+
+1. Commit and Push Your Changes:
+    * Commit your changes with a meaningful commit message:
+      ```
+      git commit -m "Description of your changes"
+      ```
+
+    * Push your changes to your forked repository:
+      ```
+      git push origin your-branch-name
+      ```
+1. Submit a Pull Request:
+    * Go to the original repository on GitHub and open a pull request.
+    * Provide a clear description of your changes and link to any relevant issues.
+
+#### Need Help?
+If you encounter any issues or need assistance, feel free to reach out to us via <contact@terpomosoft.com>. We are here to support you and look forward to your contributions!
 
 ### Improving The Documentation
 
-<!-- TODO
-Updating, improving and correcting the documentation
+Clear and comprehensive documentation is crucial for the success of our project. We welcome contributions to improve our documentation, making it easier for everyone to understand and use our project. Here’s how you can help:
 
--->
+#### How to Contribute
+Identify Areas for Improvement: Review the existing documentation and identify sections that need clarification, expansion, or updating.
+Propose Changes: Open an issue in our issue tracker to propose your changes. Describe what you plan to improve and why it’s necessary.
+Make Edits: Fork the repository and make your edits. Ensure your changes are clear, concise, and follow our documentation style guide.
+Submit a Pull Request: Once your edits are complete, submit a pull request. Be sure to link it to the relevant issue and provide a summary of your changes.
+
+#### Documentation Guidelines
+Clarity: Write in a clear and straightforward manner. Avoid jargon and explain technical terms.
+Consistency: Follow the established style and formatting guidelines to maintain consistency across the documentation.
+Accuracy: Ensure all information is accurate and up-to-date. Verify any technical details with the codebase or relevant contributors.
+Examples: Include examples and code snippets where applicable to illustrate concepts and usage.
+
+#### Get in Touch
+If you have any questions or need assistance, feel free to reach out to us via <contact@terpomosoft.com>. We appreciate your efforts to improve our documentation and make our project more accessible to everyone!
 
 ## Styleguides
 

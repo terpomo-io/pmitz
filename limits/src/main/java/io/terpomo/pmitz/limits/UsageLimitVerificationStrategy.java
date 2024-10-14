@@ -22,17 +22,17 @@ import java.util.Optional;
 import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 
-public interface UsageLimitVerificationStrategy<T extends UsageLimit> {
+public interface UsageLimitVerificationStrategy {
 
-	void recordFeatureUsage(LimitTrackingContext context, T usageLimit, long additionalUnits);
+	void recordFeatureUsage(LimitTrackingContext context, UsageLimit usageLimit, long additionalUnits);
 
-	void reduceFeatureUsage(LimitTrackingContext context, T usageLimit, long reducedUnits);
+	void reduceFeatureUsage(LimitTrackingContext context, UsageLimit usageLimit, long reducedUnits);
 
-	boolean isWithinLimits(LimitTrackingContext context, T usageLimit, long additionalUnits);
+	boolean isWithinLimits(LimitTrackingContext context, UsageLimit usageLimit, long additionalUnits);
 
-	long getRemainingUnits(LimitTrackingContext context, T usageLimit);
+	long getRemainingUnits(LimitTrackingContext context, UsageLimit usageLimit);
 
-	Optional<ZonedDateTime> getWindowStart(T usageLimit, ZonedDateTime referenceDate);
+	Optional<ZonedDateTime> getWindowStart(UsageLimit usageLimit, ZonedDateTime referenceDate);
 
-	Optional<ZonedDateTime> getWindowEnd(T usageLimit, ZonedDateTime referenceDate);
+	Optional<ZonedDateTime> getWindowEnd(UsageLimit usageLimit, ZonedDateTime referenceDate);
 }

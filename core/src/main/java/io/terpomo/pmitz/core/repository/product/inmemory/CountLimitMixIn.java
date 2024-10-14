@@ -29,7 +29,7 @@ public abstract class CountLimitMixIn {
 	private long count;
 
 	@JsonCreator
-	public CountLimitMixIn(
+	protected CountLimitMixIn(
 			@JsonProperty("id") String id,
 			@JsonProperty("count") long count) {
 	}

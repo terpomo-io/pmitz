@@ -16,13 +16,11 @@
 
 package io.terpomo.pmitz.limits.usage.repository.impl;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.ZoneId;
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,63 +43,61 @@ public class JDBCUsageRepository implements UsageRepository {
 		this.tableName = tableName;
 	}
 
+	public String getFullTableName() {
+		return schemaName + "." + tableName;
+	}
+
 	@Override
 	public void loadUsageData(LimitTrackingContext limitTrackingContext) {
-		String baseQuery = "SELECT * FROM " + schemaName + "." + tableName + " WHERE ";
+		String query = "SELECT usage_id, limit_id, window_start, window_end, expiration_date, updated_at, units " +
+				"FROM " + getFullTableName() + " WHERE ";
 		List<String> conditions = new ArrayList<>();
 		List<Object> parameters = new ArrayList<>();
 
-		for (RecordSearchCriteria criteria : limitTrackingContext.getSearchCriteria()) {
-			if (criteria.limitId() != null) {
-				conditions.add("limit_id = ?");
-				parameters.add(criteria.limitId());
-			}
-			if (criteria.windowStart() != null) {
-				ZonedDateTime startZonedDateTime = criteria.windowStart().withZoneSameInstant(ZoneId.of("UTC"));
-				Timestamp startTimestamp = Timestamp.from(startZonedDateTime.toInstant());
-				conditions.add("window_start >= ?");
-				parameters.add(startTimestamp);
-				logTimestampDetails("Before adding to load query - Window Start", startZonedDateTime);
-			}
+		try (Connection connection = dataSource.getConnection()) {
 
-			if (criteria.windowEnd() != null) {
-				ZonedDateTime endZonedDateTime = criteria.windowEnd().withZoneSameInstant(ZoneId.of("UTC"));
-				Timestamp endTimestamp = Timestamp.from(endZonedDateTime.toInstant());
-				conditions.add("window_end <= ?");
-				parameters.add(endTimestamp);
-				logTimestampDetails("Before adding to load query - Window End", endZonedDateTime);
-			}
-
-		}
-
-		String productId = limitTrackingContext.getFeature().getProduct().getProductId();
-		if (productId != null) {
-			conditions.add("product_id = ?");
-			parameters.add(productId);
-		}
-
-		String finalQuery = baseQuery + String.join(" AND ", conditions);
-
-		try (Connection connection = dataSource.getConnection();
-				PreparedStatement statement = connection.prepareStatement(finalQuery)) {
-
-			for (int i = 0; i < parameters.size(); i++) {
-				statement.setObject(i + 1, parameters.get(i));
-			}
-
-			// TODO: Remove
-			String debugQuery = debugPreparedStatement(finalQuery, parameters);
-			System.out.println("Debug SQL for loadUsageData: " + debugQuery);
-
-			try (ResultSet resultSet = statement.executeQuery()) {
-				while (resultSet.next()) {
-					UsageRecord usageRecord = mapResultSetToUsageRecord(resultSet);
-					limitTrackingContext.addCurrentUsageRecords(List.of(usageRecord));
+			for (RecordSearchCriteria criteria : limitTrackingContext.getSearchCriteria()) {
+				if (criteria.limitId() != null) {
+					conditions.add("limit_id = ?");
+					parameters.add(criteria.limitId());
+				}
+				if (criteria.windowStart() != null) {
+					conditions.add("window_start >= ?");
+					parameters.add(Timestamp.valueOf(criteria.windowStart().withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()));
+				}
+				if (criteria.windowEnd() != null) {
+					conditions.add("(window_end <= ? OR window_end IS NULL)");
+					parameters.add(Timestamp.valueOf(criteria.windowEnd().withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()));
 				}
 			}
+
+			if (conditions.isEmpty()) {
+				System.out.println("No search criteria provided, returning no records.");
+				limitTrackingContext.addCurrentUsageRecords(new ArrayList<>());
+				return;
+			}
+
+			String finalQuery = query + String.join(" AND ", conditions);
+			System.out.println("Executing Query: " + finalQuery);
+
+			try (PreparedStatement statement = connection.prepareStatement(finalQuery)) {
+				for (int i = 0; i < parameters.size(); i++) {
+					statement.setObject(i + 1, parameters.get(i));
+				}
+
+				try (ResultSet resultSet = statement.executeQuery()) {
+					List<UsageRecord> loadedRecords = new ArrayList<>();
+					while (resultSet.next()) {
+						UsageRecord usageRecord = mapResultSetToUsageRecord(resultSet);
+						loadedRecords.add(usageRecord);
+					}
+					limitTrackingContext.addCurrentUsageRecords(loadedRecords);
+				}
+			}
+
 		}
 		catch (SQLException ex) {
-			// TODO: Handle exceptions
+			throw new RuntimeException("Failed to load usage data", ex);
 		}
 	}
 
@@ -109,95 +105,138 @@ public class JDBCUsageRepository implements UsageRepository {
 		long usageId = resultSet.getLong("usage_id");
 		String limitId = resultSet.getString("limit_id");
 
-		Timestamp windowStartTimestamp = resultSet.getTimestamp("window_start");
-		ZonedDateTime startZonedDateTime = windowStartTimestamp.toInstant().atZone(ZoneId.of("UTC"));
+		// Convert result to UTC ZonedDateTime
+		ZonedDateTime windowStart = (resultSet.getTimestamp("window_start") != null)
+				? resultSet.getTimestamp("window_start").toLocalDateTime().atZone(ZoneOffset.UTC)
+				: null;
 
-		Timestamp windowEndTimestamp = resultSet.getTimestamp("window_end");
-		ZonedDateTime endZonedDateTime = windowEndTimestamp.toInstant().atZone(ZoneId.of("UTC"));
+		ZonedDateTime windowEnd = (resultSet.getTimestamp("window_end") != null)
+				? resultSet.getTimestamp("window_end").toLocalDateTime().atZone(ZoneOffset.UTC)
+				: null;
 
-		Long units = resultSet.getLong("units");
+		ZonedDateTime expirationDate = (resultSet.getTimestamp("expiration_date") != null)
+				? resultSet.getTimestamp("expiration_date").toLocalDateTime().atZone(ZoneOffset.UTC)
+				: null;
 
-		Timestamp expirationTimestamp = Timestamp.from(resultSet.getTimestamp("expiration_date").toInstant().atZone(ZoneId.of("UTC")).toInstant());
-		ZonedDateTime expirationZonedDateTime = expirationTimestamp.toInstant().atZone(ZoneId.of("UTC"));
+		System.out.println("Loaded record: UsageId=" + usageId +
+				", LimitId=" + limitId +
+				", StartTime=" + windowStart +
+				", EndTime=" + windowEnd +
+				", ExpirationDate=" + expirationDate);
 
-		Timestamp updatedAtTimestamp = resultSet.getTimestamp("updated_at");
-		ZonedDateTime updatedAt = updatedAtTimestamp.toInstant().atZone(ZoneId.of("UTC"));
+		JDBCUsageRecordRepoMetadata repoMetadata = new JDBCUsageRecordRepoMetadata(usageId, windowStart);
 
-
-		JDBCUsageRecordRepoMetadata repoMetadata = new JDBCUsageRecordRepoMetadata(
-				usageId,
-				updatedAt
-		);
-
-		return new UsageRecord(
-				repoMetadata,
-				limitId,
-				startZonedDateTime,
-				endZonedDateTime,
-				units,
-				expirationZonedDateTime
-		);
+		return new UsageRecord(repoMetadata, limitId, windowStart, windowEnd, resultSet.getLong("units"), expirationDate);
 	}
-
 
 	@Override
 	public void updateUsageRecords(LimitTrackingContext limitTrackingContext) {
-		String updateQuery = "UPDATE " + schemaName + "." + tableName + " SET feature_id = ?, product_id = ?, user_grouping = ?, limit_id = ?, window_start = ?, window_end = ?, units = ?, expiration_date = ? WHERE usage_id = ?";
+		try (Connection connection = dataSource.getConnection()) {
+			String updateQuery = "UPDATE " + getFullTableName() + " SET feature_id = ?, product_id = ?, user_grouping = ?, limit_id = ?, " +
+					"window_start = ?, window_end = ?, units = ?, expiration_date = ? WHERE usage_id = ?";
+			String insertQuery = "INSERT INTO " + getFullTableName() + " (feature_id, product_id, user_grouping, limit_id, " +
+					"window_start, window_end, units, expiration_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+			String selectQuery = "SELECT usage_id FROM " + getFullTableName() + " WHERE limit_id = ? AND (window_start = ? OR window_start IS NULL)";
 
-		try (Connection connection = dataSource.getConnection();
-				PreparedStatement statement = connection.prepareStatement(updateQuery)) {
+			try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery);
+					PreparedStatement insertStatement = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
+					PreparedStatement selectStatement = connection.prepareStatement(selectQuery)) {
 
-			for (UsageRecord record : limitTrackingContext.getUpdatedUsageRecords()) {
-				statement.setString(1, limitTrackingContext.getFeature().getFeatureId());
-				statement.setString(2, limitTrackingContext.getFeature().getProduct().getProductId());
-				statement.setString(3, limitTrackingContext.getUserGrouping().getId());
-				statement.setString(4, record.limitId());
+				connection.setAutoCommit(false);
 
-				Timestamp startTimestamp = Timestamp.from(record.startTime().toInstant());
-				statement.setTimestamp(5, startTimestamp);
+				for (UsageRecord record : limitTrackingContext.getUpdatedUsageRecords()) {
+					System.out.println("Processing record: LimitId=" + record.limitId() +
+							", StartTime=" + record.startTime() +
+							", EndTime=" + record.endTime() +
+							", Units=" + record.units() +
+							", ExpirationDate=" + record.expirationDate());
 
-				Timestamp endTimestamp = Timestamp.from(record.endTime().toInstant());
-				statement.setTimestamp(6, endTimestamp);
+					// Convert ZonedDateTime to LocalDateTime for UTC storage, if not null
+					LocalDateTime startTime = (record.startTime() != null)
+							? record.startTime().withZoneSameInstant(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).toLocalDateTime()
+							: null;
+					LocalDateTime endTime = (record.endTime() != null)
+							? record.endTime().withZoneSameInstant(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).toLocalDateTime()
+							: null;
+					LocalDateTime expirationDate = (record.expirationDate() != null)
+							? record.expirationDate().withZoneSameInstant(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).toLocalDateTime()
+							: null;
 
-				statement.setLong(7, record.units());
+					System.out.println("Converted StartTime (UTC): " + startTime);
+					System.out.println("Converted EndTime (UTC): " + endTime);
+					System.out.println("Converted ExpirationDate (UTC): " + expirationDate);
 
-				Timestamp expirationTimestamp = Timestamp.from(record.expirationDate().toInstant());
-				statement.setTimestamp(8, expirationTimestamp);
+					// Set limitId and startTime (handle null startTime with SQL logic)
+					selectStatement.setString(1, record.limitId());
+					setNullableTimestamp(selectStatement, 2, startTime); // Handle null case with helper method
 
-				statement.setLong(9, ((JDBCUsageRecordRepoMetadata) record.repoMetadata()).usageId());
+					// Execute the select query
+					try (ResultSet resultSet = selectStatement.executeQuery()) {
+						if (resultSet.next()) {
+							long usageId = resultSet.getLong("usage_id");
+							System.out.println("Updating existing record with usageId: " + usageId);
 
-				// TODO: Remove
-				logTimestampDetails("Update - Window Start", record.startTime());
-				logTimestampDetails("Update - Window End", record.endTime());
-				logTimestampDetails("Update - Expiration Date", record.expirationDate());
+							updateStatement.setString(1, limitTrackingContext.getFeature().getFeatureId());
+							updateStatement.setString(2, limitTrackingContext.getFeature().getProduct().getProductId());
+							updateStatement.setString(3, limitTrackingContext.getUserGrouping().getId());
+							updateStatement.setString(4, record.limitId());
+							setNullableTimestamp(updateStatement, 5, startTime);  // Handle null case with helper method
+							setNullableTimestamp(updateStatement, 6, endTime);    // Handle null case with helper method
+							updateStatement.setLong(7, record.units());
+							setNullableTimestamp(updateStatement, 8, expirationDate); // Handle null expiration date
+							updateStatement.setLong(9, usageId);
 
-				statement.addBatch();
+							updateStatement.addBatch();
+						}
+						else {
+							System.out.println("No existing record found for limitId: " + record.limitId() +
+									" and startTime: " + startTime + ". Inserting new record.");
+
+							insertStatement.setString(1, limitTrackingContext.getFeature().getFeatureId());
+							insertStatement.setString(2, limitTrackingContext.getFeature().getProduct().getProductId());
+							insertStatement.setString(3, limitTrackingContext.getUserGrouping().getId());
+							insertStatement.setString(4, record.limitId());
+							setNullableTimestamp(insertStatement, 5, startTime);  // Handle null case with helper method
+							setNullableTimestamp(insertStatement, 6, endTime);    // Handle null case with helper method
+							insertStatement.setLong(7, record.units());
+							setNullableTimestamp(insertStatement, 8, expirationDate); // Handle null expiration date
+
+							insertStatement.addBatch();
+						}
+					}
+				}
+
+				updateStatement.executeBatch();
+				insertStatement.executeBatch();
+				connection.commit();
 			}
 
-			statement.executeBatch();
 		}
 		catch (SQLException ex) {
-			// TODO: Handle exceptions
-			ex.printStackTrace();
+			throw new RuntimeException("Failed to update usage records", ex);
 		}
 	}
 
-	// TODO: Remove
-	private void logTimestampDetails(String message, ZonedDateTime zonedDateTime) {
-		if (zonedDateTime != null) {
-			System.out.println(message + ": ZonedDateTime = " + zonedDateTime);
+	private void setNullableTimestamp(PreparedStatement statement, int parameterIndex, LocalDateTime dateTime) throws SQLException {
+		if (dateTime != null) {
+			statement.setTimestamp(parameterIndex, Timestamp.valueOf(dateTime));
 		}
 		else {
-			System.out.println(message + ": ZonedDateTime is null");
+			statement.setNull(parameterIndex, Types.TIMESTAMP);
 		}
 	}
 
-	// TODO: Remove
-	private String debugPreparedStatement(String baseQuery, List<Object> parameters) {
-		for (Object param : parameters) {
-			String value = (param instanceof String) ? "'" + param + "'" : param.toString();
-			baseQuery = baseQuery.replaceFirst("\\?", value);
+	public void deleteOldRecords(LocalDateTime expirationDate) {
+		try (Connection connection = dataSource.getConnection()) {
+			String deleteQuery = "DELETE FROM " + getFullTableName() + " WHERE expiration_date <= ?";
+
+			try (PreparedStatement statement = connection.prepareStatement(deleteQuery)) {
+				statement.setObject(1, Timestamp.valueOf(expirationDate.atZone(ZoneOffset.UTC).toLocalDateTime()));
+				statement.executeUpdate();
+			}
 		}
-		return baseQuery;
+		catch (SQLException ex) {
+			throw new RuntimeException("Failed to delete old records", ex);
+		}
 	}
 }

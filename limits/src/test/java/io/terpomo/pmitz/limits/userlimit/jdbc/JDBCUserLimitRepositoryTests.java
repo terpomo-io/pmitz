@@ -18,7 +18,6 @@ package io.terpomo.pmitz.limits.userlimit.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.temporal.ChronoUnit;
@@ -49,7 +48,7 @@ import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-public class JDBCUserLimitRepositoryTests {
+class JDBCUserLimitRepositoryTests {
 
 	private static final String SCHEMA_NAME = "public";
 	private static final String TABLE_NAME = "user_usage_limit";
@@ -83,35 +82,6 @@ public class JDBCUserLimitRepositoryTests {
 						"A user or group of users must have a identifier"),
 				Arguments.of(new Feature(new Product("p1"), "f1"),
 						"Maximum picture resolution", null,
-						"The user/group parameter cannot be null")
-		);
-	}
-
-	static Stream<Arguments> addUsageLimit_invalidParameter() {
-		return Stream.of(
-				Arguments.of(null,
-						new CountLimit("c1", 10), new IndividualUser("user1"),
-						"The feature parameter cannot be null"),
-				Arguments.of(new Feature(new Product(null), "f1"),
-						new CountLimit("c1", 10), new IndividualUser("user1"),
-						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(null, "f1"),
-						new CountLimit("c1", 10), new IndividualUser("user1"),
-						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(new Product("p1"), null),
-						new CountLimit("c1", 10), new IndividualUser("user1"),
-						"A feature must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						null, new IndividualUser("user1"),
-						"The limit parameter cannot be null"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						new CountLimit(null, 10), new IndividualUser("user1"),
-						"A limit must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						new CountLimit("c1", 10), new IndividualUser(null),
-						"A user or group of users must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
-						new CountLimit("c1", 10), null,
 						"The user/group parameter cannot be null")
 		);
 	}
@@ -171,40 +141,6 @@ public class JDBCUserLimitRepositoryTests {
 		);
 	}
 
-	// TODO: Remove
-	public static void printDatabaseContents(DataSource dataSource) {
-		try {
-			try (Connection conn = dataSource.getConnection();
-					Statement stmt = conn.createStatement()) {
-				System.out.println("=========== UsageLimit ==========");
-				ResultSet rs = stmt.executeQuery("SELECT * FROM public.user_usage_limit");
-				while (rs.next()) {
-					long usageId = rs.getLong("usage_id");
-					String limitId = rs.getString("limit_id");
-					String featureId = rs.getString("feature_id");
-					String userGroup = rs.getString("user_group_id");
-					String limitType = rs.getString("limit_type");
-					long limitValue = rs.getLong("limit_value");
-					String limitUnit = rs.getString("limit_unit");
-					String limitInterval = rs.getString("limit_interval");
-					int limitDuration = rs.getInt("limit_duration");
-
-					System.out.printf(
-							"""
-									usage_id=%s, limitId=%s, featureId=%s, userGroup=%s, limitType=%s,
-									limitValue=%d, limitUnit=%s, limitInterval=%s, limitDuration=%d%n
-									""",
-							usageId, limitId, featureId, userGroup, limitType,
-							limitValue, limitUnit, limitInterval, limitDuration
-					);
-				}
-			}
-		}
-		catch (SQLException ex) {
-			ex.printStackTrace();
-		}
-	}
-
 	@BeforeEach
 	void setUp() throws SQLException {
 		this.dataSource = new JdbcDataSource();
@@ -234,7 +170,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> usageLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum picture size", this.user);
 
-		assertThat(usageLimit.isPresent()).isTrue();
+		assertThat(usageLimit).isPresent();
 		assertThat(usageLimit.get()).isInstanceOf(CountLimit.class);
 		CountLimit countLimit = (CountLimit) usageLimit.get();
 		assertThat(countLimit.getId()).isEqualTo("Maximum picture size");
@@ -248,7 +184,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> usageLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum number of picture uploaded in calendar month", this.user);
 
-		assertThat(usageLimit.isPresent()).isTrue();
+		assertThat(usageLimit).isPresent();
 		assertThat(usageLimit.get()).isInstanceOf(CalendarPeriodRateLimit.class);
 		CalendarPeriodRateLimit calendarPeriodRateLimit = (CalendarPeriodRateLimit) usageLimit.get();
 		assertThat(calendarPeriodRateLimit.getId()).isEqualTo("Maximum number of picture uploaded in calendar month");
@@ -262,7 +198,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> usageLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum number of picture uploaded by day", this.user);
 
-		assertThat(usageLimit.isPresent()).isTrue();
+		assertThat(usageLimit).isPresent();
 		assertThat(usageLimit.get()).isInstanceOf(SlidingWindowRateLimit.class);
 		SlidingWindowRateLimit slidingWindowRateLimit = (SlidingWindowRateLimit) usageLimit.get();
 		assertThat(slidingWindowRateLimit.getId()).isEqualTo("Maximum number of picture uploaded by day");
@@ -277,7 +213,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> usageLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum picture resolution", this.user);
 
-		assertThat(usageLimit.isPresent()).isFalse();
+		assertThat(usageLimit).isNotPresent();
 	}
 
 	@Test
@@ -296,7 +232,7 @@ public class JDBCUserLimitRepositoryTests {
 
 		UnknownLimit unknownLimit = new UnknownLimit("Unknown limit", 10L);
 
-		this.repository.addUsageLimit(this.feature, unknownLimit, this.user);
+		this.repository.updateUsageLimit(this.feature, unknownLimit, this.user);
 
 		assertThatExceptionOfType(RepositoryException.class).isThrownBy(
 				() -> this.repository.findUsageLimit(this.feature, "Unknown limit", this.user))
@@ -314,7 +250,7 @@ public class JDBCUserLimitRepositoryTests {
 	}
 
 	@Test
-	void addUsageLimit_CountLimitAdded() {
+	void updateUsageLimit_CountLimitAdded() {
 
 		String limitId = "Maximum picture resolution";
 		long limitCount = 400;
@@ -323,12 +259,12 @@ public class JDBCUserLimitRepositoryTests {
 		CountLimit countLimit = new CountLimit(limitId, limitCount);
 		countLimit.setUnit(limitUnit);
 
-		this.repository.addUsageLimit(this.feature, countLimit, this.user);
+		this.repository.updateUsageLimit(this.feature, countLimit, this.user);
 
 		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum picture resolution", this.user);
 
-		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit).isPresent();
 		assertThat(userLimit.get()).isInstanceOf(CountLimit.class);
 		CountLimit countLimitDB = (CountLimit) userLimit.get();
 		assertThat(countLimitDB.getId()).isEqualTo(limitId);
@@ -337,7 +273,7 @@ public class JDBCUserLimitRepositoryTests {
 	}
 
 	@Test
-	void addUsageLimit_CalendarPeriodRateLimitAdded() {
+	void updateUsageLimit_CalendarPeriodRateLimitAdded() {
 
 		String limitId = "Maximum number of picture uploaded in calendar week";
 		long limitQuota = 40;
@@ -348,13 +284,13 @@ public class JDBCUserLimitRepositoryTests {
 				new CalendarPeriodRateLimit(limitId, limitQuota, limitPeriodicity);
 		calendarPeriodRateLimit.setUnit(limitUnit);
 
-		this.repository.addUsageLimit(this.feature, calendarPeriodRateLimit, this.user);
+		this.repository.updateUsageLimit(this.feature, calendarPeriodRateLimit, this.user);
 
 		Optional<UsageLimit> userLimit =
 				this.repository.findUsageLimit(this.feature,
 						"Maximum number of picture uploaded in calendar week", this.user);
 
-		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit).isPresent();
 		assertThat(userLimit.get()).isInstanceOf(CalendarPeriodRateLimit.class);
 		CalendarPeriodRateLimit calendarPeriodRateLimitDb = (CalendarPeriodRateLimit) userLimit.get();
 		assertThat(calendarPeriodRateLimitDb.getId()).isEqualTo(limitId);
@@ -364,7 +300,7 @@ public class JDBCUserLimitRepositoryTests {
 	}
 
 	@Test
-	void addUsageLimit_SlidingWindowRateLimitAdded() {
+	void updateUsageLimit_SlidingWindowRateLimitAdded() {
 
 		String limitId = "Maximum number of picture uploaded by year";
 		long limitQuota = 1500;
@@ -376,13 +312,13 @@ public class JDBCUserLimitRepositoryTests {
 				new SlidingWindowRateLimit(limitId, limitQuota, limitInterval, limitDuration);
 		slidingWindowRateLimit.setUnit(limitUnit);
 
-		this.repository.addUsageLimit(this.feature, slidingWindowRateLimit, this.user);
+		this.repository.updateUsageLimit(this.feature, slidingWindowRateLimit, this.user);
 
 		Optional<UsageLimit> userLimit =
 				this.repository.findUsageLimit(this.feature,
 						"Maximum number of picture uploaded by year", this.user);
 
-		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit).isPresent();
 		assertThat(userLimit.get()).isInstanceOf(SlidingWindowRateLimit.class);
 		SlidingWindowRateLimit slidingWindowRateLimitDb = (SlidingWindowRateLimit) userLimit.get();
 		assertThat(slidingWindowRateLimitDb.getId()).isEqualTo(limitId);
@@ -390,29 +326,6 @@ public class JDBCUserLimitRepositoryTests {
 		assertThat(slidingWindowRateLimitDb.getInterval()).isEqualTo(limitInterval);
 		assertThat(slidingWindowRateLimitDb.getUnit()).isEqualTo(limitUnit);
 		assertThat(slidingWindowRateLimitDb.getDuration()).isEqualTo(limitDuration);
-	}
-
-	@Test
-	void addUsageLimit_SQLException() {
-
-		UserLimitRepository repositoryTest = new JDBCUserLimitRepository(new JdbcDataSource(), SCHEMA_NAME, "abc");
-
-		CountLimit countLimit = new CountLimit("Maximum picture resolution", 400);
-		countLimit.setUnit("dpi");
-
-		assertThatExceptionOfType(RepositoryException.class).as("The search should return an error").isThrownBy(
-				() -> repositoryTest.addUsageLimit(this.feature, countLimit, this.user))
-				.withMessage("Error adding limit")
-				.withCauseInstanceOf(SQLException.class);
-	}
-
-	@ParameterizedTest
-	@MethodSource
-	void addUsageLimit_invalidParameter(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping, String message) {
-
-		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(
-				() -> this.repository.addUsageLimit(feature, usageLimit, userGrouping))
-				.withMessage(message);
 	}
 
 	@Test
@@ -424,7 +337,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum number of picture", this.user);
 
-		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit).isPresent();
 		assertThat(userLimit.get()).isInstanceOf(CountLimit.class);
 		CountLimit countLimitDb = (CountLimit) userLimit.get();
 		assertThat(countLimitDb.getId()).isEqualTo("Maximum number of picture");
@@ -442,7 +355,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum number of picture uploaded in calendar month", this.user);
 
-		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit).isPresent();
 		assertThat(userLimit.get()).isInstanceOf(CalendarPeriodRateLimit.class);
 		CalendarPeriodRateLimit calendarPeriodRateLimitDb = (CalendarPeriodRateLimit) userLimit.get();
 		assertThat(calendarPeriodRateLimitDb.getId()).isEqualTo("Maximum number of picture uploaded in calendar month");
@@ -460,7 +373,7 @@ public class JDBCUserLimitRepositoryTests {
 		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum number of picture uploaded by day", this.user);
 
-		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit).isPresent();
 		assertThat(userLimit.get()).isInstanceOf(SlidingWindowRateLimit.class);
 		SlidingWindowRateLimit slidingWindowRateLimitDb = (SlidingWindowRateLimit) userLimit.get();
 		assertThat(slidingWindowRateLimitDb.getId()).isEqualTo("Maximum number of picture uploaded by day");
@@ -478,7 +391,7 @@ public class JDBCUserLimitRepositoryTests {
 
 		assertThatExceptionOfType(RepositoryException.class).as("The search should return an error").isThrownBy(
 				() -> repositoryTest.updateUsageLimit(this.feature, countLimit, this.user))
-				.withMessage("Error updating limit")
+				.withMessage("Error finding limit")
 				.withCauseInstanceOf(SQLException.class);
 	}
 
@@ -493,20 +406,17 @@ public class JDBCUserLimitRepositoryTests {
 
 	@Test
 	void deleteUsageLimit_CountLimitDeleted() {
-		Product product = new Product("Picture hosting service");
-		Feature feature = new Feature(product, "Uploading pictures");
-
 		IndividualUser user1 = new IndividualUser("User2");
 
 		CountLimit countLimit = new CountLimit("Maximum number of picture", 10);
 
-		this.repository.addUsageLimit(feature, countLimit, user1);
+		this.repository.updateUsageLimit(feature, countLimit, user1);
 
 		this.repository.deleteUsageLimit(feature, "Maximum number of picture", user1);
 
 		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(feature, "Maximum number of picture", user1);
 
-		assertThat(userLimit.isEmpty()).isTrue();
+		assertThat(userLimit).isEmpty();
 	}
 
 	@Test

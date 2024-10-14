@@ -14,26 +14,21 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.exception;
+package io.terpomo.pmitz.limits.userlimit;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.subjects.UserGrouping;
+import javax.sql.DataSource;
 
-public class FeatureNotAllowedException extends RuntimeException {
-	private final Feature feature;
-	private final UserGrouping userGrouping;
+import io.terpomo.pmitz.limits.impl.UsageLimitResolverImpl;
+import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 
-	public FeatureNotAllowedException(String message, Feature feature, UserGrouping userGrouping) {
-		super(message);
-		this.feature = feature;
-		this.userGrouping = userGrouping;
+public class DefaultUserLimitRepositoryBuilder implements UserLimitRepository.Builder {
+	@Override
+	public UserLimitRepository jdbcRepository(DataSource dataSource, String dbSchema, String tableName) {
+		return new JDBCUserLimitRepository(dataSource, dbSchema, tableName);
 	}
 
-	public Feature getFeature() {
-		return feature;
-	}
-
-	public UserGrouping getUserGrouping() {
-		return userGrouping;
+	@Override
+	public UserLimitRepository noOpRepository() {
+		return new UsageLimitResolverImpl.NoOpUserLimitRepository();
 	}
 }

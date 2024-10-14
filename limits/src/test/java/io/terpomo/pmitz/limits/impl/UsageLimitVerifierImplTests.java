@@ -59,7 +59,7 @@ class UsageLimitVerifierImplTests {
 	UsageRepository usageRepo;
 
 	@Mock
-	UsageLimitVerificationStrategy<UsageLimit> limitVerificationStrategy;
+	UsageLimitVerificationStrategy limitVerificationStrategy;
 
 	@Mock
 	UsageLimitVerificationStrategyResolver limitVerificationStrategyResolver;
@@ -107,7 +107,7 @@ class UsageLimitVerifierImplTests {
 		var capturedContext = contextArgCaptor.getValue();
 
 		var searchCriteriaList = capturedContext.getSearchCriteria();
-		assertThat(searchCriteriaList.size()).isEqualTo(1);
+		assertThat(searchCriteriaList).hasSize(1);
 		var searchCriteria = searchCriteriaList.get(0);
 		assertThat(searchCriteria.limitId()).isEqualTo("MAX_FILES");
 		assertThat(searchCriteria.windowStart()).isNull();
@@ -136,7 +136,7 @@ class UsageLimitVerifierImplTests {
 		var capturedContext = contextArgCaptor.getValue();
 
 		var searchCriteriaList = capturedContext.getSearchCriteria();
-		assertThat(searchCriteriaList.size()).isEqualTo(1);
+		assertThat(searchCriteriaList).hasSize(1);
 		var searchCriteria = searchCriteriaList.get(0);
 		assertThat(searchCriteria.limitId()).isEqualTo("MAX_FILES");
 		assertThat(searchCriteria.windowStart()).isNull();
@@ -157,8 +157,8 @@ class UsageLimitVerifierImplTests {
 			mockedLocalDateTime.when(ZonedDateTime::now).thenReturn(zonedDateTime);
 
 			var remainingUnitsMap = usageLimitVerifier.getLimitsRemainingUnits(feature, userGrouping);
-			assertThat(remainingUnitsMap.size()).isEqualTo(1);
-			assertThat(remainingUnitsMap.get(usageLimit.getId())).isEqualTo(2L);
+			assertThat(remainingUnitsMap).hasSize(1);
+			assertThat(remainingUnitsMap).containsEntry(usageLimit.getId(), 2L);
 		}
 		verify(usageRepo).loadUsageData(contextArgCaptor.capture());
 

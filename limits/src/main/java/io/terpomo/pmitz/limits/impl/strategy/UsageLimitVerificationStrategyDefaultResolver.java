@@ -25,7 +25,7 @@ public class UsageLimitVerificationStrategyDefaultResolver implements UsageLimit
 	private final UsageLimitVerificationStrategy defaultVerificationStrategy;
 
 	public UsageLimitVerificationStrategyDefaultResolver() {
-		defaultVerificationStrategy = new SimpleUsageLimitVerificationStrategy<>();
+		defaultVerificationStrategy = new SimpleUsageLimitVerificationStrategy();
 	}
 
 	public UsageLimitVerificationStrategyDefaultResolver(UsageLimitVerificationStrategy defaultVerificationStrategy) {
@@ -33,7 +33,7 @@ public class UsageLimitVerificationStrategyDefaultResolver implements UsageLimit
 	}
 
 	@Override
-	public <T extends UsageLimit> UsageLimitVerificationStrategy<T> resolveLimitVerificationStrategy(T usageLimit) {
+	public UsageLimitVerificationStrategy resolveLimitVerificationStrategy(UsageLimit usageLimit) {
 		return defaultVerificationStrategy;
 	}
 }

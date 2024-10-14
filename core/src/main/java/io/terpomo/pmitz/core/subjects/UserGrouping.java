@@ -16,7 +16,9 @@
 
 package io.terpomo.pmitz.core.subjects;
 
-public abstract class UserGrouping {
+import java.io.Serializable;
+
+public abstract class UserGrouping implements Serializable {
 
 	public abstract String getId();
 }

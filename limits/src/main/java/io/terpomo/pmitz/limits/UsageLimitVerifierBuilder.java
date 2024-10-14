@@ -33,7 +33,7 @@ public final class UsageLimitVerifierBuilder {
 		// private constructor
 	}
 
-	public static Builder of(ProductRepository productRepository) {
+	public static UsageLimitResolverSpec of(ProductRepository productRepository) {
 		return new Builder(productRepository);
 	}
 
@@ -44,7 +44,7 @@ public final class UsageLimitVerifierBuilder {
 	public interface UsageLimitResolverSpec {
 		UsageRepositorySpec withCustomUsageLimitResolver(UsageLimitResolver usageLimitResolver);
 
-		UsageRepositorySpec withDefaultUsageLimitResolver(UserLimitRepository userLimitRepository);
+		UsageRepositorySpec withUserLimitRepository(UserLimitRepository userLimitRepository);
 
 		UsageRepositorySpec withDefaultUsageLimitResolver();
 	}
@@ -85,7 +85,7 @@ public final class UsageLimitVerifierBuilder {
 		}
 
 		@Override
-		public UsageRepositorySpec withDefaultUsageLimitResolver(UserLimitRepository userLimitRepository) {
+		public UsageRepositorySpec withUserLimitRepository(UserLimitRepository userLimitRepository) {
 			usageLimitResolver = new UsageLimitResolverImpl(productRepository, userLimitRepository);
 			return this;
 		}

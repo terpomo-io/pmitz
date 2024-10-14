@@ -21,110 +21,108 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.TimeZone;
 
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
-public class MySQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
+public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
 
-	@Container
-	private static final MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:latest")
-			.withDatabaseName(CUSTOM_SCHEMA)
-			.withEnv("TZ", "UTC")
-			.withCommand("--default-time-zone=UTC");
+	private static final PostgreSQLContainer<?> postgresqlContainer =
+			new PostgreSQLContainer<>("postgres:latest")
+					.withEnv("TZ", "UTC")
+					.withCommand("postgres", "-c", "timezone=UTC");
+
+	@BeforeAll
+	public static void setUpClass() {
+		// Start the container before all tests
+		postgresqlContainer.start();
+		// Set timezone to UTC
+		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+	}
+
+	@AfterAll
+	public static void tearDownClass() {
+		// Stop the container after all tests
+		if (postgresqlContainer != null) {
+			postgresqlContainer.stop();
+		}
+	}
 
 	@Override
 	protected void setupDataSource() {
-		mysqlContainer.start();
+		// Set up the data source using the container's JDBC URL
 		dataSource = new BasicDataSource();
-		dataSource.setUrl(mysqlContainer.getJdbcUrl());
-		dataSource.setUsername(mysqlContainer.getUsername());
-		dataSource.setPassword(mysqlContainer.getPassword());
+		String jdbcUrlWithTimezone = postgresqlContainer.getJdbcUrl() + "?sessionTimezone=UTC";
+		dataSource.setUrl(jdbcUrlWithTimezone);
+		dataSource.setUsername(postgresqlContainer.getUsername());
+		dataSource.setPassword(postgresqlContainer.getPassword());
+
 		repository = new JDBCUsageRepository(dataSource, CUSTOM_SCHEMA, getTableName());
 	}
 
 	@Override
 	protected String getTimeZoneQuery() {
-		return "SELECT @@global.time_zone, @@session.time_zone";
+		return "SHOW timezone";
 	}
 
 	@Override
 	protected boolean isSingleTimeZoneQuery() {
-		return false; // MySQL returns two values
+		return true; // PostgreSQL only returns one value
 	}
 
 	@Override
 	protected String getTableName() {
-		return "`Usage`";
+		return "\"Usage\"";
 	}
 
 	@Override
 	protected void setupDatabase() throws SQLException {
-		mysqlContainer.start();
-		dataSource = new BasicDataSource();
-		dataSource.setUrl(mysqlContainer.getJdbcUrl());
-		dataSource.setUsername(mysqlContainer.getUsername());
-		dataSource.setPassword(mysqlContainer.getPassword());
-
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
 
-			// Only set the session timezone
-			stmt.execute("SET time_zone = '+00:00';");
+			// Set session timezone for the current connection
+			stmt.execute("SET LOCAL TIME ZONE 'UTC';");
 
 			// Create schema and tables
 			stmt.execute("CREATE SCHEMA IF NOT EXISTS " + CUSTOM_SCHEMA);
-			stmt.execute("CREATE TABLE IF NOT EXISTS " + CUSTOM_SCHEMA + ".`Usage` (" +
-					"usage_id INT AUTO_INCREMENT PRIMARY KEY, " +
+			stmt.execute("CREATE TABLE IF NOT EXISTS " + CUSTOM_SCHEMA + ".\"Usage\" (" +
+					"usage_id SERIAL PRIMARY KEY, " +
 					"feature_id VARCHAR(255), " +
 					"product_id VARCHAR(255), " +
 					"user_grouping VARCHAR(255), " +
 					"limit_id VARCHAR(255), " +
-					"window_start DATETIME, " +
-					"window_end DATETIME, " +
+					"window_start TIMESTAMP, " +
+					"window_end TIMESTAMP, " +
 					"units INT, " +
-					"expiration_date DATETIME, " +
+					"expiration_date TIMESTAMP, " +
 					"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
 					");");
 
-			// Output the session timezone
-			ResultSet rs = stmt.executeQuery("SELECT @@session.time_zone;");
+			ResultSet rs = stmt.executeQuery("SHOW timezone;");
 			if (rs.next()) {
-				System.out.println("MySQL Session Timezone: " + rs.getString(1));
+				System.out.println("PostgreSQL Timezone: " + rs.getString(1));
 			}
 		}
 	}
 
 	@Override
-	protected void tearDownDatabase() throws SQLException {
+	protected void tearDownDatabase() {
 		try (Connection conn = dataSource.getConnection();
 				Statement statement = conn.createStatement()) {
-
-			// Disable foreign key checks to avoid constraint issues during truncation
-			statement.execute("SET FOREIGN_KEY_CHECKS=0");
-
-			// Check if table exists before truncating
-			ResultSet rs = statement.executeQuery(
-					"SELECT COUNT(*) FROM information_schema.tables " +
-							"WHERE table_schema = '" + CUSTOM_SCHEMA + "' " +
-							"AND table_name = '" + getTableName().replace("`", "") + "'");
-
-			if (rs.next() && rs.getInt(1) > 0) {
-				// Truncate the table in the custom schema if it exists
-				statement.execute("TRUNCATE TABLE " + CUSTOM_SCHEMA + "." + getTableName());
-			}
-
-			// Re-enable foreign key checks
-			statement.execute("SET FOREIGN_KEY_CHECKS=1");
+			statement.execute("TRUNCATE TABLE " + getFullTableName() + " RESTART IDENTITY CASCADE");
+		}
+		catch (SQLException ex) {
+			System.out.println("Error during tearDownDatabase: " + ex.getMessage());
 		}
 	}
 
-
 	@Override
-	protected void printDatabaseContents(String message) throws SQLException {
+	protected void printDatabaseContents(String message) {
 		System.out.println("---- " + message + " ----");
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
@@ -147,6 +145,9 @@ public class MySQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageR
 						+ ", WindowEnd: " + windowEnd + ", Units: " + units + ", ExpirationDate: " + expirationDate
 						+ ", UpdatedAt: " + updatedAt);
 			}
+		}
+		catch (SQLException ex) {
+			System.out.println("Error while printing database contents: " + ex.getMessage());
 		}
 	}
 }

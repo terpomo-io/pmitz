@@ -36,7 +36,7 @@ public abstract class SlidingWindowRateLimitMixIn {
 	private int duration;
 
 	@JsonCreator
-	public SlidingWindowRateLimitMixIn(
+	protected SlidingWindowRateLimitMixIn(
 			@JsonProperty("id") String id,
 			@JsonProperty("quota") long quota,
 			@JsonProperty("interval") ChronoUnit interval,

@@ -52,9 +52,6 @@ public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
 
 	protected abstract void tearDownDatabase() throws SQLException;
 
-	// TODO: Remove
-	protected abstract void printDatabaseContents();
-
 	@BeforeEach
 	void setUp() throws SQLException {
 		setupDataSource();
@@ -68,9 +65,7 @@ public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
 	}
 
 	@Test
-	public void testUpdateUserLimit() throws SQLException {
-
-		printDatabaseContents();
+	public void testUpdateUserLimit() {
 
 		CountLimit countLimitToModified = new CountLimit("Maximum number of picture", 15);
 
@@ -79,12 +74,10 @@ public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
 		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
 				"Maximum number of picture", this.user);
 
-		assertThat(userLimit.isPresent()).isTrue();
+		assertThat(userLimit).isPresent();
 		assertThat(userLimit.get()).isInstanceOf(CountLimit.class)
 				.extracting(UsageLimit::getId).isEqualTo("Maximum number of picture");
 		assertThat(userLimit.get()).isInstanceOf(CountLimit.class)
 				.extracting(UsageLimit::getValue).isEqualTo(15L);
-
-		printDatabaseContents();
 	}
 }

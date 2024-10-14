@@ -24,11 +24,11 @@ public abstract class UsageLimit {
 	private String unit;
 	private String id;
 
-	public UsageLimit(String id) {
+	protected UsageLimit(String id) {
 		this.id = id;
 	}
 
-	public UsageLimit(String id, String unit) {
+	protected UsageLimit(String id, String unit) {
 		this.id = id;
 		this.unit = unit;
 	}

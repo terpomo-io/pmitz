@@ -32,7 +32,6 @@ import org.mockito.Captor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.terpomo.pmitz.core.exception.LimitExceededException;
-import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.RateLimit;
@@ -48,7 +47,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SimpleUsageLimitVerificationStrategyTests {
 	static String limitId = "numer-of-photos";
-	UsageLimitVerificationStrategy<UsageLimit> verificationStrategy = new SimpleUsageLimitVerificationStrategy<>();
+	UsageLimitVerificationStrategy verificationStrategy = new SimpleUsageLimitVerificationStrategy();
 	@Captor
 	ArgumentCaptor<List<UsageRecord>> updatedRecordArgCaptor;
 
@@ -73,7 +72,7 @@ class SimpleUsageLimitVerificationStrategyTests {
 
 		var updatedRecordList = updatedRecordArgCaptor.getValue();
 
-		assertThat(updatedRecordList.size()).isEqualTo(1);
+		assertThat(updatedRecordList).hasSize(1);
 		UsageRecord updatedUsageRecord = updatedRecordList.get(0);
 		assertThat(updatedUsageRecord.units()).isEqualTo(previouslyConsumedUnits + 5);
 		assertThat(updatedUsageRecord.startTime()).isNull();
@@ -99,7 +98,7 @@ class SimpleUsageLimitVerificationStrategyTests {
 
 		var updatedRecordList = updatedRecordArgCaptor.getValue();
 
-		assertThat(updatedRecordList.size()).isEqualTo(1);
+		assertThat(updatedRecordList).hasSize(1);
 		UsageRecord updatedUsageRecord = updatedRecordList.get(0);
 		assertThat(updatedUsageRecord.units()).isEqualTo(5 + 5);
 		assertThat(updatedUsageRecord.repoMetadata()).isEqualTo(existingRecord.repoMetadata());
@@ -126,7 +125,7 @@ class SimpleUsageLimitVerificationStrategyTests {
 
 		var updatedRecordList = updatedRecordArgCaptor.getValue();
 
-		assertThat(updatedRecordList.size()).isEqualTo(1);
+		assertThat(updatedRecordList).hasSize(1);
 		UsageRecord updatedUsageRecord = updatedRecordList.get(0);
 		assertThat(updatedUsageRecord.units()).isEqualTo(10);
 		assertThat(updatedUsageRecord.startTime()).isEqualTo(windowStart);
@@ -158,7 +157,7 @@ class SimpleUsageLimitVerificationStrategyTests {
 
 		var updatedRecordList = updatedRecordArgCaptor.getValue();
 
-		assertThat(updatedRecordList.size()).isEqualTo(1);
+		assertThat(updatedRecordList).hasSize(1);
 		UsageRecord updatedUsageRecord = updatedRecordList.get(0);
 		assertThat(updatedUsageRecord.units()).isEqualTo((previouslyConsumedUnits == 0) ? 0 : previouslyConsumedUnits - 5);
 		assertThat(updatedUsageRecord.startTime()).isNull();
@@ -184,7 +183,7 @@ class SimpleUsageLimitVerificationStrategyTests {
 
 		var updatedRecordList = updatedRecordArgCaptor.getValue();
 
-		assertThat(updatedRecordList.size()).isEqualTo(1);
+		assertThat(updatedRecordList).hasSize(1);
 		UsageRecord updatedUsageRecord = updatedRecordList.get(0);
 		assertThat(updatedUsageRecord.units()).isEqualTo(5 - 4);
 		assertThat(updatedUsageRecord.repoMetadata()).isEqualTo(existingRecord.repoMetadata());
@@ -210,9 +209,9 @@ class SimpleUsageLimitVerificationStrategyTests {
 
 		var updatedRecordList = updatedRecordArgCaptor.getValue();
 
-		assertThat(updatedRecordList.size()).isEqualTo(1);
+		assertThat(updatedRecordList).hasSize(1);
 		UsageRecord updatedUsageRecord = updatedRecordList.get(0);
-		assertThat(updatedUsageRecord.units()).isEqualTo(0);
+		assertThat(updatedUsageRecord.units()).isZero();
 		assertThat(updatedUsageRecord.startTime()).isEqualTo(windowStart);
 		assertThat(updatedUsageRecord.endTime()).isEqualTo(windowEnd);
 		assertThat(updatedUsageRecord.expirationDate()).isEqualTo(windowEnd.plusMonths(3));

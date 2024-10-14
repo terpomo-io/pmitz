@@ -21,9 +21,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.testcontainers.containers.MSSQLServerContainer;
@@ -35,7 +32,8 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 
 	@Container
 	private static final MSSQLServerContainer<?> mssqlServerContainer =
-			new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:latest").withEnv("TZ", "Europe/Berlin");
+			new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:latest")
+					.withEnv("TZ", "UTC");  // Set container timezone to UTC
 
 	@Override
 	protected void setupDataSource() {
@@ -44,41 +42,56 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 		dataSource.setUrl(mssqlServerContainer.getJdbcUrl());
 		dataSource.setUsername(mssqlServerContainer.getUsername());
 		dataSource.setPassword(mssqlServerContainer.getPassword());
-		repository = new JDBCUsageRepository(dataSource, "dbo", "[Usage]");
+		repository = new JDBCUsageRepository(dataSource, CUSTOM_SCHEMA, getTableName());
+	}
+
+	@Override
+	protected String getTimeZoneQuery() {
+		return "SELECT CURRENT_TIMEZONE()";
+	}
+
+	@Override
+	protected boolean isSingleTimeZoneQuery() {
+		return true; // SQL Server only returns one value
+	}
+
+	@Override
+	protected String getTableName() {
+		return "[Usage]";
 	}
 
 	@Override
 	protected void setupDatabase() throws SQLException {
 		try (Connection conn = dataSource.getConnection();
 				Statement statement = conn.createStatement()) {
-			String checkTableExists = "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Usage' AND schema_id = SCHEMA_ID('dbo')) ";
-			String createTable = "CREATE TABLE dbo.[Usage] ("
-					+ "usage_id INT PRIMARY KEY IDENTITY(1,1), "
-					+ "feature_id VARCHAR(255), "
-					+ "product_id VARCHAR(255), "
-					+ "user_grouping VARCHAR(255), "
-					+ "limit_id VARCHAR(255), "
-					+ "window_start DATETIMEOFFSET, "
-					+ "window_end DATETIMEOFFSET, "
-					+ "units INT, "
-					+ "expiration_date DATETIMEOFFSET, "
-					+ "updated_at DATETIMEOFFSET DEFAULT CURRENT_TIMESTAMP"
-					+ ");";
-			statement.execute(checkTableExists + createTable);
 
-			ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC")).truncatedTo(ChronoUnit.DAYS);
-			ZonedDateTime windowStart = now.plusHours(9);
-			ZonedDateTime windowEnd = now.plusHours(17);
+			statement.execute("IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '" + CUSTOM_SCHEMA + "') " +
+					"EXEC('CREATE SCHEMA " + CUSTOM_SCHEMA + "')");
 
-			String insertSQL = String.format(
-					"INSERT INTO dbo.[Usage] " +
-							"(feature_id, product_id, user_grouping, limit_id, window_start, window_end, units, expiration_date) " +
-							"VALUES ('featureX', 'productY', 'groupZ', 'limitA', '%s', '%s', 100, '%s')",
-					Timestamp.from(windowStart.toInstant()),
-					Timestamp.from(windowEnd.toInstant()),
-					Timestamp.from(windowStart.plusDays(1).toInstant())
-			);
-			statement.execute(insertSQL);
+			// Set the session time zone to UTC (SQL Server doesn't directly support session time zones, but ensure UTC consistency)
+			statement.execute("SET LANGUAGE us_english;"); // Ensure language consistency to handle dates properly
+			statement.execute("SET DATEFORMAT ymd;"); // Ensure date format consistency for UTC handling
+
+			String createTable = "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Usage' AND schema_id = SCHEMA_ID('" + CUSTOM_SCHEMA + "')) " +
+					"CREATE TABLE " + getFullTableName() + " (" +
+					"usage_id INT PRIMARY KEY IDENTITY(1,1), " +
+					"feature_id VARCHAR(255), " +
+					"product_id VARCHAR(255), " +
+					"user_grouping VARCHAR(255), " +
+					"limit_id VARCHAR(255), " +
+					"window_start DATETIME2, " +
+					"window_end DATETIME2, " +
+					"units INT, " +
+					"expiration_date DATETIME2, " +
+					"updated_at DATETIME DEFAULT CURRENT_TIMESTAMP" +
+					");";
+			statement.execute(createTable);
+
+			try (ResultSet rs = statement.executeQuery("SELECT SYSDATETIMEOFFSET()")) {
+				if (rs.next()) {
+					System.out.println("SQL Server current datetime with timezone: " + rs.getString(1));
+				}
+			}
 		}
 	}
 
@@ -86,15 +99,17 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 	protected void tearDownDatabase() throws SQLException {
 		try (Connection conn = dataSource.getConnection();
 				Statement statement = conn.createStatement()) {
-			statement.execute("DROP TABLE IF EXISTS dbo.[Usage]");
+			// Truncate the table between tests
+			statement.execute("TRUNCATE TABLE " + getFullTableName());
 		}
 	}
 
-	// TODO: Remove
-	protected void printDatabaseContents() {
+	@Override
+	protected void printDatabaseContents(String message) throws SQLException {
+		System.out.println("---- " + message + " ----");
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM dbo.\"Usage\"");
+			ResultSet rs = stmt.executeQuery("SELECT * FROM " + getFullTableName());
 			while (rs.next()) {
 				int usageId = rs.getInt("usage_id");
 				String featureId = rs.getString("feature_id");
@@ -107,7 +122,7 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 				Timestamp expirationDate = rs.getTimestamp("expiration_date");
 				Timestamp updatedAt = rs.getTimestamp("updated_at");
 
-				// TODO: Remove
+				// Simply print the timestamp values as-is without converting to UTC
 				System.out.println("UsageId: " + usageId + ", FeatureId: " + featureId + ", ProductId: " + productId
 						+ ", UserGrouping: " + userGrouping + ", LimitId: " + limitId + ", WindowStart: " + windowStart
 						+ ", WindowEnd: " + windowEnd + ", Units: " + units + ", ExpirationDate: " + expirationDate
@@ -115,9 +130,7 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 			}
 		}
 		catch (SQLException ex) {
-			// TODO: handle exceptions
 			ex.printStackTrace();
 		}
 	}
 }
-

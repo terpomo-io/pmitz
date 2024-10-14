@@ -18,7 +18,6 @@ package io.terpomo.pmitz.limits.userlimit.integration;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.temporal.ChronoUnit;
@@ -153,45 +152,6 @@ public class MySQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUs
 		try (Connection conn = dataSource.getConnection();
 				Statement statement = conn.createStatement()) {
 			statement.execute(dropContraintQuery);
-		}
-	}
-
-	// TODO: Remove
-	@Override
-	protected void printDatabaseContents() {
-
-		System.out.printf("========= %s.%s =========%n", SCHEMA_NAME, TABLE_NAME);
-
-		String query = String.format(
-				"""
-						SELECT * FROM %s.%s
-						""",
-				SCHEMA_NAME, TABLE_NAME);
-		try (Connection conn = dataSource.getConnection();
-				Statement stmt = conn.createStatement()) {
-			ResultSet rs = stmt.executeQuery(query);
-			while (rs.next()) {
-				int usageId = rs.getInt("usage_id");
-				String limitId = rs.getString("limit_id");
-				String featureId = rs.getString("feature_id");
-				String userGroupId = rs.getString("user_group_id");
-				String limitType = rs.getString("limit_type");
-				long limitValue = rs.getLong("limit_value");
-				String limitUnit = rs.getString("limit_unit");
-				String limitInterval = rs.getString("limit_interval");
-				int limitDuration = rs.getInt("limit_duration");
-
-				System.out.printf(
-						"""
-								usageId=%s, limitId=%s, featureId=%s, userGroupId=%s, limitType=%s,
-								limitValue=%d, limitUnit=%s, limitInterval=%s, limitDuration=%d%n
-								""",
-						usageId, limitId, featureId, userGroupId, limitType,
-						limitValue, limitUnit, limitInterval, limitDuration);
-			}
-		}
-		catch (SQLException ex) {
-			ex.printStackTrace();
 		}
 	}
 }

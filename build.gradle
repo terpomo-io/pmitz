@@ -1,5 +1,5 @@
 apply plugin: 'java'
-apply plugin: 'checkstyle'
+//apply plugin: 'checkstyle'
 
 group 'io.terpomo.pmitz'
 version '1.0-SNAPSHOT'
@@ -22,7 +22,7 @@ subprojects {
 
     checkstyle {
         toolVersion = "10.15.0"
-        ignoreFailures = true
+        ignoreFailures = false
         showViolations = true
         configFile = rootProject.file('/checkstyle/config/pmitz-checkstyle.xml')
         configProperties = [

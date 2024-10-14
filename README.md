@@ -19,24 +19,20 @@ Clone github directory [https://github.com/terpomo-io/pmitz](https://github.com/
 <dependency>
   <groupId>io.terpomo.pmitz</groupId>
   <artifactId>pmitz</artifactId>
-  <version>0.0.1</version>
+  <version>0.8</version>
 </dependency>
 ```
 
 ### How to use it from Gradle.
 ```groovy
 dependencies {
-  implementation 'io.terpomo.pmitz:pmitz:0.0.1'
+  implementation 'io.terpomo.pmitz:pmitz:0.8'
 }
 ```
 
 ## Usage
 
-```java
-import io.terpomo.pmitz.Pmitz;
-
-pmitz.
-```
+To access examples of using Pmitz, refer to the [examples](examples) folder
 
 ## Requirements
 * Java 17
