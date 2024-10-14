@@ -23,7 +23,7 @@ subprojects {
         toolVersion = "10.15.0"
         ignoreFailures = false
         showViolations = true
-        configFile = rootProject.file('/checkstyle/config/pmitz-checkstyle.xml')
+        configFile = rootProject.file('./checkstyle/config/pmitz-checkstyle.xml')
         configProperties = [
                 'headerType': 'apache2',
                 'headerCopyrightPattern': '20\\d\\d(-20\\d\\d)?',
