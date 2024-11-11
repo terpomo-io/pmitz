@@ -2,8 +2,6 @@ plugins {
     id 'java'
 }
 
-group 'io.terpomo.pmitz'
-
 repositories {
     mavenCentral()
 }
@@ -25,43 +23,33 @@ java {
 
 dependencies {
     implementation project(':core')
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
-    // SLF4J API
-    implementation 'org.slf4j:slf4j-api:2.0.9'
 
-    // Testing
-    testImplementation 'org.apache.commons:commons-dbcp2:2.9.0'
-    testImplementation 'com.h2database:h2:2.2.220'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testImplementation 'org.mockito:mockito-junit-jupiter:5.9.0'
-    testImplementation 'org.assertj:assertj-core:3.25.3'
-
-    // SLF4J Log4j Implementation
-    testImplementation 'org.slf4j:slf4j-log4j12:2.0.9'
+    implementation libs.slf4j
+    implementation libs.jacksonDatabind
 
     // JDBC Drivers
-    postgresImplementation 'org.postgresql:postgresql:42.5.1'
-    mysqlImplementation 'mysql:mysql-connector-java:8.0.30'
-    sqlserverImplementation 'com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre11'
-    mariadbImplementation 'org.mariadb.jdbc:mariadb-java-client:3.1.3'  // MariaDB JDBC driver
+    postgresImplementation libs.driver.postgres
+    mysqlImplementation libs.driver.mysql
+    sqlserverImplementation libs.driver.sqlserver
 
-    // Add MariaDB JDBC driver for testing
-    testImplementation 'org.mariadb.jdbc:mariadb-java-client:3.1.3'
+    // Testing
+    testImplementation libs.junit.jupiter
+    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.assertj.core
+
+    testImplementation libs.commons.commons.dbcp2
+    testImplementation libs.driver.h2
 
     // TestContainers (for all databases)
-    testImplementation 'org.testcontainers:testcontainers:1.19.4'
-    testImplementation 'org.testcontainers:postgresql:1.19.4'
-    testImplementation 'org.testcontainers:mysql:1.19.4'
-    testImplementation 'org.testcontainers:mssqlserver:1.19.4'
-    testImplementation 'org.testcontainers:junit-jupiter:1.19.4'
-    testImplementation "org.testcontainers:mariadb:1.20.1"
-}
-
-test {
-    useJUnitPlatform()
+    testImplementation libs.testcontainers
+    testImplementation libs.testcontainers.postgresql
+    testImplementation libs.testcontainers.mysql
+    testImplementation libs.testcontainers.mssqlserver
+    testImplementation libs.testcontainers.junitJupiter
 }
 
 jar {
-    archiveBaseName = 'pmitz-limits'
+    archiveBaseName.set("pmitz-${project.name}")
+    archiveVersion.set(rootProject.version.toString())
+    archiveFileName.set("${archiveBaseName.get()}-${archiveVersion.get()}.jar")
 }

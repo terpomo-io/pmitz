@@ -5,3 +5,34 @@ include 'limits'
 include 'all'
 include 'examples'
 
+dependencyResolutionManagement {
+    versionCatalogs {
+        libs {
+            version('testcontainers', '1.20.3')
+
+            library('slf4j', 'org.slf4j:slf4j-api:2.0.16')
+            library('commons.commons-dbcp2', 'org.apache.commons:commons-dbcp2:2.12.0')
+            library('jacksonDatabind', 'com.fasterxml.jackson.core:jackson-databind:2.18.1')
+
+            library('driver.h2', 'com.h2database:h2:2.3.232')
+            library('driver.postgres', 'org.postgresql:postgresql:42.7.4')
+            library('driver.mysql', 'mysql:mysql-connector-java:8.0.33')
+            library('driver.sqlserver', 'com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11')
+
+            library('testcontainers', 'org.testcontainers', 'testcontainers').versionRef('testcontainers')
+            library('testcontainers.postgresql','org.testcontainers', 'postgresql').versionRef('testcontainers')
+            library('testcontainers.mysql', 'org.testcontainers', 'mysql').versionRef('testcontainers')
+            library('testcontainers.mssqlserver', 'org.testcontainers', 'mssqlserver').versionRef('testcontainers')
+            library('testcontainers.junitJupiter', 'org.testcontainers', 'junit-jupiter').versionRef('testcontainers')
+
+            library('spring.javaformat', 'io.spring.javaformat:spring-javaformat-checkstyle:0.0.41')
+
+            library('junit.jupiter', 'org.junit.jupiter:junit-jupiter:5.11.3')
+            library('mockito.junit.jupiter', 'org.mockito:mockito-junit-jupiter:5.14.2')
+            library('assertj.core', 'org.assertj:assertj-core:3.26.3')
+
+            library('json.path', 'com.jayway.jsonpath:json-path:2.9.0')
+        }
+    }
+}
+

@@ -2,9 +2,6 @@ plugins {
     id 'java'
 }
 
-group 'io.terpomo.pmitz'
-version '1.0-SNAPSHOT'
-
 repositories {
     mavenCentral()
 }
@@ -12,13 +9,14 @@ repositories {
 dependencies {
     implementation project(':limits')
     implementation project(':core')
-    implementation 'com.h2database:h2:2.2.224'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    implementation libs.driver.h2
 
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation libs.junit.jupiter
 }
 
-test {
-    useJUnitPlatform()
+jar {
+    archiveBaseName.set("pmitz-${project.name}")
+    archiveVersion.set(rootProject.version.toString())
+    archiveFileName.set("${archiveBaseName.get()}-${archiveVersion.get()}.jar")
 }

@@ -2,9 +2,6 @@ plugins {
     id 'java'
 }
 
-group 'io.terpomo.pmitz'
-version '1.0-SNAPSHOT'
-
 repositories {
     mavenCentral()
 }
@@ -13,13 +10,13 @@ dependencies {
     implementation project(':core')
     implementation project(':limits')
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testImplementation 'org.mockito:mockito-junit-jupiter:5.9.0'
-    testImplementation 'org.assertj:assertj-core:3.25.3'
+    testImplementation libs.junit.jupiter
+    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.assertj.core
 }
 
-test {
-    useJUnitPlatform()
+jar {
+    archiveBaseName.set("pmitz-${project.name}")
+    archiveVersion.set(rootProject.version.toString())
+    archiveFileName.set("${archiveBaseName.get()}-${archiveVersion.get()}.jar")
 }

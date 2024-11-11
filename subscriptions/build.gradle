@@ -2,22 +2,16 @@ plugins {
     id 'java'
 }
 
-group 'io.terpomo.pmitz'
-
 repositories {
     mavenCentral()
 }
 
 dependencies {
     implementation project(':core')
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-test {
-    useJUnitPlatform()
 }
 
 jar {
-    archiveBaseName = 'pmitz-subscriptions'
+    archiveBaseName.set("pmitz-${project.name}")
+    archiveVersion.set(rootProject.version.toString())
+    archiveFileName.set("${archiveBaseName.get()}-${archiveVersion.get()}.jar")
 }
