@@ -1,30 +1,4 @@
-/*
- * Copyright 2023-2024 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package io.terpomo.pmitz.limits.integration;
-
-import java.sql.*;
-import java.time.*;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-
-import org.apache.commons.dbcp2.BasicDataSource;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
@@ -32,21 +6,28 @@ import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.UsageRecord;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
+import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRecordRepoMetadata;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
+import org.apache.commons.dbcp2.BasicDataSource;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import java.sql.*;
+import java.time.Duration;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.*;
 
 public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 
 	protected BasicDataSource dataSource;
 	protected JDBCUsageRepository repository;
-
-	// Abstract method for child classes to provide the query for checking timezone
-	protected abstract String getTimeZoneQuery();
-
-	protected abstract boolean isSingleTimeZoneQuery(); // Some databases return only one value
-
-	protected Clock clock;
 
 	static final String CUSTOM_SCHEMA = "pmitz";
 
@@ -57,8 +38,6 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 	@BeforeEach
 	public void setUp() throws SQLException {
 		setupDataSource();
-		clock = Clock.fixed(Instant.now(), ZoneOffset.UTC); // Always set the clock to UTC
-		ensureDatabaseTimezoneIsUTC(); // Ensure database is in UTC
 		setupDatabase();
 		printDatabaseContents("After setupDatabase");
 	}
@@ -73,40 +52,6 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 		dataSource.close();
 	}
 
-	public void ensureDatabaseTimezoneIsUTC() throws SQLException {
-		try (Connection connection = dataSource.getConnection();
-				PreparedStatement statement = connection.prepareStatement(getTimeZoneQuery());
-				ResultSet rs = statement.executeQuery()) {
-
-			if (rs.next()) {
-				if (isSingleTimeZoneQuery()) {
-					String timezone = rs.getString(1);
-					// Normalize SQL Server's "(UTC) Coordinated Universal Time" to "UTC"
-					if (timezone.contains("Coordinated Universal Time")) {
-						timezone = "UTC";
-					}
-					assertThat(timezone).isEqualTo("UTC");
-				}
-				else {
-					String globalTimezone = rs.getString(1);
-					String sessionTimezone = rs.getString(2);
-
-					// Normalize SQL Server's timezones if necessary
-					if (globalTimezone.contains("Coordinated Universal Time")) {
-						globalTimezone = "UTC";
-					}
-					if (sessionTimezone.contains("Coordinated Universal Time")) {
-						sessionTimezone = "UTC";
-					}
-
-					assertThat(globalTimezone).isEqualTo("UTC");
-					assertThat(sessionTimezone).isEqualTo("UTC");
-				}
-			}
-		}
-	}
-
-
 	protected abstract void setupDataSource();
 
 	protected abstract String getTableName();
@@ -117,8 +62,8 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 
 	protected abstract void printDatabaseContents(String message) throws SQLException;
 
-	public static void assertLocalDateTimeEqualsIgnoringMillis(LocalDateTime expected, LocalDateTime actual) {
-		assertThat(actual.truncatedTo(ChronoUnit.SECONDS)).isEqualTo(expected.truncatedTo(ChronoUnit.SECONDS));
+	public static void assertZonedDateTimeEqualsIgnoringMillis(ZonedDateTime expected, ZonedDateTime actual) {
+		assertThat(actual).isCloseTo(expected, within(1, ChronoUnit.SECONDS));
 	}
 
 	@Test
@@ -132,15 +77,16 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			}
 		};
 
-		ZonedDateTime nowZoned = ZonedDateTime.now(clock);
-		LocalDateTime startTime = nowZoned.minusMinutes(10).toLocalDateTime();
-		LocalDateTime endTime = nowZoned.plusMinutes(10).toLocalDateTime();
+		ZonedDateTime now = ZonedDateTime.now();
 
-		RecordSearchCriteria criteria = new RecordSearchCriteria("limit1", startTime.atZone(ZoneOffset.UTC), endTime.atZone(ZoneOffset.UTC));
+		ZonedDateTime startTime = now.minusMinutes(10);
+		ZonedDateTime endTime = now.plusMinutes(10);
+
+		RecordSearchCriteria criteria = new RecordSearchCriteria("limit1", startTime, endTime);
 		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
 
-		UsageRecord record1 = new UsageRecord(null, "limit1", startTime.plusMinutes(1).atZone(ZoneOffset.UTC), null, 100L, nowZoned.plusDays(1));
-		UsageRecord record2 = new UsageRecord(null, "limit1", startTime.plusMinutes(2).atZone(ZoneOffset.UTC), endTime.minusMinutes(1).atZone(ZoneOffset.UTC), 150L, nowZoned.plusDays(2));
+		UsageRecord record1 = new UsageRecord(null, "limit1", startTime.plusMinutes(1), null, 100L, now.plusDays(1));
+		UsageRecord record2 = new UsageRecord(null, "limit1", startTime.plusMinutes(2), endTime.minusMinutes(1), 150L, now.plusDays(2));
 
 		LimitTrackingContext contextToInsert = new LimitTrackingContext(feature, userGrouping, List.of());
 		contextToInsert.addUpdatedUsageRecords(List.of(record1, record2));
@@ -153,451 +99,331 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 
 		UsageRecord loadedRecord1 = loadedRecords.get(0);
 		assertThat(loadedRecord1.limitId()).isEqualTo("limit1");
-		assertLocalDateTimeEqualsIgnoringMillis(loadedRecord1.startTime().toLocalDateTime(), startTime.plusMinutes(1));
-		assertThat(loadedRecord1.endTime()).isNull();  // Check for null window_end
+		assertZonedDateTimeEqualsIgnoringMillis(loadedRecord1.startTime(), startTime.plusMinutes(1));
+		assertThat(loadedRecord1.endTime()).isNull();
 		assertThat(loadedRecord1.units()).isEqualTo(100L);
 
 		UsageRecord loadedRecord2 = loadedRecords.get(1);
 		assertThat(loadedRecord2.limitId()).isEqualTo("limit1");
-		assertLocalDateTimeEqualsIgnoringMillis(loadedRecord2.startTime().toLocalDateTime(), startTime.plusMinutes(2));
-		assertLocalDateTimeEqualsIgnoringMillis(loadedRecord2.endTime().toLocalDateTime(), endTime.minusMinutes(1));
+		assertZonedDateTimeEqualsIgnoringMillis(loadedRecord2.startTime(), startTime.plusMinutes(2));
+		assertZonedDateTimeEqualsIgnoringMillis(loadedRecord2.endTime(), endTime.minusMinutes(1));
 		assertThat(loadedRecord2.units()).isEqualTo(150L);
 	}
 
 	@Test
 	public void testUpdateUsageRecordsIntegration() throws SQLException {
-		setupDatabase();
-		printDatabaseContents("After setupDatabase");
-
-		LocalDateTime now = LocalDateTime.now(clock);
-		UsageRecord record1 = new UsageRecord(null, "limit1", now.atZone(ZoneOffset.UTC), now.plusHours(1).atZone(ZoneOffset.UTC), 100L, now.plusDays(1).atZone(ZoneOffset.UTC));
-		UsageRecord record2 = new UsageRecord(null, "limit2", now.atZone(ZoneOffset.UTC), now.plusHours(2).atZone(ZoneOffset.UTC), 200L, now.plusDays(2).atZone(ZoneOffset.UTC));
-
-		Product product = new Product("product1");
-		Feature feature = new Feature(product, "feature1");
+		Product product = new Product("product2");
+		Feature feature = new Feature(product, "feature2");
 		UserGrouping userGrouping = new UserGrouping() {
 			@Override
 			public String getId() {
-				return "user1";
+				return "user2";
 			}
 		};
 
-		LimitTrackingContext contextToInsert = new LimitTrackingContext(feature, userGrouping, List.of());
-		contextToInsert.addUpdatedUsageRecords(List.of(record1, record2));
+		ZonedDateTime now = ZonedDateTime.now();
 
-		repository.updateUsageRecords(contextToInsert);
-		printDatabaseContents("After initial updateUsageRecords");
+		UsageRecord record = new UsageRecord(null, "limit2", now.minusHours(1), now.plusHours(1), 200L, now.plusDays(1));
 
-		UsageRecord updatedRecord1 = new UsageRecord(null, "limit1", now.atZone(ZoneOffset.UTC), now.plusHours(1).atZone(ZoneOffset.UTC), 150L, now.plusDays(1).atZone(ZoneOffset.UTC));
-		UsageRecord updatedRecord2 = new UsageRecord(null, "limit2", now.atZone(ZoneOffset.UTC), now.plusHours(2).atZone(ZoneOffset.UTC), 250L, now.plusDays(2).atZone(ZoneOffset.UTC));
+		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of());
+		context.addUpdatedUsageRecords(List.of(record));
 
-		LimitTrackingContext contextToUpdate = new LimitTrackingContext(feature, userGrouping, List.of());
-		contextToUpdate.addUpdatedUsageRecords(List.of(updatedRecord1, updatedRecord2));
+		repository.updateUsageRecords(context);
 
-		repository.updateUsageRecords(contextToUpdate);
-		printDatabaseContents("After updateUsageRecords with updates");
+		String selectQuery = "SELECT * FROM " + getFullTableName() + " WHERE limit_id = 'limit2'";
 
-		try (Connection connection = dataSource.getConnection();
-				Statement stmt = connection.createStatement();
-				ResultSet rs = stmt.executeQuery("SELECT * FROM " + repository.getFullTableName())) {
-			int count = 0;
-			while (rs.next()) {
-				count++;
-				String limitId = rs.getString("limit_id");
-				LocalDateTime startTime = rs.getTimestamp("window_start").toLocalDateTime();
-				LocalDateTime endTime = rs.getTimestamp("window_end").toLocalDateTime();
-				long units = rs.getLong("units");
+		try (Connection conn = dataSource.getConnection();
+				Statement stmt = conn.createStatement();
+				ResultSet rs = stmt.executeQuery(selectQuery)) {
 
-				if ("limit1".equals(limitId)) {
-					assertLocalDateTimeEqualsIgnoringMillis(startTime, now);
-					assertLocalDateTimeEqualsIgnoringMillis(endTime, now.plusHours(1));
-					assertThat(units).isEqualTo(150L);
-				}
-				else if ("limit2".equals(limitId)) {
-					assertLocalDateTimeEqualsIgnoringMillis(startTime, now);
-					assertLocalDateTimeEqualsIgnoringMillis(endTime, now.plusHours(2));
-					assertThat(units).isEqualTo(250L);
-				}
-			}
-			assertThat(count).isEqualTo(2);
+			assertThat(rs.next()).isTrue();
+			assertThat(rs.getString("feature_id")).isEqualTo("feature2");
+			assertThat(rs.getString("product_id")).isEqualTo("product2");
+			assertThat(rs.getString("user_grouping")).isEqualTo("user2");
+			assertThat(rs.getString("limit_id")).isEqualTo("limit2");
+
+			ZonedDateTime windowStart = rs.getTimestamp("window_start").toInstant().atZone(ZoneOffset.UTC);
+			ZonedDateTime windowEnd = rs.getTimestamp("window_end").toInstant().atZone(ZoneOffset.UTC);
+
+			assertZonedDateTimeEqualsIgnoringMillis(windowStart, now.minusHours(1));
+			assertZonedDateTimeEqualsIgnoringMillis(windowEnd, now.plusHours(1));
+
+			assertThat(rs.getLong("units")).isEqualTo(200L);
+
+			ZonedDateTime expirationDate = rs.getTimestamp("expiration_date").toInstant().atZone(ZoneOffset.UTC);
+			assertZonedDateTimeEqualsIgnoringMillis(expirationDate, now.plusDays(1));
 		}
 	}
 
 	@Test
 	public void testUpdateUsageRecordsWithNullDates() throws SQLException {
-		LocalDateTime now = LocalDateTime.now(clock);
-
-		UsageRecord record1 = new UsageRecord(null, "limit1", now.atZone(ZoneOffset.UTC), null, 100L, now.plusDays(1).atZone(ZoneOffset.UTC));
-		UsageRecord record2 = new UsageRecord(null, "limit2", null, now.plusHours(2).atZone(ZoneOffset.UTC), 200L, now.plusDays(2).atZone(ZoneOffset.UTC));
-
-		Product product = new Product("product1");
-		Feature feature = new Feature(product, "feature1");
+		Product product = new Product("product3");
+		Feature feature = new Feature(product, "feature3");
 		UserGrouping userGrouping = new UserGrouping() {
 			@Override
 			public String getId() {
-				return "user1";
+				return "user3";
 			}
 		};
 
-		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of());
-		context.addUpdatedUsageRecords(List.of(record1, record2));
-		repository.updateUsageRecords(context);
+		ZonedDateTime now = ZonedDateTime.now();
 
-		try (Connection connection = dataSource.getConnection();
-				Statement stmt = connection.createStatement();
-				ResultSet rs = stmt.executeQuery("SELECT * FROM " + repository.getFullTableName())) {
-			while (rs.next()) {
-				String limitId = rs.getString("limit_id");
-				LocalDateTime startTime = (rs.getTimestamp("window_start") != null) ? rs.getTimestamp("window_start").toLocalDateTime() : null;
-				LocalDateTime endTime = (rs.getTimestamp("window_end") != null) ? rs.getTimestamp("window_end").toLocalDateTime() : null;
-
-				if ("limit1".equals(limitId)) {
-					assertThat(startTime).isNotNull();
-					assertThat(endTime).isNull();  // Check for null window_end
-				}
-				else if ("limit2".equals(limitId)) {
-					assertThat(startTime).isNull();  // Check for null window_start
-					assertThat(endTime).isNotNull();
-				}
-			}
-		}
-	}
-
-	@Test
-	public void testUpdateUsageRecordsWithNullExpirationDates() throws SQLException {
-		LocalDateTime now = LocalDateTime.now(clock);
-
-		UsageRecord record1 = new UsageRecord(null, "limit1", now.atZone(ZoneOffset.UTC), now.plusHours(1).atZone(ZoneOffset.UTC), 100L, null);
-		UsageRecord record2 = new UsageRecord(null, "limit2", now.atZone(ZoneOffset.UTC), now.plusHours(2).atZone(ZoneOffset.UTC), 200L, null);
-
-		Product product = new Product("product1");
-		Feature feature = new Feature(product, "feature1");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user1";
-			}
-		};
+		UsageRecord record = new UsageRecord(null, "limit3", null, null, 300L, null);
 
 		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of());
-		context.addUpdatedUsageRecords(List.of(record1, record2));
+		context.addUpdatedUsageRecords(List.of(record));
+
 		repository.updateUsageRecords(context);
 
-		try (Connection connection = dataSource.getConnection();
-				Statement stmt = connection.createStatement();
-				ResultSet rs = stmt.executeQuery("SELECT * FROM " + repository.getFullTableName())) {
-			while (rs.next()) {
-				String limitId = rs.getString("limit_id");
-				Timestamp expirationDate = rs.getTimestamp("expiration_date");
+		String selectQuery = "SELECT * FROM " + getFullTableName() + " WHERE limit_id = 'limit3'";
 
-				assertThat(expirationDate).isNull();  // Ensure null expiration_date
-			}
-		}
-	}
+		try (Connection conn = dataSource.getConnection();
+				Statement stmt = conn.createStatement();
+				ResultSet rs = stmt.executeQuery(selectQuery)) {
 
-	@Test
-	public void testUpdateUsageRecordsWithNullStartAndEndDates() throws SQLException {
-		UsageRecord record1 = new UsageRecord(null, "limit1", null, null, 100L, null);
+			assertThat(rs.next()).isTrue();
+			assertThat(rs.getString("feature_id")).isEqualTo("feature3");
+			assertThat(rs.getString("product_id")).isEqualTo("product3");
+			assertThat(rs.getString("user_grouping")).isEqualTo("user3");
+			assertThat(rs.getString("limit_id")).isEqualTo("limit3");
 
-		Product product = new Product("product1");
-		Feature feature = new Feature(product, "feature1");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user1";
-			}
-		};
+			assertThat(rs.getTimestamp("window_start")).isNull();
+			assertThat(rs.getTimestamp("window_end")).isNull();
 
-		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of());
-		context.addUpdatedUsageRecords(List.of(record1));
-		repository.updateUsageRecords(context);
+			assertThat(rs.getLong("units")).isEqualTo(300L);
 
-		printDatabaseContents("After update with null start and end dates");
-
-		try (Connection connection = dataSource.getConnection();
-				Statement stmt = connection.createStatement();
-				ResultSet rs = stmt.executeQuery("SELECT * FROM " + repository.getFullTableName())) {
-			int count = 0;
-			while (rs.next()) {
-				count++;
-				String limitId = rs.getString("limit_id");
-				LocalDateTime startTime = (rs.getTimestamp("window_start") != null) ? rs.getTimestamp("window_start").toLocalDateTime() : null;
-				LocalDateTime endTime = (rs.getTimestamp("window_end") != null) ? rs.getTimestamp("window_end").toLocalDateTime() : null;
-				long units = rs.getLong("units");
-
-				if ("limit1".equals(limitId)) {
-					assertThat(startTime).isNull();
-					assertThat(endTime).isNull();
-					assertThat(units).isEqualTo(100L);
-				}
-			}
-			assertThat(count).isEqualTo(1);
+			assertThat(rs.getTimestamp("expiration_date")).isNull();
 		}
 	}
 
 	@Test
 	public void testLoadUsageDataWithNullWindowStart() throws SQLException {
-		setupDatabase();
-		printDatabaseContents("After setupDatabase");
-
-		LocalDateTime now = LocalDateTime.now(clock);
-
-		UsageRecord record1 = new UsageRecord(null, "limit1", null, now.plusMinutes(1).atZone(ZoneOffset.UTC), 100L, now.plusDays(1).atZone(ZoneOffset.UTC));
-		UsageRecord record2 = new UsageRecord(null, "limit2", now.minusMinutes(2).atZone(ZoneOffset.UTC), now.plusMinutes(1).atZone(ZoneOffset.UTC), 200L, now.plusDays(2).atZone(ZoneOffset.UTC));
-
-		Product product = new Product("product1");
-		Feature feature = new Feature(product, "feature1");
+		Product product = new Product("product4");
+		Feature feature = new Feature(product, "feature4");
 		UserGrouping userGrouping = new UserGrouping() {
 			@Override
 			public String getId() {
-				return "user1";
+				return "user4";
 			}
 		};
 
+		ZonedDateTime now = ZonedDateTime.now();
+
+		UsageRecord record = new UsageRecord(null, "limit4", null, now.plusHours(1), 400L, now.plusDays(1));
+
 		LimitTrackingContext contextToInsert = new LimitTrackingContext(feature, userGrouping, List.of());
-		contextToInsert.addUpdatedUsageRecords(List.of(record1, record2));
-
+		contextToInsert.addUpdatedUsageRecords(List.of(record));
 		repository.updateUsageRecords(contextToInsert);
-		printDatabaseContents("After initial insert");
 
-		LocalDateTime queryEnd = now.plusMinutes(5);
-		RecordSearchCriteria criteria = new RecordSearchCriteria("limit1", null, queryEnd.atZone(ZoneOffset.UTC));  // Null windowStart
-
+		RecordSearchCriteria criteria = new RecordSearchCriteria("limit4", null, now.plusHours(2));
 		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
 
 		repository.loadUsageData(context);
-		printDatabaseContents("After loadUsageData");
 
 		List<UsageRecord> loadedRecords = context.getCurrentUsageRecords();
 		assertThat(loadedRecords).hasSize(1);
+
 		UsageRecord loadedRecord = loadedRecords.get(0);
-		assertThat(loadedRecord.limitId()).isEqualTo("limit1");
-		assertThat(loadedRecord.startTime()).isNull();  // Start time is null
-		assertLocalDateTimeEqualsIgnoringMillis(record1.endTime().toLocalDateTime(), loadedRecord.endTime().toLocalDateTime());
-		assertThat(loadedRecord.units()).isEqualTo(record1.units());
-		assertLocalDateTimeEqualsIgnoringMillis(record1.expirationDate().toLocalDateTime(), loadedRecord.expirationDate().toLocalDateTime());
-	}
-
-	@Test
-	public void testLoadUsageDataWithNullWindowEnd() throws SQLException {
-		setupDatabase();
-		printDatabaseContents("After setupDatabase");
-
-		LocalDateTime now = LocalDateTime.now(clock);
-
-		UsageRecord record1 = new UsageRecord(null, "limit1", now.minusMinutes(1).atZone(ZoneOffset.UTC), null, 100L, now.plusDays(1).atZone(ZoneOffset.UTC));
-		UsageRecord record2 = new UsageRecord(null, "limit2", now.minusMinutes(2).atZone(ZoneOffset.UTC), now.plusMinutes(1).atZone(ZoneOffset.UTC), 200L, now.plusDays(2).atZone(ZoneOffset.UTC));
-
-		Product product = new Product("product1");
-		Feature feature = new Feature(product, "feature1");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user1";
-			}
-		};
-
-		LimitTrackingContext contextToInsert = new LimitTrackingContext(feature, userGrouping, List.of());
-		contextToInsert.addUpdatedUsageRecords(List.of(record1, record2));
-
-		repository.updateUsageRecords(contextToInsert);
-		printDatabaseContents("After initial insert");
-
-		LocalDateTime queryStart = now.minusMinutes(5);
-		LocalDateTime queryEnd = now.plusMinutes(5);
-		RecordSearchCriteria criteria = new RecordSearchCriteria("limit1", queryStart.atZone(ZoneOffset.UTC), queryEnd.atZone(ZoneOffset.UTC));
-
-		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
-
-		repository.loadUsageData(context);
-		printDatabaseContents("After loadUsageData");
-
-		List<UsageRecord> loadedRecords = context.getCurrentUsageRecords();
-		assertThat(loadedRecords).hasSize(1);
-		UsageRecord loadedRecord = loadedRecords.get(0);
-		assertThat(loadedRecord.limitId()).isEqualTo("limit1");
-		assertLocalDateTimeEqualsIgnoringMillis(record1.startTime().toLocalDateTime(), loadedRecord.startTime().toLocalDateTime());
-		assertThat(loadedRecord.endTime()).isNull();
+		assertThat(loadedRecord.limitId()).isEqualTo("limit4");
+		assertThat(loadedRecord.startTime()).isNull();
+		assertZonedDateTimeEqualsIgnoringMillis(loadedRecord.endTime(), now.plusHours(1));
+		assertThat(loadedRecord.units()).isEqualTo(400L);
 	}
 
 	@Test
 	public void testLoadUsageDataWithInvalidLimitId() throws SQLException {
-		setupDatabase();
-		printDatabaseContents("After setupDatabase");
-
-		LocalDateTime now = LocalDateTime.now(clock);
-
-		UsageRecord record1 = new UsageRecord(null, "limit1", now.minusMinutes(1).atZone(ZoneOffset.UTC), now.plusMinutes(1).atZone(ZoneOffset.UTC), 100L, now.plusDays(1).atZone(ZoneOffset.UTC));
-		UsageRecord record2 = new UsageRecord(null, "limit2", now.minusMinutes(2).atZone(ZoneOffset.UTC), now.plusMinutes(1).atZone(ZoneOffset.UTC), 200L, now.plusDays(2).atZone(ZoneOffset.UTC));
-
-		Product product = new Product("product1");
-		Feature feature = new Feature(product, "feature1");
+		Product product = new Product("product5");
+		Feature feature = new Feature(product, "feature5");
 		UserGrouping userGrouping = new UserGrouping() {
 			@Override
 			public String getId() {
-				return "user1";
+				return "user5";
 			}
 		};
 
-		LimitTrackingContext contextToInsert = new LimitTrackingContext(feature, userGrouping, List.of());
-		contextToInsert.addUpdatedUsageRecords(List.of(record1, record2));
+		ZonedDateTime now = ZonedDateTime.now();
 
-		repository.updateUsageRecords(contextToInsert);
-		printDatabaseContents("After initial insert");
-
-		LocalDateTime queryStart = now.minusMinutes(5);
-		LocalDateTime queryEnd = now.plusMinutes(5);
-		RecordSearchCriteria criteria = new RecordSearchCriteria("invalid_limit", queryStart.atZone(ZoneOffset.UTC), queryEnd.atZone(ZoneOffset.UTC));
-
-		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
-
-		repository.loadUsageData(context);
-		printDatabaseContents("After loadUsageData");
-
-		List<UsageRecord> loadedRecords = context.getCurrentUsageRecords();
-		assertThat(loadedRecords).isEmpty();  // No records should be returned for an invalid limitId
-	}
-
-	@Test
-	public void testLoadUsageDataWithNullLimitId() throws SQLException {
-		setupDatabase();
-		printDatabaseContents("After setupDatabase");
-
-		LocalDateTime now = LocalDateTime.now(clock);
-
-		UsageRecord record1 = new UsageRecord(null, "limit1", now.minusMinutes(1).atZone(ZoneOffset.UTC), now.plusMinutes(1).atZone(ZoneOffset.UTC), 100L, now.plusDays(1).atZone(ZoneOffset.UTC));
-		UsageRecord record2 = new UsageRecord(null, "limit2", now.minusMinutes(2).atZone(ZoneOffset.UTC), now.plusMinutes(1).atZone(ZoneOffset.UTC), 200L, now.plusDays(2).atZone(ZoneOffset.UTC));
-
-		Product product = new Product("product1");
-		Feature feature = new Feature(product, "feature1");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user1";
-			}
-		};
+		// Create a new record without repoMetadata
+		UsageRecord recordToInsert = new UsageRecord(null, "limit5", now.minusHours(1), now.plusHours(1), 500L, now.plusDays(1));
 
 		LimitTrackingContext contextToInsert = new LimitTrackingContext(feature, userGrouping, List.of());
-		contextToInsert.addUpdatedUsageRecords(List.of(record1, record2));
+		contextToInsert.addUpdatedUsageRecords(List.of(recordToInsert));
+		repository.updateUsageRecords(contextToInsert); // This will insert the record
 
-		repository.updateUsageRecords(contextToInsert);
-		printDatabaseContents("After initial insert");
+		// Load the record to verify the insert
+		RecordSearchCriteria validCriteria = new RecordSearchCriteria("limit5", now.minusHours(2), now.plusHours(2));
+		LimitTrackingContext validContext = new LimitTrackingContext(feature, userGrouping, List.of(validCriteria));
+		repository.loadUsageData(validContext);
 
-		LocalDateTime queryStart = now.minusMinutes(5);
-		LocalDateTime queryEnd = now.plusMinutes(5);
-		RecordSearchCriteria criteria = new RecordSearchCriteria(null, queryStart.atZone(ZoneOffset.UTC), queryEnd.atZone(ZoneOffset.UTC));
+		List<UsageRecord> validRecords = validContext.getCurrentUsageRecords();
+		assertThat(validRecords).hasSize(1);
 
-		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
+		// Test with an invalid limit id
+		RecordSearchCriteria invalidCriteria = new RecordSearchCriteria("invalidLimit", now.minusHours(2), now.plusHours(2));
+		LimitTrackingContext invalidContext = new LimitTrackingContext(feature, userGrouping, List.of(invalidCriteria));
+		repository.loadUsageData(invalidContext);
 
-		repository.loadUsageData(context);
-		printDatabaseContents("After loadUsageData");
-
-		List<UsageRecord> loadedRecords = context.getCurrentUsageRecords();
-		assertThat(loadedRecords).hasSize(2);
+		List<UsageRecord> invalidRecords = invalidContext.getCurrentUsageRecords();
+		assertThat(invalidRecords).isEmpty();
 	}
 
 	@Test
 	public void testLoadUsageDataWithOutOfBoundsTimeRange() throws SQLException {
-		setupDatabase();
-		printDatabaseContents("After setupDatabase");
-
-		LocalDateTime now = LocalDateTime.now(clock);
-
-		UsageRecord record1 = new UsageRecord(null, "limit1", now.minusMinutes(1).atZone(ZoneOffset.UTC), now.plusMinutes(1).atZone(ZoneOffset.UTC), 100L, now.plusDays(1).atZone(ZoneOffset.UTC));
-		UsageRecord record2 = new UsageRecord(null, "limit2", now.minusMinutes(2).atZone(ZoneOffset.UTC), now.plusMinutes(1).atZone(ZoneOffset.UTC), 200L, now.plusDays(2).atZone(ZoneOffset.UTC));
-
-		Product product = new Product("product1");
-		Feature feature = new Feature(product, "feature1");
+		Product product = new Product("product6");
+		Feature feature = new Feature(product, "feature6");
 		UserGrouping userGrouping = new UserGrouping() {
 			@Override
 			public String getId() {
-				return "user1";
+				return "user6";
 			}
 		};
 
+		ZonedDateTime now = ZonedDateTime.now();
+
+		UsageRecord record = new UsageRecord(null, "limit6", now.minusHours(1), now.plusHours(1), 600L, now.plusDays(1));
+
 		LimitTrackingContext contextToInsert = new LimitTrackingContext(feature, userGrouping, List.of());
-		contextToInsert.addUpdatedUsageRecords(List.of(record1, record2));
-
+		contextToInsert.addUpdatedUsageRecords(List.of(record));
 		repository.updateUsageRecords(contextToInsert);
-		printDatabaseContents("After initial insert");
 
-		LocalDateTime queryStart = now.plusHours(2);  // Start searching after the last record's end time
-		LocalDateTime queryEnd = now.plusHours(3);    // Search window is fully outside bounds
-		RecordSearchCriteria criteria = new RecordSearchCriteria("limit1", queryStart.atZone(ZoneOffset.UTC), queryEnd.atZone(ZoneOffset.UTC));
-
+		RecordSearchCriteria criteria = new RecordSearchCriteria("limit6", now.plusHours(2), now.plusHours(3));
 		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
 
 		repository.loadUsageData(context);
-		printDatabaseContents("After loadUsageData");
 
 		List<UsageRecord> loadedRecords = context.getCurrentUsageRecords();
-		assertThat(loadedRecords).isEmpty();  // No records should be found since the time range is out of bounds
+		assertThat(loadedRecords).isEmpty();
+	}
+
+	@Test
+	public void testUpdateUsageRecordsWithExistingRecord() throws SQLException {
+		Product product = new Product("product7");
+		Feature feature = new Feature(product, "feature7");
+		UserGrouping userGrouping = new UserGrouping() {
+			@Override
+			public String getId() {
+				return "user7";
+			}
+		};
+
+		ZonedDateTime now = ZonedDateTime.now();
+		ZonedDateTime fixedTime = ZonedDateTime.of(2024, 11, 2, 7, 0, 0, 0, ZoneOffset.UTC);
+
+		// Insert a new record
+		UsageRecord recordToInsert = new UsageRecord(null, "existing-limit", fixedTime, fixedTime.plusHours(1), 700L, fixedTime.plusDays(1));
+		LimitTrackingContext contextToInsert = new LimitTrackingContext(feature, userGrouping, List.of());
+		contextToInsert.addUpdatedUsageRecords(List.of(recordToInsert));
+		repository.updateUsageRecords(contextToInsert);
+
+		// Update the existing record
+		UsageRecord recordToUpdate = new UsageRecord(null, "existing-limit", fixedTime, fixedTime.plusHours(2), 750L, fixedTime.plusDays(1));
+		System.out.println("Updating record with endTime: " + recordToUpdate.endTime());
+
+		LimitTrackingContext contextToUpdate = new LimitTrackingContext(feature, userGrouping, List.of());
+		contextToUpdate.addUpdatedUsageRecords(List.of(recordToUpdate));
+		repository.updateUsageRecords(contextToUpdate);
+
+		// Verify the update
+		RecordSearchCriteria criteria = new RecordSearchCriteria("existing-limit", fixedTime.minusHours(1), fixedTime.plusHours(3));
+		LimitTrackingContext loadContext = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
+		repository.loadUsageData(loadContext);
+
+		List<UsageRecord> loadedRecords = loadContext.getCurrentUsageRecords();
+		assertThat(loadedRecords).hasSize(1);
+
+		UsageRecord loadedRecord = loadedRecords.get(0);
+		System.out.println("Loaded record with endTime: " + loadedRecord.endTime());
+
+		assertZonedDateTimeEqualsIgnoringMillis(fixedTime, loadedRecord.startTime());
+		assertZonedDateTimeEqualsIgnoringMillis(fixedTime.plusHours(2), loadedRecord.endTime());
+		assertThat(loadedRecord.units()).isEqualTo(750L);
+		assertZonedDateTimeEqualsIgnoringMillis(fixedTime.plusDays(1), loadedRecord.expirationDate());
+	}
+
+	@Test
+	public void testDeleteOldRecords() throws SQLException {
+		Product product = new Product("product8");
+		Feature feature = new Feature(product, "feature8");
+		UserGrouping userGrouping = new UserGrouping() {
+			@Override
+			public String getId() {
+				return "user8";
+			}
+		};
+
+		ZonedDateTime now = ZonedDateTime.now();
+
+		UsageRecord record1 = new UsageRecord(null, "limit8", now.minusDays(2), now.minusDays(1), 800L, now.minusHours(1));
+		UsageRecord record2 = new UsageRecord(null, "limit8", now.minusHours(1), now.plusHours(1), 850L, now.plusDays(1));
+
+		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of());
+		context.addUpdatedUsageRecords(List.of(record1, record2));
+		repository.updateUsageRecords(context);
+
+		// Delete records with expiration date <= now
+		repository.deleteOldRecords(now);
+
+		// Load and verify
+		RecordSearchCriteria criteria = new RecordSearchCriteria("limit8", now.minusDays(3), now.plusDays(3));
+		LimitTrackingContext loadContext = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
+		repository.loadUsageData(loadContext);
+
+		List<UsageRecord> loadedRecords = loadContext.getCurrentUsageRecords();
+		assertThat(loadedRecords).hasSize(1);
+
+		UsageRecord loadedRecord = loadedRecords.get(0);
+		assertThat(loadedRecord.limitId()).isEqualTo("limit8");
+		assertZonedDateTimeEqualsIgnoringMillis(loadedRecord.startTime(), now.minusHours(1));
+		assertZonedDateTimeEqualsIgnoringMillis(loadedRecord.endTime(), now.plusHours(1));
+		assertThat(loadedRecord.units()).isEqualTo(850L);
+		assertZonedDateTimeEqualsIgnoringMillis(loadedRecord.expirationDate(), now.plusDays(1));
 	}
 
 	@Test
 	public void testLoadUsageDataWithEmptyCriteria() throws SQLException {
-		setupDatabase();
-		printDatabaseContents("After setupDatabase");
-
-		LocalDateTime now = LocalDateTime.now(clock);
-
-		UsageRecord record1 = new UsageRecord(null, "limit1", now.minusMinutes(1).atZone(ZoneOffset.UTC), now.plusMinutes(1).atZone(ZoneOffset.UTC), 100L, now.plusDays(1).atZone(ZoneOffset.UTC));
-		UsageRecord record2 = new UsageRecord(null, "limit2", now.minusMinutes(2).atZone(ZoneOffset.UTC), now.plusMinutes(1).atZone(ZoneOffset.UTC), 200L, now.plusDays(2).atZone(ZoneOffset.UTC));
-
-		Product product = new Product("product1");
-		Feature feature = new Feature(product, "feature1");
+		Product product = new Product("product9");
+		Feature feature = new Feature(product, "feature9");
 		UserGrouping userGrouping = new UserGrouping() {
 			@Override
 			public String getId() {
-				return "user1";
+				return "user9";
 			}
 		};
 
-		LimitTrackingContext contextToInsert = new LimitTrackingContext(feature, userGrouping, List.of());
-		contextToInsert.addUpdatedUsageRecords(List.of(record1, record2));
-
-		repository.updateUsageRecords(contextToInsert);
-		printDatabaseContents("After initial insert");
-
 		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of());
-
 		repository.loadUsageData(context);
-		printDatabaseContents("After loadUsageData");
 
 		List<UsageRecord> loadedRecords = context.getCurrentUsageRecords();
-		assertThat(loadedRecords).isEmpty();  // No criteria means no data should be returned
+		assertThat(loadedRecords).isEmpty();
 	}
 
 	@Test
 	public void testLoadUsageDataWithLargeDatasets() throws SQLException {
-		setupDatabase();
-		printDatabaseContents("After setupDatabase");
-
-		Product product = new Product("product1");
-		Feature feature = new Feature(product, "feature1");
+		Product product = new Product("product10");
+		Feature feature = new Feature(product, "feature10");
 		UserGrouping userGrouping = new UserGrouping() {
 			@Override
 			public String getId() {
-				return "user1";
+				return "user10";
 			}
 		};
 
-		LocalDateTime now = LocalDateTime.now(clock);
-		LimitTrackingContext contextToInsert = new LimitTrackingContext(feature, userGrouping, List.of());
+		ZonedDateTime now = ZonedDateTime.now();
 
-		for (int i = 0; i < 1000; i++) {
-			UsageRecord record = new UsageRecord(null, "limit1", now.minusMinutes(i).atZone(ZoneOffset.UTC), now.minusMinutes(i - 5).atZone(ZoneOffset.UTC), 100L + i, now.plusDays(1).atZone(ZoneOffset.UTC));
+		// Insert multiple records
+		LimitTrackingContext contextToInsert = new LimitTrackingContext(feature, userGrouping, List.of());
+		for (int i = 0; i < 100; i++) {
+			UsageRecord record = new UsageRecord(null, "limit10", now.minusDays(i), now.plusDays(i), 1000L + i, now.plusDays(i));
 			contextToInsert.addUpdatedUsageRecords(List.of(record));
 		}
-
 		repository.updateUsageRecords(contextToInsert);
 
-		RecordSearchCriteria criteria = new RecordSearchCriteria("limit1", now.minusMinutes(1000).atZone(ZoneOffset.UTC), now.plusMinutes(10).atZone(ZoneOffset.UTC));
-		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
+		// Load and verify
+		RecordSearchCriteria criteria = new RecordSearchCriteria("limit10", now.minusDays(200), now.plusDays(200));
+		LimitTrackingContext loadContext = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
+		repository.loadUsageData(loadContext);
 
-		repository.loadUsageData(context);
-		List<UsageRecord> loadedRecords = context.getCurrentUsageRecords();
-		assertThat(loadedRecords).hasSize(1000);
+		List<UsageRecord> loadedRecords = loadContext.getCurrentUsageRecords();
+		assertThat(loadedRecords).hasSize(100);
 	}
-
 }

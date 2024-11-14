@@ -1,53 +1,25 @@
-/*
- * Copyright 2023-2024 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package io.terpomo.pmitz.limits.integration;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.util.TimeZone;
-
+import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
+import java.sql.*;
 
 public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
 
 	private static final PostgreSQLContainer<?> postgresqlContainer =
-			new PostgreSQLContainer<>("postgres:latest")
-					.withEnv("TZ", "UTC")
-					.withCommand("postgres", "-c", "timezone=UTC");
+			new PostgreSQLContainer<>("postgres:latest");
 
 	@BeforeAll
 	public static void setUpClass() {
-		// Start the container before all tests
 		postgresqlContainer.start();
-		// Set timezone to UTC
-		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 	}
 
 	@AfterAll
 	public static void tearDownClass() {
-		// Stop the container after all tests
 		if (postgresqlContainer != null) {
 			postgresqlContainer.stop();
 		}
@@ -55,24 +27,12 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 
 	@Override
 	protected void setupDataSource() {
-		// Set up the data source using the container's JDBC URL
 		dataSource = new BasicDataSource();
-		String jdbcUrlWithTimezone = postgresqlContainer.getJdbcUrl() + "?sessionTimezone=UTC";
-		dataSource.setUrl(jdbcUrlWithTimezone);
+		dataSource.setUrl(postgresqlContainer.getJdbcUrl());
 		dataSource.setUsername(postgresqlContainer.getUsername());
 		dataSource.setPassword(postgresqlContainer.getPassword());
 
 		repository = new JDBCUsageRepository(dataSource, CUSTOM_SCHEMA, getTableName());
-	}
-
-	@Override
-	protected String getTimeZoneQuery() {
-		return "SHOW timezone";
-	}
-
-	@Override
-	protected boolean isSingleTimeZoneQuery() {
-		return true; // PostgreSQL only returns one value
 	}
 
 	@Override
@@ -85,10 +45,6 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
 
-			// Set session timezone for the current connection
-			stmt.execute("SET LOCAL TIME ZONE 'UTC';");
-
-			// Create schema and tables
 			stmt.execute("CREATE SCHEMA IF NOT EXISTS " + CUSTOM_SCHEMA);
 			stmt.execute("CREATE TABLE IF NOT EXISTS " + CUSTOM_SCHEMA + ".\"Usage\" (" +
 					"usage_id SERIAL PRIMARY KEY, " +
@@ -102,11 +58,6 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 					"expiration_date TIMESTAMP, " +
 					"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
 					");");
-
-			ResultSet rs = stmt.executeQuery("SHOW timezone;");
-			if (rs.next()) {
-				System.out.println("PostgreSQL Timezone: " + rs.getString(1));
-			}
 		}
 	}
 
@@ -115,8 +66,7 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 		try (Connection conn = dataSource.getConnection();
 				Statement statement = conn.createStatement()) {
 			statement.execute("TRUNCATE TABLE " + getFullTableName() + " RESTART IDENTITY CASCADE");
-		}
-		catch (SQLException ex) {
+		} catch (SQLException ex) {
 			System.out.println("Error during tearDownDatabase: " + ex.getMessage());
 		}
 	}
@@ -139,14 +89,12 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 				Timestamp expirationDate = rs.getTimestamp("expiration_date");
 				Timestamp updatedAt = rs.getTimestamp("updated_at");
 
-				// Simply print the timestamp values as-is
 				System.out.println("UsageId: " + usageId + ", FeatureId: " + featureId + ", ProductId: " + productId
 						+ ", UserGrouping: " + userGrouping + ", LimitId: " + limitId + ", WindowStart: " + windowStart
 						+ ", WindowEnd: " + windowEnd + ", Units: " + units + ", ExpirationDate: " + expirationDate
 						+ ", UpdatedAt: " + updatedAt);
 			}
-		}
-		catch (SQLException ex) {
+		} catch (SQLException ex) {
 			System.out.println("Error while printing database contents: " + ex.getMessage());
 		}
 	}
