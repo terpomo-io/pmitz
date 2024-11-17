@@ -1,22 +1,4 @@
-plugins {
-    id 'java'
-}
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     implementation project(':core')
     implementation project(':limits')
-
-    testImplementation libs.junit.jupiter
-    testImplementation libs.mockito.junit.jupiter
-    testImplementation libs.assertj.core
-}
-
-jar {
-    archiveBaseName.set("pmitz-${project.name}")
-    archiveVersion.set(rootProject.version.toString())
-    archiveFileName.set("${archiveBaseName.get()}-${archiveVersion.get()}.jar")
 }

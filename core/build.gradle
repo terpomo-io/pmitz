@@ -1,35 +1,6 @@
-plugins {
-    id 'java'
-}
-
-repositories {
-    mavenCentral()
-}
-
-java {
-    registerFeature('postgres') {
-        usingSourceSet(sourceSets.main)
-    }
-    registerFeature('mysql') {
-        usingSourceSet(sourceSets.main)
-    }
-    registerFeature('sqlserver') {
-        usingSourceSet(sourceSets.main)
-    }
-}
-
 dependencies {
     implementation libs.slf4j
-    implementation libs.jacksonDatabind
+    implementation libs.jackson.databind
 
     testImplementation libs.json.path
-    testImplementation libs.junit.jupiter
-    testImplementation libs.mockito.junit.jupiter
-    testImplementation libs.assertj.core
-}
-
-jar {
-    archiveBaseName.set("pmitz-${project.name}")
-    archiveVersion.set(rootProject.version.toString())
-    archiveFileName.set("${archiveBaseName.get()}-${archiveVersion.get()}.jar")
 }

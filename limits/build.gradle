@@ -1,11 +1,3 @@
-plugins {
-    id 'java'
-}
-
-repositories {
-    mavenCentral()
-}
-
 java {
     registerFeature('postgres') {
         usingSourceSet(sourceSets.main)
@@ -16,29 +8,24 @@ java {
     registerFeature('sqlserver') {
         usingSourceSet(sourceSets.main)
     }
-    registerFeature('mariadb') {
-        usingSourceSet(sourceSets.main)
-    }
 }
 
 dependencies {
     implementation project(':core')
 
     implementation libs.slf4j
-    implementation libs.jacksonDatabind
+    implementation libs.jackson.databind
 
     // JDBC Drivers
-    postgresImplementation libs.driver.postgres
-    mysqlImplementation libs.driver.mysql
-    sqlserverImplementation libs.driver.sqlserver
+    postgresImplementation libs.postgres
+    mysqlImplementation libs.mysql
+    sqlserverImplementation libs.sqlserver
 
     // Testing
-    testImplementation libs.junit.jupiter
-    testImplementation libs.mockito.junit.jupiter
-    testImplementation libs.assertj.core
+    testRuntimeOnly libs.junit.jupiter.engine
 
-    testImplementation libs.commons.commons.dbcp2
-    testImplementation libs.driver.h2
+    testImplementation libs.commons.dbcp2
+    testImplementation libs.h2
 
     // TestContainers (for all databases)
     testImplementation libs.testcontainers
@@ -46,10 +33,4 @@ dependencies {
     testImplementation libs.testcontainers.mysql
     testImplementation libs.testcontainers.mssqlserver
     testImplementation libs.testcontainers.junitJupiter
-}
-
-jar {
-    archiveBaseName.set("pmitz-${project.name}")
-    archiveVersion.set(rootProject.version.toString())
-    archiveFileName.set("${archiveBaseName.get()}-${archiveVersion.get()}.jar")
 }

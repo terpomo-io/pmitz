@@ -1,17 +1,3 @@
-plugins {
-    id 'java'
-}
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     implementation project(':core')
-}
-
-jar {
-    archiveBaseName.set("pmitz-${project.name}")
-    archiveVersion.set(rootProject.version.toString())
-    archiveFileName.set("${archiveBaseName.get()}-${archiveVersion.get()}.jar")
 }

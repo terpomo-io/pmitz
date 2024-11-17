@@ -3,11 +3,8 @@ apply plugin: 'java'
 group 'io.terpomo.pmitz'
 version '1.0.0-SNAPSHOT'
 
-repositories {
-    mavenCentral()
-}
-
 subprojects {
+    apply plugin: 'java'
     apply plugin: 'checkstyle'
 
     checkstyle {
@@ -24,13 +21,27 @@ subprojects {
     }
 
     dependencies {
-        checkstyle(libs.spring.javaformat)
+        checkstyle libs.spring.javaformat
+
+        testImplementation libs.junit.jupiter
+        testImplementation libs.mockito.junit.jupiter
+        testImplementation libs.assertj.core
     }
 
     configurations.checkstyle {
         resolutionStrategy.capabilitiesResolution.withCapability("com.google.collections:google-collections") {
             select("com.google.guava:guava:0")
         }
+    }
+
+    tasks.withType(Jar).configureEach {
+        archiveBaseName.set("pmitz-${project.name}")
+        archiveVersion.set(rootProject.version.toString())
+        archiveFileName.set("${archiveBaseName.get()}-${archiveVersion.get()}.jar")
+    }
+
+    repositories {
+        mavenCentral()
     }
 
     test {
