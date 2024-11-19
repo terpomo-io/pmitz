@@ -1,29 +1,40 @@
+/*
+ * Copyright 2023-2024 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.terpomo.pmitz.limits.integration;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.sql.*;
-
+@Testcontainers
 public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
 
+	@Container
 	private static final PostgreSQLContainer<?> postgresqlContainer =
 			new PostgreSQLContainer<>("postgres:latest");
 
-	@BeforeAll
-	public static void setUpClass() {
-		postgresqlContainer.start();
-	}
-
-	@AfterAll
-	public static void tearDownClass() {
-		if (postgresqlContainer != null) {
-			postgresqlContainer.stop();
-		}
-	}
 
 	@Override
 	protected void setupDataSource() {
@@ -58,6 +69,9 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 					"expiration_date TIMESTAMP, " +
 					"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
 					");");
+
+			stmt.execute("CREATE INDEX idx_limit_id ON " + CUSTOM_SCHEMA + ".\"Usage\" (limit_id);");
+			stmt.execute("CREATE INDEX idx_feature_product_user ON " + CUSTOM_SCHEMA + ".\"Usage\" (feature_id, product_id, user_grouping);");
 		}
 	}
 
