@@ -1,7 +1,7 @@
 plugins {
     id 'java'
-    alias libs.plugins.springboot
-    alias libs.plugins.springDependencyManagement
+    id 'org.springframework.boot' version '3.3.5'
+    id 'io.spring.dependency-management' version '1.1.6'
 }
 
 group = 'com.example'
@@ -18,18 +18,10 @@ repositories {
 }
 
 dependencies {
-    implementation project(path: ':all')
-    implementation project(path: ':core')
-    implementation project(path: ':limits')
-
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
-
-    implementation 'org.flywaydb:flyway-core'
-
-    implementation 'com.h2database:h2'
-
+    implementation project(path: ':all')
+    implementation project(path: ':core')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
@@ -39,5 +31,5 @@ tasks.named('test') {
 }
 
 task wrapper(type: Wrapper){
-    gradleVersion = '8.11'
+    gradleVersion = '8.5'
 }
