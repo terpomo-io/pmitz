@@ -1,54 +1,8 @@
 rootProject.name = 'pmitz'
-include 'core', 'subscriptions', 'limits', 'all', 'examples'
-
-dependencyResolutionManagement {
-    versionCatalogs {
-        libs {
-            version('assertj-core.version', '3.27.3')
-            version('commons-dbcp2.version', '2.13.0')
-            version('h2.version', '2.3.232')
-            version('jackson-databind.version', '2.18.2')
-            version('json-path.version', '2.9.0')
-            version('junit.version', '5.11.4')
-            version('junit.platform-launcher', '1.11.4')
-            version('logback-classic.version', '1.5.16')
-            version('mockito-junit-jupiter.version', '5.15.2')
-            version('mssql-jdbc.version', '12.8.1.jre11')
-            version('mysql-connector-java.version', '8.0.33')
-            version('postgres.version', '42.7.5')
-            version('slf4j.version', '2.0.16')
-            version('spring-javaformat-checkstyle.version', '0.0.43')
-            version('testcontainers.version', '1.20.4')
-
-            // Common libraries
-            library('slf4j', 'org.slf4j', 'slf4j-api').versionRef('slf4j.version')
-            library('commons.dbcp2', 'org.apache.commons', 'commons-dbcp2').versionRef('commons-dbcp2.version')
-            library('jackson.databind', 'com.fasterxml.jackson.core', 'jackson-databind').versionRef('jackson-databind.version')
-            library('json.path', 'com.jayway.jsonpath', 'json-path').versionRef('json-path.version')
-
-            // Database drivers
-            library('h2', 'com.h2database', 'h2').versionRef('h2.version')
-            library('postgres', 'org.postgresql', 'postgresql').versionRef('postgres.version')
-            library('mysql', 'mysql', 'mysql-connector-java').versionRef('mysql-connector-java.version')
-            library('sqlserver', 'com.microsoft.sqlserver', 'mssql-jdbc').versionRef('mssql-jdbc.version')
-
-            // Testcontainers libraries
-            library('testcontainers', 'org.testcontainers', 'testcontainers').versionRef('testcontainers.version')
-            library('testcontainers.postgresql','org.testcontainers', 'postgresql').versionRef('testcontainers.version')
-            library('testcontainers.mysql', 'org.testcontainers', 'mysql').versionRef('testcontainers.version')
-            library('testcontainers.mssqlserver', 'org.testcontainers', 'mssqlserver').versionRef('testcontainers.version')
-            library('testcontainers.junitJupiter', 'org.testcontainers', 'junit-jupiter').versionRef('testcontainers.version')
-
-            // Library for CheckStyle
-            library('spring.javaformat', 'io.spring.javaformat', 'spring-javaformat-checkstyle').versionRef('spring-javaformat-checkstyle.version')
-
-            // Libraries for testing
-            library('junit.jupiter', 'org.junit.jupiter', 'junit-jupiter').versionRef('junit.version')
-            library('junit.platform.launcher', 'org.junit.platform', 'junit-platform-launcher').versionRef('junit.platform-launcher')
-            library('mockito.junit.jupiter', 'org.mockito', 'mockito-junit-jupiter').versionRef('mockito-junit-jupiter.version')
-            library('assertj.core', 'org.assertj', 'assertj-core').versionRef('assertj-core.version')
-            library('logback', 'ch.qos.logback', 'logback-classic').versionRef('logback-classic.version')
-        }
-    }
-}
+include 'core'
+include 'subscriptions'
+include 'limits'
+include 'all'
+include 'examples'
+include 'remoteserver'
 
