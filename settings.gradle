@@ -1,8 +1,8 @@
 rootProject.name = 'pmitz'
-include 'core',
-        'limits',
-        'subscriptions',
-        'all',
-        'remoteserver',
-        'remoteclient',
-        'examples'
+include 'core'
+include 'subscriptions'
+include 'limits'
+include 'all'
+include 'examples'
+include 'remoteserver'
+
