@@ -4,4 +4,5 @@ include 'subscriptions'
 include 'limits'
 include 'all'
 include 'examples'
+include 'remoteserver'
 
