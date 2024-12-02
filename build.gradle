@@ -1,20 +1,7 @@
 apply plugin: 'java'
 
 group 'io.terpomo.pmitz'
-version '1.0-SNAPSHOT'
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-test {
-    useJUnitPlatform()
-}
+version '1.0.0-SNAPSHOT'
 
 subprojects {
     apply plugin: 'checkstyle'
@@ -33,12 +20,22 @@ subprojects {
     }
 
     dependencies {
-        checkstyle("io.spring.javaformat:spring-javaformat-checkstyle:0.0.41")
+        checkstyle libs.spring.javaformat
     }
 
     configurations.checkstyle {
         resolutionStrategy.capabilitiesResolution.withCapability("com.google.collections:google-collections") {
             select("com.google.guava:guava:0")
         }
+    }
+
+    tasks.withType(Jar).configureEach {
+        archiveBaseName.set("pmitz-${project.name}")
+        archiveVersion.set(rootProject.version.toString())
+        archiveFileName.set("${archiveBaseName.get()}-${archiveVersion.get()}.jar")
+    }
+
+    repositories {
+        mavenCentral()
     }
 }

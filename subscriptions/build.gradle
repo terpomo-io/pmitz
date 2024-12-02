@@ -1,23 +1,13 @@
-plugins {
-    id 'java'
-}
-
-group 'io.terpomo.pmitz'
-
-repositories {
-    mavenCentral()
-}
+apply plugin: 'java'
 
 dependencies {
     implementation project(':core')
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    testImplementation libs.junit.jupiter
+    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.assertj.core
 }
 
 test {
     useJUnitPlatform()
-}
-
-jar {
-    archiveBaseName = 'pmitz-subscriptions'
 }

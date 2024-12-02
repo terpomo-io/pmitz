@@ -1,22 +1,14 @@
-plugins {
-    id 'java'
-}
-
-group 'io.terpomo.pmitz'
-version '1.0-SNAPSHOT'
-
-repositories {
-    mavenCentral()
-}
+apply plugin: 'java'
 
 dependencies {
     implementation project(':limits')
     implementation project(':core')
-    implementation 'com.h2database:h2:2.2.224'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    implementation libs.h2
 
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation libs.junit.jupiter
+    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.assertj.core
 }
 
 test {
