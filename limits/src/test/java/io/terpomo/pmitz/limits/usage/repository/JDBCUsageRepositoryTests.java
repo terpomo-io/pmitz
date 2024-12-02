@@ -2,8 +2,7 @@
  * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * You may obtain a copy at
  *
  *      https://www.apache.org/licenses/LICENSE-2.0
  *
@@ -16,18 +15,9 @@
 
 package io.terpomo.pmitz.limits.usage.repository;
 
-import java.sql.Connection;
-import java.sql.Statement;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
-import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.UsageRecord;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRecordRepoMetadata;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
@@ -36,7 +26,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.*;
+import java.sql.Connection;
+import java.sql.Statement;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class JDBCUsageRepositoryTests {
 
@@ -53,19 +51,20 @@ class JDBCUsageRepositoryTests {
 
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
+
 			stmt.execute("CREATE SCHEMA IF NOT EXISTS " + CUSTOM_SCHEMA);
-			stmt.execute("CREATE TABLE " + CUSTOM_SCHEMA + ".\"Usage\" ("
-					+ "usage_id serial PRIMARY KEY, "
-					+ "feature_id varchar, "
-					+ "product_id varchar, "
-					+ "user_grouping varchar, "
-					+ "limit_id varchar, "
-					+ "window_start TIMESTAMP, "
-					+ "window_end TIMESTAMP, "
-					+ "units integer, "
-					+ "expiration_date TIMESTAMP, "
-					+ "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
-					+ ");");
+			stmt.execute("CREATE TABLE " + CUSTOM_SCHEMA + ".\"Usage\" (" +
+					"usage_id serial PRIMARY KEY, " +
+					"feature_id varchar, " +
+					"product_id varchar, " +
+					"user_grouping varchar, " +
+					"limit_id varchar, " +
+					"window_start TIMESTAMP, " +
+					"window_end TIMESTAMP, " +
+					"units integer, " +
+					"expiration_date TIMESTAMP, " +
+					"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+					");");
 		}
 
 		repository = new JDBCUsageRepository(dataSource, CUSTOM_SCHEMA, "\"Usage\"");
@@ -75,6 +74,7 @@ class JDBCUsageRepositoryTests {
 	void tearDown() throws Exception {
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
+
 			stmt.execute("DROP TABLE IF EXISTS " + CUSTOM_SCHEMA + ".\"Usage\";");
 		}
 	}
@@ -82,21 +82,20 @@ class JDBCUsageRepositoryTests {
 	@Test
 	void testLoadUsageDataWithDifferentValues() throws Exception {
 		ZonedDateTime fixedTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-		UsageRecord newRecord = new UsageRecord(null, "limit2", fixedTime.minusDays(15), fixedTime.minusDays(5), 200L, fixedTime.plusMonths(2));
+		UsageRecord newRecord = new UsageRecord(null, "limit2", fixedTime.minusDays(15),
+				fixedTime.minusDays(5), 200L, fixedTime.plusMonths(2));
 
 		Product product = new Product("product2");
 		Feature feature = new Feature(product, "feature2");
 		IndividualUser user = new IndividualUser("user2");
 
-
-		RecordSearchCriteria criteria = new RecordSearchCriteria("limit2", fixedTime.minusDays(15), fixedTime.minusDays(5));
+		RecordSearchCriteria criteria = new RecordSearchCriteria("limit2",
+				fixedTime.minusDays(15), fixedTime.minusDays(5));
 		LimitTrackingContext context = new LimitTrackingContext(feature, user, List.of(criteria));
 		context.addUpdatedUsageRecords(List.of(newRecord));
 		repository.updateUsageRecords(context);
 
-		criteria = new RecordSearchCriteria("limit2", fixedTime.minusDays(15), fixedTime.minusDays(5));
 		context = new LimitTrackingContext(feature, user, List.of(criteria));
-
 		repository.loadUsageData(context);
 
 		List<UsageRecord> records = context.getCurrentUsageRecords();
@@ -111,14 +110,15 @@ class JDBCUsageRepositoryTests {
 	@Test
 	void testUpdateUsageRecordsWithDifferentValues() throws Exception {
 		ZonedDateTime now = ZonedDateTime.now().truncatedTo(ChronoUnit.MICROS);
-		UsageRecord newRecord = new UsageRecord(null, "limit3", now.minusDays(40), now.minusDays(20), 300L, now.plusMonths(4));
+		UsageRecord newRecord = new UsageRecord(null, "limit3", now.minusDays(40),
+				now.minusDays(20), 300L, now.plusMonths(4));
 
 		Product product = new Product("product3");
 		Feature feature = new Feature(product, "feature3");
 		IndividualUser user = new IndividualUser("user3");
 
-
-		RecordSearchCriteria criteria = new RecordSearchCriteria("limit3", now.minusDays(40), now.minusDays(20));
+		RecordSearchCriteria criteria = new RecordSearchCriteria("limit3",
+				now.minusDays(40), now.minusDays(20));
 		LimitTrackingContext context = new LimitTrackingContext(feature, user, List.of(criteria));
 		context.addUpdatedUsageRecords(List.of(newRecord));
 
@@ -126,9 +126,9 @@ class JDBCUsageRepositoryTests {
 
 		checkInsertedRecord(now.minusDays(40), now.minusDays(20));
 
-		UsageRecord updatedRecord = new UsageRecord(new JDBCUsageRecordRepoMetadata(1L, now), "limit3", now.minusDays(35), now.minusDays(15), 350L, now.plusMonths(4));
+		UsageRecord updatedRecord = new UsageRecord(new JDBCUsageRecordRepoMetadata(1L, now),
+				"limit3", now.minusDays(35), now.minusDays(15), 350L, now.plusMonths(4));
 
-		criteria = new RecordSearchCriteria("limit3", now.minusDays(40), now.minusDays(20));
 		context = new LimitTrackingContext(feature, user, List.of(criteria));
 		context.addUpdatedUsageRecords(List.of(updatedRecord));
 		repository.updateUsageRecords(context);
@@ -137,12 +137,12 @@ class JDBCUsageRepositoryTests {
 
 		try (Connection connection = dataSource.getConnection();
 				Statement statement = connection.createStatement();
-				java.sql.ResultSet resultSet = statement.executeQuery("SELECT units FROM " + repository.getFullTableName() + " ORDER BY usage_id DESC LIMIT 1")) {
+				java.sql.ResultSet resultSet = statement.executeQuery(
+						"SELECT units FROM " + repository.getFullTableName() + " ORDER BY usage_id DESC LIMIT 1")) {
 
-			if (resultSet.next()) {
-				int actualUnits = resultSet.getInt("units");
-				assertThat((long) actualUnits).isEqualTo(350L);
-			}
+			assertThat(resultSet.next()).isTrue();
+			int actualUnits = resultSet.getInt("units");
+			assertThat(actualUnits).isEqualTo(350L);
 		}
 	}
 
@@ -167,13 +167,17 @@ class JDBCUsageRepositoryTests {
 	void testLoadUsageDataWithMultipleRecords() throws Exception {
 		ZonedDateTime time = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 
-		UsageRecord newRecord1 = new UsageRecord(null, "limit4", time.minusDays(60), time.minusDays(40), 200L, time.plusMonths(6));
-		UsageRecord newRecord2 = new UsageRecord(null, "limit4", time.minusDays(30), time.minusDays(10), 100L, time.plusMonths(3));
+		UsageRecord newRecord1 = new UsageRecord(null, "limit4", time.minusDays(60),
+				time.minusDays(40), 200L, time.plusMonths(6));
+		UsageRecord newRecord2 = new UsageRecord(null, "limit4", time.minusDays(30),
+				time.minusDays(10), 100L, time.plusMonths(3));
 
 		Product product = new Product("product4");
 		Feature feature = new Feature(product, "feature4");
 		IndividualUser user = new IndividualUser("user4");
-		RecordSearchCriteria criteria = new RecordSearchCriteria("limit4", time.minusDays(60), time.minusDays(10));
+
+		RecordSearchCriteria criteria = new RecordSearchCriteria("limit4",
+				time.minusDays(60), time.minusDays(10));
 		LimitTrackingContext context = new LimitTrackingContext(feature, user, List.of(criteria));
 		context.addUpdatedUsageRecords(List.of(newRecord1, newRecord2));
 
@@ -181,11 +185,11 @@ class JDBCUsageRepositoryTests {
 
 		testFilteringLogic(time.minusDays(60), time.minusDays(30), 2);
 		testFilteringLogic(time.minusDays(60), time.minusDays(10), 2);
-		testFilteringLogic(time.minusDays(61), time.minusDays(29), 2); // This range contains both inserted records.
-
+		testFilteringLogic(time.minusDays(61), time.minusDays(29), 2);
 	}
 
-	private void testFilteringLogic(ZonedDateTime startDate, ZonedDateTime endDate, int expectedRecordCount) throws Exception{
+	private void testFilteringLogic(ZonedDateTime startDate, ZonedDateTime endDate,
+			int expectedRecordCount) throws Exception {
 		ZonedDateTime normalizedStartDate = startDate.isBefore(endDate) ? startDate : endDate;
 		ZonedDateTime normalizedEndDate = startDate.isBefore(endDate) ? endDate : startDate;
 
@@ -193,8 +197,8 @@ class JDBCUsageRepositoryTests {
 		Feature feature = new Feature(product, "feature4");
 		IndividualUser user = new IndividualUser("user4");
 
-
-		RecordSearchCriteria criteria = new RecordSearchCriteria("limit4", normalizedStartDate, normalizedEndDate);
+		RecordSearchCriteria criteria = new RecordSearchCriteria("limit4",
+				normalizedStartDate, normalizedEndDate);
 		LimitTrackingContext context = new LimitTrackingContext(feature, user, List.of(criteria));
 		repository.loadUsageData(context);
 
@@ -206,19 +210,21 @@ class JDBCUsageRepositoryTests {
 	}
 
 	private void checkInsertedRecord(ZonedDateTime expectedStart, ZonedDateTime expectedEnd) throws Exception {
-		String selectQuery = "SELECT window_start, window_end FROM " + repository.getFullTableName() + " ORDER BY usage_id DESC LIMIT 1";
+		String selectQuery = "SELECT window_start, window_end FROM " +
+				repository.getFullTableName() + " ORDER BY usage_id DESC LIMIT 1";
 
 		try (Connection connection = dataSource.getConnection();
 				Statement statement = connection.createStatement();
 				java.sql.ResultSet resultSet = statement.executeQuery(selectQuery)) {
 
-			if (resultSet.next()) {
-				ZonedDateTime actualStart = resultSet.getTimestamp("window_start").toInstant().atZone(ZoneOffset.UTC);
-				ZonedDateTime actualEnd = resultSet.getTimestamp("window_end").toInstant().atZone(ZoneOffset.UTC);
+			assertThat(resultSet.next()).isTrue();
+			ZonedDateTime actualStart = resultSet.getTimestamp("window_start")
+					.toInstant().atZone(ZoneOffset.UTC);
+			ZonedDateTime actualEnd = resultSet.getTimestamp("window_end")
+					.toInstant().atZone(ZoneOffset.UTC);
 
-				assertThat(actualStart).isEqualTo(expectedStart.withZoneSameInstant(ZoneOffset.UTC));
-				assertThat(actualEnd).isEqualTo(expectedEnd.withZoneSameInstant(ZoneOffset.UTC));
-			}
+			assertThat(actualStart).isEqualTo(expectedStart.withZoneSameInstant(ZoneOffset.UTC));
+			assertThat(actualEnd).isEqualTo(expectedEnd.withZoneSameInstant(ZoneOffset.UTC));
 		}
 	}
 
@@ -227,21 +233,20 @@ class JDBCUsageRepositoryTests {
 		ZoneId vancouverTimeZone = ZoneId.of("America/Vancouver");
 		ZonedDateTime windowStartVancouver = ZonedDateTime.of(2024, 10, 8, 17, 15, 34, 0, vancouverTimeZone);
 		ZonedDateTime windowEndVancouver = windowStartVancouver.plusHours(1);
-		UsageRecord newRecord = new UsageRecord(null, "limit5", windowStartVancouver, windowEndVancouver, 200L, windowEndVancouver.plusDays(1));
+		UsageRecord newRecord = new UsageRecord(null, "limit5", windowStartVancouver,
+				windowEndVancouver, 200L, windowEndVancouver.plusDays(1));
 
 		Product product = new Product("product5");
 		Feature feature = new Feature(product, "feature5");
 		IndividualUser user = new IndividualUser("user5");
 
-
-		RecordSearchCriteria criteria = new RecordSearchCriteria("limit5", windowStartVancouver, windowEndVancouver);
+		RecordSearchCriteria criteria = new RecordSearchCriteria("limit5",
+				windowStartVancouver, windowEndVancouver);
 		LimitTrackingContext context = new LimitTrackingContext(feature, user, List.of(criteria));
 		context.addUpdatedUsageRecords(List.of(newRecord));
 		repository.updateUsageRecords(context);
 
-		criteria = new RecordSearchCriteria("limit5", windowStartVancouver, windowEndVancouver);
 		context = new LimitTrackingContext(feature, user, List.of(criteria));
-
 		repository.loadUsageData(context);
 
 		List<UsageRecord> records = context.getCurrentUsageRecords();

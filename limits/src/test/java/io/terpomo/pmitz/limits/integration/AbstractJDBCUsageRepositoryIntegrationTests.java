@@ -18,7 +18,7 @@ package io.terpomo.pmitz.limits.integration;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
-import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.limits.UsageRecord;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
@@ -27,6 +27,7 @@ import org.apache.commons.dbcp2.BasicDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +42,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.assertj.core.api.Fail.fail;
 
 public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 
@@ -81,9 +83,13 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 	}
 
 	protected abstract void setupDataSource();
+
 	protected abstract String getTableName();
+
 	protected abstract void setupDatabase() throws SQLException;
+
 	protected abstract void tearDownDatabase() throws SQLException;
+
 	protected abstract void printDatabaseContents(String message) throws SQLException;
 
 	public static void assertZonedDateTimeEqualsIgnoringMillis(ZonedDateTime expected, ZonedDateTime actual) {
@@ -94,19 +100,14 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 	void testLoadUsageData() {
 		Product product = new Product("product1");
 		Feature feature = new Feature(product, "feature1");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user1";
-			}
-		};
+		IndividualUser userGrouping = new IndividualUser("user1");
 
 		ZonedDateTime now = ZonedDateTime.now();
 
 		ZonedDateTime startTime = now.minusMinutes(10);
 		ZonedDateTime endTime = now.plusMinutes(10);
 
-		RecordSearchCriteria criteria = new RecordSearchCriteria("limit1", startTime, endTime); // Renamed 'limit'
+		RecordSearchCriteria criteria = new RecordSearchCriteria("limit1", startTime, endTime);
 		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
 
 		UsageRecord record1 = new UsageRecord(null, "limit1", startTime.plusMinutes(1), null, 100L, now.plusDays(1));
@@ -122,15 +123,15 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 		assertThat(loadedRecords).hasSize(2);
 
 		UsageRecord loadedRecord1 = loadedRecords.get(0);
-		assertThat(loadedRecord1.limitId()).isEqualTo("limit1"); // Renamed 'limit'
-		assertZonedDateTimeEqualsIgnoringMillis(loadedRecord1.startTime(), startTime.plusMinutes(1));
+		assertThat(loadedRecord1.limitId()).isEqualTo("limit1");
+		assertZonedDateTimeEqualsIgnoringMillis(startTime.plusMinutes(1), loadedRecord1.startTime());
 		assertThat(loadedRecord1.endTime()).isNull();
 		assertThat(loadedRecord1.units()).isEqualTo(100L);
 
 		UsageRecord loadedRecord2 = loadedRecords.get(1);
-		assertThat(loadedRecord2.limitId()).isEqualTo("limit1"); // Renamed 'limit'
-		assertZonedDateTimeEqualsIgnoringMillis(loadedRecord2.startTime(), startTime.plusMinutes(2));
-		assertZonedDateTimeEqualsIgnoringMillis(loadedRecord2.endTime(), endTime.minusMinutes(1));
+		assertThat(loadedRecord2.limitId()).isEqualTo("limit1");
+		assertZonedDateTimeEqualsIgnoringMillis(startTime.plusMinutes(2), loadedRecord2.startTime());
+		assertZonedDateTimeEqualsIgnoringMillis(endTime.minusMinutes(1), loadedRecord2.endTime());
 		assertThat(loadedRecord2.units()).isEqualTo(150L);
 	}
 
@@ -138,13 +139,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 	void testUpdateUsageRecordsIntegration() {
 		Product product = new Product("product2");
 		Feature feature = new Feature(product, "feature2");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user2";
-			}
-		};
-
+		IndividualUser userGrouping = new IndividualUser("user2");
 
 		ZonedDateTime now = ZonedDateTime.now();
 
@@ -156,7 +151,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 		try {
 			repository.updateUsageRecords(context);
 
-			String selectQuery = "SELECT * FROM " + getFullTableName() + " WHERE limit_id = 'limit2'"; // Use parameterized query or prepared statement
+			String selectQuery = "SELECT * FROM " + getFullTableName() + " WHERE limit_id = 'limit2'";
 
 			try (Connection conn = dataSource.getConnection();
 					Statement stmt = conn.createStatement();
@@ -166,21 +161,21 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 				assertThat(rs.getString("feature_id")).isEqualTo("feature2");
 				assertThat(rs.getString("product_id")).isEqualTo("product2");
 				assertThat(rs.getString("user_grouping")).isEqualTo("user2");
-				assertThat(rs.getString("limit_id")).isEqualTo("limit2"); // Renamed 'limit'
+				assertThat(rs.getString("limit_id")).isEqualTo("limit2");
 
 				ZonedDateTime windowStart = rs.getTimestamp("window_start").toInstant().atZone(ZoneOffset.UTC);
 				ZonedDateTime windowEnd = rs.getTimestamp("window_end").toInstant().atZone(ZoneOffset.UTC);
 
-				assertZonedDateTimeEqualsIgnoringMillis(windowStart, now.minusHours(1));
-				assertZonedDateTimeEqualsIgnoringMillis(windowEnd, now.plusHours(1));
+				assertZonedDateTimeEqualsIgnoringMillis(now.minusHours(1), windowStart);
+				assertZonedDateTimeEqualsIgnoringMillis(now.plusHours(1), windowEnd);
 
 				assertThat(rs.getLong("units")).isEqualTo(200L);
 
 				ZonedDateTime expirationDate = rs.getTimestamp("expiration_date").toInstant().atZone(ZoneOffset.UTC);
-				assertZonedDateTimeEqualsIgnoringMillis(expirationDate, now.plusDays(1));
+				assertZonedDateTimeEqualsIgnoringMillis(now.plusDays(1), expirationDate);
 			}
 		} catch (SQLException e) {
-			logger.error("Error updating records", e);
+			fail("Error updating records", e);
 		}
 	}
 
@@ -188,12 +183,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 	void testUpdateUsageRecordsWithNullDates() {
 		Product product = new Product("product3");
 		Feature feature = new Feature(product, "feature3");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user3";
-			}
-		};
+		IndividualUser userGrouping = new IndividualUser("user3");
 
 		UsageRecord usageRecord = new UsageRecord(null, "limit3", null, null, 300L, null);
 
@@ -203,7 +193,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 		try {
 			repository.updateUsageRecords(context);
 
-			String selectQuery = "SELECT * FROM " + getFullTableName() + " WHERE limit_id = 'limit3'"; // Use prepared statement
+			String selectQuery = "SELECT * FROM " + getFullTableName() + " WHERE limit_id = 'limit3'";
 
 			try (Connection conn = dataSource.getConnection();
 					Statement stmt = conn.createStatement();
@@ -213,14 +203,10 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 				assertThat(rs.getString("feature_id")).isEqualTo("feature3");
 				assertThat(rs.getString("product_id")).isEqualTo("product3");
 				assertThat(rs.getString("user_grouping")).isEqualTo("user3");
-				assertThat(rs.getString("limit_id")).isEqualTo("limit3"); // Renamed limit
-
-
+				assertThat(rs.getString("limit_id")).isEqualTo("limit3");
 
 				assertThat(rs.getTimestamp("window_start")).isNull();
 				assertThat(rs.getTimestamp("window_end")).isNull();
-
-
 
 				assertThat(rs.getLong("units")).isEqualTo(300L);
 
@@ -235,12 +221,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 	void testLoadUsageDataWithNullWindowStart() {
 		Product product = new Product("product4");
 		Feature feature = new Feature(product, "feature4");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user4";
-			}
-		};
+		IndividualUser userGrouping = new IndividualUser("user4");
 
 		ZonedDateTime now = ZonedDateTime.now();
 
@@ -262,25 +243,18 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			UsageRecord loadedRecord = loadedRecords.get(0);
 			assertThat(loadedRecord.limitId()).isEqualTo("limit4");
 			assertThat(loadedRecord.startTime()).isNull();
-			assertZonedDateTimeEqualsIgnoringMillis(loadedRecord.endTime(), now.plusHours(1));
+			assertZonedDateTimeEqualsIgnoringMillis(now.plusHours(1), loadedRecord.endTime());
 			assertThat(loadedRecord.units()).isEqualTo(400L);
 		} catch (Exception e) {
 			logger.error("Error loading data with null window start", e);
 		}
 	}
 
-
-
 	@Test
 	void testLoadUsageDataWithInvalidLimitId() {
 		Product product = new Product("product5");
 		Feature feature = new Feature(product, "feature5");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user5";
-			}
-		};
+		IndividualUser userGrouping = new IndividualUser("user5");
 
 		ZonedDateTime now = ZonedDateTime.now();
 
@@ -309,12 +283,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 	void testLoadUsageDataWithOutOfBoundsTimeRange() {
 		Product product = new Product("product6");
 		Feature feature = new Feature(product, "feature6");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user6";
-			}
-		};
+		IndividualUser userGrouping = new IndividualUser("user6");
 
 		ZonedDateTime now = ZonedDateTime.now();
 
@@ -324,7 +293,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 		contextToInsert.addUpdatedUsageRecords(List.of(usageRecord));
 		repository.updateUsageRecords(contextToInsert);
 
-		RecordSearchCriteria criteria = new RecordSearchCriteria("limit6", now.plusHours(2), now.plusHours(3)); // Check criteria
+		RecordSearchCriteria criteria = new RecordSearchCriteria("limit6", now.plusHours(2), now.plusHours(3));
 		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
 
 		repository.loadUsageData(context);
@@ -333,18 +302,11 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 		assertThat(loadedRecords).isEmpty();
 	}
 
-
-
 	@Test
 	void testUpdateUsageRecordsWithExistingRecord() {
 		Product product = new Product("product7");
 		Feature feature = new Feature(product, "feature7");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user7";
-			}
-		};
+		IndividualUser userGrouping = new IndividualUser("user7");
 
 		ZonedDateTime fixedTime = ZonedDateTime.of(2024, 11, 2, 7, 0, 0, 0, ZoneOffset.UTC);
 
@@ -353,16 +315,11 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 		contextToInsert.addUpdatedUsageRecords(List.of(recordToInsert));
 		repository.updateUsageRecords(contextToInsert);
 
-
-
-
 		UsageRecord recordToUpdate = new UsageRecord(null, "existingLimit", fixedTime, fixedTime.plusHours(2), 750L, fixedTime.plusDays(1));
 
 		LimitTrackingContext contextToUpdate = new LimitTrackingContext(feature, userGrouping, List.of());
 		contextToUpdate.addUpdatedUsageRecords(List.of(recordToUpdate));
 		repository.updateUsageRecords(contextToUpdate);
-
-
 
 		RecordSearchCriteria criteria = new RecordSearchCriteria("existingLimit", fixedTime.minusHours(1), fixedTime.plusHours(3));
 		LimitTrackingContext loadContext = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
@@ -382,12 +339,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 	void testDeleteOldRecords() {
 		Product product = new Product("product8");
 		Feature feature = new Feature(product, "feature8");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user8";
-			}
-		};
+		IndividualUser userGrouping = new IndividualUser("user8");
 
 		ZonedDateTime now = ZonedDateTime.now();
 
@@ -398,7 +350,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 		context.addUpdatedUsageRecords(List.of(record1, record2));
 		repository.updateUsageRecords(context);
 
-		repository.deleteOldRecords(now); // Ensure now is consistent
+		repository.deleteOldRecords(now);
 
 		RecordSearchCriteria criteria = new RecordSearchCriteria("limit8", now.minusDays(3), now.plusDays(3));
 		LimitTrackingContext loadContext = new LimitTrackingContext(feature, userGrouping, List.of(criteria));
@@ -408,24 +360,18 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 		assertThat(loadedRecords).hasSize(1);
 
 		UsageRecord loadedRecord = loadedRecords.get(0);
-		assertThat(loadedRecord.limitId()).isEqualTo("limit8"); // Renamed
-		assertZonedDateTimeEqualsIgnoringMillis(loadedRecord.startTime(), now.minusHours(1));
-		assertZonedDateTimeEqualsIgnoringMillis(loadedRecord.endTime(), now.plusHours(1));
+		assertThat(loadedRecord.limitId()).isEqualTo("limit8");
+		assertZonedDateTimeEqualsIgnoringMillis(now.minusHours(1), loadedRecord.startTime());
+		assertZonedDateTimeEqualsIgnoringMillis(now.plusHours(1), loadedRecord.endTime());
 		assertThat(loadedRecord.units()).isEqualTo(850L);
-		assertZonedDateTimeEqualsIgnoringMillis(loadedRecord.expirationDate(), now.plusDays(1));
-
+		assertZonedDateTimeEqualsIgnoringMillis(now.plusDays(1), loadedRecord.expirationDate());
 	}
 
 	@Test
 	void testLoadUsageDataWithEmptyCriteria() {
 		Product product = new Product("product9");
 		Feature feature = new Feature(product, "feature9");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user9";
-			}
-		};
+		IndividualUser userGrouping = new IndividualUser("user9");
 
 		LimitTrackingContext context = new LimitTrackingContext(feature, userGrouping, List.of());
 
@@ -439,12 +385,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 	void testLoadUsageDataWithLargeDatasets() {
 		Product product = new Product("product10");
 		Feature feature = new Feature(product, "feature10");
-		UserGrouping userGrouping = new UserGrouping() {
-			@Override
-			public String getId() {
-				return "user10";
-			}
-		};
+		IndividualUser userGrouping = new IndividualUser("user10");
 
 		ZonedDateTime now = ZonedDateTime.now();
 
@@ -463,6 +404,5 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 
 		List<UsageRecord> loadedRecords = loadContext.getCurrentUsageRecords();
 		assertThat(loadedRecords).hasSize(100);
-
 	}
 }

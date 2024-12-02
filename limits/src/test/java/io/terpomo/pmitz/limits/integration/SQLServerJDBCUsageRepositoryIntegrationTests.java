@@ -16,25 +16,21 @@
 
 package io.terpomo.pmitz.limits.integration;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.sql.*;
 
 @Testcontainers
 public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
 
 	@Container
 	private static final MSSQLServerContainer<?> mssqlServerContainer =
-			new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:latest");
+			new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:latest")
+					.acceptLicense();
 
 	@Override
 	protected void setupDataSource() {
@@ -61,15 +57,15 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 			String createTable = "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Usage' AND schema_id = SCHEMA_ID('" + CUSTOM_SCHEMA + "')) " +
 					"CREATE TABLE " + getFullTableName() + " (" +
 					"usage_id INT PRIMARY KEY IDENTITY(1,1), " +
-					"feature_id VARCHAR(255), " +
-					"product_id VARCHAR(255), " +
-					"user_grouping VARCHAR(255), " +
-					"limit_id VARCHAR(255), " +
-					"window_start DATETIME2, " +
-					"window_end DATETIME2, " +
-					"units INT, " +
-					"expiration_date DATETIME2, " +
-					"updated_at DATETIME DEFAULT CURRENT_TIMESTAMP" +
+					"feature_id NVARCHAR(255) NOT NULL, " +
+					"product_id NVARCHAR(255) NOT NULL, " +
+					"user_grouping NVARCHAR(255) NOT NULL, " +
+					"limit_id NVARCHAR(255) NOT NULL, " +
+					"window_start DATETIME2 NULL, " +
+					"window_end DATETIME2 NULL, " +
+					"units INT NOT NULL, " +
+					"expiration_date DATETIME2 NULL, " +
+					"updated_at DATETIME2 DEFAULT SYSUTCDATETIME() NOT NULL" +
 					");";
 
 			stmt.execute(createTable);
@@ -85,8 +81,8 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 	@Override
 	protected void tearDownDatabase() throws SQLException {
 		try (Connection conn = dataSource.getConnection();
-				Statement statement = conn.createStatement()) {
-			statement.execute("TRUNCATE TABLE " + getFullTableName());
+				Statement stmt = conn.createStatement()) {
+			stmt.execute("TRUNCATE TABLE " + getFullTableName());
 		}
 	}
 
@@ -94,8 +90,9 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 	protected void printDatabaseContents(String message) {
 		System.out.println("---- " + message + " ----");
 		try (Connection conn = dataSource.getConnection();
-				Statement stmt = conn.createStatement()) {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM " + getFullTableName());
+				Statement stmt = conn.createStatement();
+				ResultSet rs = stmt.executeQuery("SELECT * FROM " + getFullTableName())) {
+
 			while (rs.next()) {
 				int usageId = rs.getInt("usage_id");
 				String featureId = rs.getString("feature_id");
@@ -108,10 +105,16 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 				Timestamp expirationDate = rs.getTimestamp("expiration_date");
 				Timestamp updatedAt = rs.getTimestamp("updated_at");
 
-				System.out.println("UsageId: " + usageId + ", FeatureId: " + featureId + ", ProductId: " + productId
-						+ ", UserGrouping: " + userGrouping + ", LimitId: " + limitId + ", WindowStart: " + windowStart
-						+ ", WindowEnd: " + windowEnd + ", Units: " + units + ", ExpirationDate: " + expirationDate
-						+ ", UpdatedAt: " + updatedAt);
+				System.out.println("UsageId: " + usageId +
+						", FeatureId: " + featureId +
+						", ProductId: " + productId +
+						", UserGrouping: " + userGrouping +
+						", LimitId: " + limitId +
+						", WindowStart: " + windowStart +
+						", WindowEnd: " + windowEnd +
+						", Units: " + units +
+						", ExpirationDate: " + expirationDate +
+						", UpdatedAt: " + updatedAt);
 			}
 		} catch (SQLException ex) {
 			ex.printStackTrace();

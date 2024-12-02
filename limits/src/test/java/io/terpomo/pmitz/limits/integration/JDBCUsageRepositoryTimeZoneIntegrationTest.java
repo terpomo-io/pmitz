@@ -1,17 +1,8 @@
 /*
  * Copyright 2023-2024 the original author or authors.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0.
+ * You may obtain a copy at https://www.apache.org/licenses/LICENSE-2.0
  */
 
 package io.terpomo.pmitz.limits.integration;
@@ -39,7 +30,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.*;
 import java.time.*;
-import java.time.zone.ZoneRulesException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -73,12 +63,12 @@ class JDBCUsageRepositoryTimeZoneIntegrationTest {
 			.acceptLicense().withPassword("yourStrong(!)Password")
 			.waitingFor(Wait.forListeningPort()).withStartupTimeout(Duration.ofMinutes(2));
 
-
-
 	private Stream<Arguments> databaseContainers() {
-		return Stream.of(Arguments.of("mysql", mysqlContainer),
+		return Stream.of(
+				Arguments.of("mysql", mysqlContainer),
 				Arguments.of("postgres", postgresContainer),
-				Arguments.of("sqlserver", sqlServerContainer));
+				Arguments.of("sqlserver", sqlServerContainer)
+		);
 	}
 
 	private void createTable(String databaseType, BasicDataSource dataSource) throws SQLException {
@@ -86,15 +76,15 @@ class JDBCUsageRepositoryTimeZoneIntegrationTest {
 		String schemaPrefix;
 		try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
 			switch (databaseType) {
-				case "mysql":
+				case "mysql" -> {
 					stmt.execute("CREATE SCHEMA IF NOT EXISTS `" + CUSTOM_SCHEMA + "`");
 					schemaPrefix = "`" + CUSTOM_SCHEMA + "`.";
 					createTableQuery = "CREATE TABLE IF NOT EXISTS " + schemaPrefix + "`Usage` (" +
 							"usage_id INT AUTO_INCREMENT PRIMARY KEY, feature_id VARCHAR(255), product_id VARCHAR(255), " +
 							"user_grouping VARCHAR(255), limit_id VARCHAR(255), window_start TIMESTAMP, " +
 							"window_end TIMESTAMP, units INT, expiration_date TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)";
-					break;
-				case "postgres":
+				}
+				case "postgres" -> {
 					stmt.execute("CREATE SCHEMA IF NOT EXISTS " + CUSTOM_SCHEMA);
 					schemaPrefix = CUSTOM_SCHEMA + ".";
 					createTableQuery = "CREATE TABLE IF NOT EXISTS " + schemaPrefix + TABLE_NAME + " (" +
@@ -102,8 +92,8 @@ class JDBCUsageRepositoryTimeZoneIntegrationTest {
 							"user_grouping VARCHAR(255), limit_id VARCHAR(255), window_start TIMESTAMP WITH TIME ZONE, " +
 							"window_end TIMESTAMP WITH TIME ZONE, units INT, expiration_date TIMESTAMP WITH TIME ZONE, " +
 							"updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP)";
-					break;
-				case "sqlserver":
+				}
+				case "sqlserver" -> {
 					stmt.execute("IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '" + CUSTOM_SCHEMA + "') " +
 							"EXEC('CREATE SCHEMA " + CUSTOM_SCHEMA + "');");
 					schemaPrefix = CUSTOM_SCHEMA + ".";
@@ -111,9 +101,8 @@ class JDBCUsageRepositoryTimeZoneIntegrationTest {
 							"usage_id INT IDENTITY(1,1) PRIMARY KEY, feature_id NVARCHAR(255), " +
 							"product_id NVARCHAR(255), user_grouping NVARCHAR(255), limit_id NVARCHAR(255), " +
 							"window_start DATETIME2, window_end DATETIME2, units INT, expiration_date DATETIME2, updated_at DATETIME2 DEFAULT SYSUTCDATETIME())";
-					break;
-				default:
-					throw new IllegalArgumentException("Unsupported database type: " + databaseType);
+				}
+				default -> throw new IllegalArgumentException("Unsupported database type: " + databaseType);
 			}
 			stmt.execute(createTableQuery);
 		}
@@ -121,19 +110,17 @@ class JDBCUsageRepositoryTimeZoneIntegrationTest {
 
 	private void insertRecords(Connection connection, String databaseType, List<Timestamp> timestamps) throws SQLException {
 		String insertQuery = "INSERT INTO %s (feature_id, product_id, user_grouping, limit_id, window_start, window_end, units, expiration_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-
 		String qualifiedTableName = switch (databaseType) {
 			case "mysql" -> String.format("`%s`.`%s`", CUSTOM_SCHEMA, TABLE_NAME);
 			case "postgres" -> String.format("%s.%s", CUSTOM_SCHEMA, TABLE_NAME);
 			case "sqlserver" -> String.format("%s.[%s]", CUSTOM_SCHEMA, TABLE_NAME);
 			default -> throw new IllegalArgumentException("Unsupported database type: " + databaseType);
-		}; // Use a formatted string with placeholders
-
+		};
 		insertQuery = String.format(insertQuery, qualifiedTableName);
 
 		try (PreparedStatement statement = connection.prepareStatement(insertQuery)) {
 			for (Timestamp ts : timestamps) {
-				statement.setString(1, FEATURE_ID); // Use setString for MySQL and PostgreSQL
+				statement.setString(1, FEATURE_ID);
 				statement.setString(2, PRODUCT_ID);
 				statement.setString(3, USER_ID);
 				statement.setString(4, LIMIT_ID);
@@ -143,7 +130,7 @@ class JDBCUsageRepositoryTimeZoneIntegrationTest {
 				statement.setTimestamp(8, ts);
 
 				if (databaseType.equals("sqlserver")) {
-					statement.setNString(1, FEATURE_ID); // Use setNString for SQL Server
+					statement.setNString(1, FEATURE_ID);
 					statement.setNString(2, PRODUCT_ID);
 					statement.setNString(3, USER_ID);
 					statement.setNString(4, LIMIT_ID);
@@ -153,8 +140,6 @@ class JDBCUsageRepositoryTimeZoneIntegrationTest {
 			}
 		}
 	}
-
-
 
 	private List<UsageRecord> loadRecords(JDBCUsageRepository repository, ZonedDateTime from, ZonedDateTime to) {
 		Product product = new Product(PRODUCT_ID);
@@ -171,8 +156,14 @@ class JDBCUsageRepositoryTimeZoneIntegrationTest {
 		List<UsageRecord> updatedRecords = new ArrayList<>();
 		for (UsageRecord usageRecord : recordsToUpdate) {
 			JDBCUsageRecordRepoMetadata updatedMetadata = (JDBCUsageRecordRepoMetadata) usageRecord.repoMetadata();
-			UsageRecord updatedRecord = new UsageRecord(updatedMetadata, usageRecord.limitId(),
-					usageRecord.startTime(), usageRecord.endTime(), usageRecord.units() + 10, newExpirationDate);
+			UsageRecord updatedRecord = new UsageRecord(
+					updatedMetadata,
+					usageRecord.limitId(),
+					usageRecord.startTime(),
+					usageRecord.endTime(),
+					usageRecord.units() + 10,
+					newExpirationDate
+			);
 			updatedRecords.add(updatedRecord);
 		}
 
@@ -187,7 +178,7 @@ class JDBCUsageRepositoryTimeZoneIntegrationTest {
 
 	@ParameterizedTest
 	@MethodSource("databaseContainers")
-	void testRepositoryOperations(String databaseType, JdbcDatabaseContainer<?> container) throws SQLException, ZoneRulesException {
+	void testRepositoryOperations(String databaseType, JdbcDatabaseContainer<?> container) throws SQLException {
 		BasicDataSource dataSource = new BasicDataSource();
 		dataSource.setUrl(container.getJdbcUrl());
 		dataSource.setUsername(container.getUsername());
@@ -209,7 +200,8 @@ class JDBCUsageRepositoryTimeZoneIntegrationTest {
 
 		List<UsageRecord> loadedRecords = loadRecords(repository,
 				ZonedDateTime.of(2021, 12, 31, 0, 0, 0, 0, ZoneId.of("UTC")),
-				ZonedDateTime.of(2022, 1, 2, 0, 0, 0, 0, ZoneId.of("UTC")));
+				ZonedDateTime.of(2022, 1, 2, 0, 0, 0, 0, ZoneId.of("UTC"))
+		);
 
 		assertEquals(timestamps.size(), loadedRecords.size());
 
@@ -218,7 +210,8 @@ class JDBCUsageRepositoryTimeZoneIntegrationTest {
 
 		List<UsageRecord> finalLoadedRecords = loadRecords(repository,
 				ZonedDateTime.of(2021, 12, 31, 0, 0, 0, 0, ZoneId.of("UTC")),
-				ZonedDateTime.of(2025, 1, 2, 0, 0, 0, 0, ZoneId.of("UTC")));
+				ZonedDateTime.of(2025, 1, 2, 0, 0, 0, 0, ZoneId.of("UTC"))
+		);
 
 		for (UsageRecord usageRecord : finalLoadedRecords) {
 			assertEquals(UNITS + 10, usageRecord.units());
@@ -228,7 +221,8 @@ class JDBCUsageRepositoryTimeZoneIntegrationTest {
 		repository.deleteOldRecords(ZonedDateTime.now());
 		loadedRecords = loadRecords(repository,
 				ZonedDateTime.of(2021, 12, 31, 0, 0, 0, 0, ZoneId.of("UTC")),
-				ZonedDateTime.of(2025, 1, 2, 0, 0, 0, 0, ZoneId.of("UTC")));
+				ZonedDateTime.of(2025, 1, 2, 0, 0, 0, 0, ZoneId.of("UTC"))
+		);
 
 		assertTrue(loadedRecords.isEmpty());
 	}
