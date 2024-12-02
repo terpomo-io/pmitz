@@ -1,20 +1,33 @@
 /*
  * Copyright 2023-2024 the original author or authors.
  *
- * Licensed under the Apache License, Version 2.0.
- * You may obtain a copy at https://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package io.terpomo.pmitz.limits.integration;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
-import io.terpomo.pmitz.core.subjects.IndividualUser;
-import io.terpomo.pmitz.limits.UsageRecord;
-import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
-import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
-import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRecordRepoMetadata;
-import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -28,17 +41,22 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.sql.*;
-import java.time.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
+import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Product;
+import io.terpomo.pmitz.core.subjects.IndividualUser;
+import io.terpomo.pmitz.limits.UsageRecord;
+import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
+import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
+import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRecordRepoMetadata;
+import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class JDBCUsageRepositoryTimeZoneIntegrationTest {
+class JDBCUsageRepositoryTimeZoneIntegrationTests {
 
 	private static final String CUSTOM_SCHEMA = "test_schema";
 	private static final String TABLE_NAME = "Usage";

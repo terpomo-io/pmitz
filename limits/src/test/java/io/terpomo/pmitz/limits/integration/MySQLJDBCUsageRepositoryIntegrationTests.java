@@ -16,13 +16,19 @@
 
 package io.terpomo.pmitz.limits.integration;
 
-import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.sql.*;
+import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
+
 
 @Testcontainers
 public class MySQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {

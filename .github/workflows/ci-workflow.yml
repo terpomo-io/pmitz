@@ -11,4 +11,4 @@ jobs:
           java-version: 17
           distribution: 'temurin'
       - name: Build with Gradle
-        run: ./gradlew build -x checkstyleMain -x checkstyleTest
+        run: ./gradlew build

@@ -16,13 +16,17 @@
 
 package io.terpomo.pmitz.limits.integration;
 
-import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.sql.*;
+import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
 @Testcontainers
 public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
@@ -75,7 +79,8 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
 			stmt.execute("TRUNCATE TABLE " + getFullTableName() + " RESTART IDENTITY CASCADE");
-		} catch (SQLException ex) {
+		}
+		catch (SQLException ex) {
 			System.out.println("Error during tearDownDatabase: " + ex.getMessage());
 		}
 	}
@@ -93,11 +98,11 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 				String productId = rs.getString("product_id");
 				String userGrouping = rs.getString("user_grouping");
 				String limitId = rs.getString("limit_id");
-				Timestamp windowStart = rs.getTimestamp("window_start");
-				Timestamp windowEnd = rs.getTimestamp("window_end");
+				java.sql.Timestamp windowStart = rs.getTimestamp("window_start");
+				java.sql.Timestamp windowEnd = rs.getTimestamp("window_end");
 				int units = rs.getInt("units");
-				Timestamp expirationDate = rs.getTimestamp("expiration_date");
-				Timestamp updatedAt = rs.getTimestamp("updated_at");
+				java.sql.Timestamp expirationDate = rs.getTimestamp("expiration_date");
+				java.sql.Timestamp updatedAt = rs.getTimestamp("updated_at");
 
 				System.out.println("UsageId: " + usageId +
 						", FeatureId: " + featureId +
@@ -110,7 +115,8 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 						", ExpirationDate: " + expirationDate +
 						", UpdatedAt: " + updatedAt);
 			}
-		} catch (SQLException ex) {
+		}
+		catch (SQLException ex) {
 			System.out.println("Error while printing database contents: " + ex.getMessage());
 		}
 	}

@@ -16,21 +16,6 @@
 
 package io.terpomo.pmitz.limits.integration;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
-import io.terpomo.pmitz.core.subjects.IndividualUser;
-import io.terpomo.pmitz.limits.UsageRecord;
-import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
-import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
-import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
-import org.apache.commons.dbcp2.BasicDataSource;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -40,10 +25,24 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+import org.apache.commons.dbcp2.BasicDataSource;
+import org.assertj.core.api.Fail;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Product;
+import io.terpomo.pmitz.core.subjects.IndividualUser;
+import io.terpomo.pmitz.limits.UsageRecord;
+import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
+import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
+import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
-import static org.assertj.core.api.Fail.fail;
-
 public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 
 	private static final Logger logger = LoggerFactory.getLogger(AbstractJDBCUsageRepositoryIntegrationTests.class);
@@ -63,8 +62,9 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			setupDataSource();
 			setupDatabase();
 			printDatabaseContents("After setupDatabase");
-		} catch (SQLException e) {
-			logger.error("Error during setup", e);
+		}
+		catch (SQLException ex) {
+			logger.error("Error during setup", ex);
 		}
 	}
 
@@ -77,8 +77,9 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			}
 			tearDownDatabase();
 			dataSource.close();
-		} catch (SQLException e) {
-			logger.error("Error during teardown", e);
+		}
+		catch (SQLException ex) {
+			logger.error("Error during teardown", ex);
 		}
 	}
 
@@ -174,8 +175,9 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 				ZonedDateTime expirationDate = rs.getTimestamp("expiration_date").toInstant().atZone(ZoneOffset.UTC);
 				assertZonedDateTimeEqualsIgnoringMillis(now.plusDays(1), expirationDate);
 			}
-		} catch (SQLException e) {
-			fail("Error updating records", e);
+		}
+		catch (SQLException ex) {
+			Fail.fail("Error updating records", ex);
 		}
 	}
 
@@ -212,8 +214,9 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 
 				assertThat(rs.getTimestamp("expiration_date")).isNull();
 			}
-		} catch (SQLException e) {
-			logger.error("Error updating records with null dates", e);
+		}
+		catch (SQLException ex) {
+			logger.error("Error updating records with null dates", ex);
 		}
 	}
 
@@ -245,8 +248,9 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			assertThat(loadedRecord.startTime()).isNull();
 			assertZonedDateTimeEqualsIgnoringMillis(now.plusHours(1), loadedRecord.endTime());
 			assertThat(loadedRecord.units()).isEqualTo(400L);
-		} catch (Exception e) {
-			logger.error("Error loading data with null window start", e);
+		}
+		catch (Exception ex) {
+			logger.error("Error loading data with null window start", ex);
 		}
 	}
 

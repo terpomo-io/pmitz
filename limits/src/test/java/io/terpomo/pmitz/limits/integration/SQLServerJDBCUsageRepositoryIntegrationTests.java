@@ -16,13 +16,18 @@
 
 package io.terpomo.pmitz.limits.integration;
 
-import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.sql.*;
+import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
 @Testcontainers
 public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
@@ -116,7 +121,8 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 						", ExpirationDate: " + expirationDate +
 						", UpdatedAt: " + updatedAt);
 			}
-		} catch (SQLException ex) {
+		}
+		catch (SQLException ex) {
 			ex.printStackTrace();
 		}
 	}

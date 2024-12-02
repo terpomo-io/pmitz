@@ -16,17 +16,25 @@
 
 package io.terpomo.pmitz.limits.usage.repository.impl;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.sql.DataSource;
+
 import io.terpomo.pmitz.limits.UsageRecord;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
 import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
-
-import javax.sql.DataSource;
-import java.sql.*;
-import java.time.*;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class JDBCUsageRepository implements UsageRepository {
 
@@ -50,7 +58,8 @@ public class JDBCUsageRepository implements UsageRepository {
 		return schemaName + "." + tableName;
 	}
 
-	private List<UsageRecord> loadUsageRecords(Connection connection, LimitTrackingContext context) throws SQLException {
+	private List<UsageRecord> loadUsageRecords(Connection connection, LimitTrackingContext context)
+			throws SQLException {
 		StringBuilder query = new StringBuilder("SELECT usage_id, limit_id, window_start, window_end, expiration_date, units ")
 				.append("FROM ").append(getFullTableName())
 				.append(" WHERE feature_id = ? AND product_id = ? AND user_grouping = ?");
@@ -60,7 +69,8 @@ public class JDBCUsageRepository implements UsageRepository {
 
 		if (!criteriaConditions.isEmpty()) {
 			query.append(" AND (").append(String.join(" OR ", criteriaConditions)).append(")");
-		} else {
+		}
+		else {
 			return new ArrayList<>();
 		}
 
@@ -79,11 +89,20 @@ public class JDBCUsageRepository implements UsageRepository {
 			Timestamp windowEndTs = resultSet.getTimestamp("window_end");
 			Timestamp expirationDateTs = resultSet.getTimestamp("expiration_date");
 
-			ZonedDateTime windowStart = windowStartTs != null ? windowStartTs.toInstant().atZone(ZoneOffset.UTC) : null;
-			ZonedDateTime windowEnd = windowEndTs != null ? windowEndTs.toInstant().atZone(ZoneOffset.UTC) : null;
-			ZonedDateTime expirationDate = expirationDateTs != null ? expirationDateTs.toInstant().atZone(ZoneOffset.UTC) : null;
+			ZonedDateTime windowStart = (windowStartTs != null)
+					? windowStartTs.toInstant().atZone(ZoneOffset.UTC)
+					: null;
+			ZonedDateTime windowEnd = (windowEndTs != null)
+					? windowEndTs.toInstant().atZone(ZoneOffset.UTC)
+					: null;
+			ZonedDateTime expirationDate = (expirationDateTs != null)
+					? expirationDateTs.toInstant().atZone(ZoneOffset.UTC)
+					: null;
 
-			JDBCUsageRecordRepoMetadata metadata = new JDBCUsageRecordRepoMetadata(resultSet.getLong("usage_id"), windowStart);
+			JDBCUsageRecordRepoMetadata metadata = new JDBCUsageRecordRepoMetadata(
+					resultSet.getLong("usage_id"), windowStart
+			);
+
 			UsageRecord usageRecord = new UsageRecord(
 					metadata,
 					resultSet.getString("limit_id"),
@@ -140,12 +159,14 @@ public class JDBCUsageRepository implements UsageRepository {
 		try (Connection connection = dataSource.getConnection()) {
 			List<UsageRecord> records = loadUsageRecords(connection, context);
 			context.addCurrentUsageRecords(records);
-		} catch (SQLException ex) {
-			throw new UsageRepositoryException("Failed to load usage data", ex);
+		}
+		catch (SQLException ex) {
+			throw new RuntimeException("Failed to load usage data", ex);
 		}
 	}
 
-	private void updateUsageRecord(PreparedStatement updateStatement, UsageRecord usageRecord, LimitTrackingContext context, long usageId) throws SQLException {
+	private void updateUsageRecord(PreparedStatement updateStatement, UsageRecord usageRecord,
+			LimitTrackingContext context, long usageId) throws SQLException {
 		updateStatement.clearParameters();
 		int index = 1;
 		updateStatement.setString(index++, context.getFeature().getFeatureId());
@@ -154,22 +175,29 @@ public class JDBCUsageRepository implements UsageRepository {
 		updateStatement.setString(index++, usageRecord.limitId());
 
 		ZonedDateTime startTime = usageRecord.startTime();
-		updateStatement.setTimestamp(index++, startTime != null ? Timestamp.from(startTime.toInstant()) : null);
+		updateStatement.setTimestamp(index++, (startTime != null)
+				? Timestamp.from(startTime.toInstant())
+				: null);
 
 		ZonedDateTime endTime = usageRecord.endTime();
-		updateStatement.setTimestamp(index++, endTime != null ? Timestamp.from(endTime.toInstant()) : null);
+		updateStatement.setTimestamp(index++, (endTime != null)
+				? Timestamp.from(endTime.toInstant())
+				: null);
 
 		updateStatement.setLong(index++, usageRecord.units());
 
 		ZonedDateTime expirationDate = usageRecord.expirationDate();
-		updateStatement.setTimestamp(index++, expirationDate != null ? Timestamp.from(expirationDate.toInstant()) : null);
+		updateStatement.setTimestamp(index++, (expirationDate != null)
+				? Timestamp.from(expirationDate.toInstant())
+				: null);
 
 		updateStatement.setLong(index, usageId);
 
 		updateStatement.addBatch();
 	}
 
-	private void insertUsageRecord(PreparedStatement insertStatement, UsageRecord usageRecord, LimitTrackingContext context) throws SQLException {
+	private void insertUsageRecord(PreparedStatement insertStatement, UsageRecord usageRecord,
+			LimitTrackingContext context) throws SQLException {
 		insertStatement.clearParameters();
 		int index = 1;
 		insertStatement.setString(index++, context.getFeature().getFeatureId());
@@ -178,30 +206,39 @@ public class JDBCUsageRepository implements UsageRepository {
 		insertStatement.setString(index++, usageRecord.limitId());
 
 		ZonedDateTime startTime = usageRecord.startTime();
-		insertStatement.setTimestamp(index++, startTime != null ? Timestamp.from(startTime.toInstant()) : null);
+		insertStatement.setTimestamp(index++, (startTime != null)
+				? Timestamp.from(startTime.toInstant())
+				: null);
 
 		ZonedDateTime endTime = usageRecord.endTime();
-		insertStatement.setTimestamp(index++, endTime != null ? Timestamp.from(endTime.toInstant()) : null);
+		insertStatement.setTimestamp(index++, (endTime != null)
+				? Timestamp.from(endTime.toInstant())
+				: null);
 
 		insertStatement.setLong(index++, usageRecord.units());
 
 		ZonedDateTime expirationDate = usageRecord.expirationDate();
-		insertStatement.setTimestamp(index, expirationDate != null ? Timestamp.from(expirationDate.toInstant()) : null);
+		insertStatement.setTimestamp(index++, (expirationDate != null)
+				? Timestamp.from(expirationDate.toInstant())
+				: null);
 
 		insertStatement.addBatch();
 	}
 
-	private long findRecordId(Connection connection, UsageRecord usageRecord, LimitTrackingContext context) throws SQLException {
+	private long findRecordId(Connection connection, UsageRecord usageRecord,
+			LimitTrackingContext context) throws SQLException {
 		StringBuilder query = new StringBuilder("SELECT usage_id FROM ").append(getFullTableName())
 				.append(" WHERE limit_id = ?");
 
 		List<Object> params = new ArrayList<>();
 		params.add(usageRecord.limitId());
+
 		ZonedDateTime startTime = usageRecord.startTime();
 		if (startTime != null) {
 			query.append(" AND window_start = ?");
 			params.add(Timestamp.from(startTime.toInstant()));
-		} else {
+		}
+		else {
 			query.append(" AND window_start IS NULL");
 		}
 		query.append(" AND feature_id = ? AND product_id = ? AND user_grouping = ?");
@@ -220,16 +257,19 @@ public class JDBCUsageRepository implements UsageRepository {
 		return -1;
 	}
 
-	private void processUsageRecordUpdates(Connection connection, List<UsageRecord> usageRecords, LimitTrackingContext context) throws SQLException {
-		String updateQuery = "UPDATE " + getFullTableName() + " SET feature_id = ?, product_id = ?, user_grouping = ?, limit_id = ?, " +
-				"window_start = ?, window_end = ?, units = ?, expiration_date = ? WHERE usage_id = ?";
+	private void processUsageRecordUpdates(Connection connection, List<UsageRecord> usageRecords,
+			LimitTrackingContext context) throws SQLException {
+		String updateQuery = "UPDATE " + getFullTableName()
+				+ " SET feature_id = ?, product_id = ?, user_grouping = ?, limit_id = ?, "
+				+ "window_start = ?, window_end = ?, units = ?, expiration_date = ? WHERE usage_id = ?";
 
-		String insertQuery = "INSERT INTO " + getFullTableName() +
-				" (feature_id, product_id, user_grouping, limit_id, window_start, window_end, units, expiration_date) " +
-				"VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+		String insertQuery = "INSERT INTO " + getFullTableName()
+				+ " (feature_id, product_id, user_grouping, limit_id, window_start, window_end, units, expiration_date) "
+				+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
 		try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery);
-				PreparedStatement insertStatement = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS)) {
+				PreparedStatement insertStatement = connection.prepareStatement(insertQuery,
+						Statement.RETURN_GENERATED_KEYS)) {
 
 			for (UsageRecord usageRecord : usageRecords) {
 				if (usageRecord.limitId() == null) {
@@ -237,15 +277,18 @@ public class JDBCUsageRepository implements UsageRepository {
 					continue;
 				}
 
-				if (usageRecord.startTime() != null && usageRecord.endTime() != null && usageRecord.endTime().isBefore(usageRecord.startTime())) {
-					throw new UsageRepositoryException("endTime cannot be before startTime in UsageRecord");
+				if (usageRecord.startTime() != null && usageRecord.endTime() != null
+						&& usageRecord.endTime().isBefore(usageRecord.startTime())) {
+					throw new IllegalArgumentException("endTime cannot be before startTime in UsageRecord");
 				}
 				if (usageRecord.expirationDate() != null) {
-					if (usageRecord.startTime() != null && usageRecord.expirationDate().isBefore(usageRecord.startTime())) {
-						throw new UsageRepositoryException("expirationDate cannot be before startTime in UsageRecord");
+					if (usageRecord.startTime() != null
+							&& usageRecord.expirationDate().isBefore(usageRecord.startTime())) {
+						throw new IllegalArgumentException("expirationDate cannot be before startTime in UsageRecord");
 					}
-					if (usageRecord.endTime() != null && usageRecord.expirationDate().isBefore(usageRecord.endTime())) {
-						throw new UsageRepositoryException("expirationDate cannot be before endTime in UsageRecord");
+					if (usageRecord.endTime() != null
+							&& usageRecord.expirationDate().isBefore(usageRecord.endTime())) {
+						throw new IllegalArgumentException("expirationDate cannot be before endTime in UsageRecord");
 					}
 				}
 
@@ -254,11 +297,13 @@ public class JDBCUsageRepository implements UsageRepository {
 
 				if (usageId != -1) {
 					updateUsageRecord(updateStatement, usageRecord, context, usageId);
-				} else {
+				}
+				else {
 					usageId = findRecordId(connection, usageRecord, context);
 					if (usageId != -1) {
 						updateUsageRecord(updateStatement, usageRecord, context, usageId);
-					} else {
+					}
+					else {
 						insertUsageRecord(insertStatement, usageRecord, context);
 					}
 				}
@@ -273,25 +318,30 @@ public class JDBCUsageRepository implements UsageRepository {
 	public void updateUsageRecords(LimitTrackingContext context) {
 		try (Connection connection = dataSource.getConnection()) {
 			performUpdatesInTransaction(connection, context);
-		} catch (SQLException e) {
-			LOGGER.log(Level.SEVERE, "Error updating usage records: ", e);
-			throw new UsageRepositoryException("Error updating usage records", e);
+		}
+		catch (SQLException ex) {
+			LOGGER.log(Level.SEVERE, "Error updating usage records: ", ex);
+			throw new RuntimeException("Error updating usage records", ex);
 		}
 	}
 
-	private void performUpdatesInTransaction(Connection connection, LimitTrackingContext context) throws SQLException {
+	private void performUpdatesInTransaction(Connection connection, LimitTrackingContext context)
+			throws SQLException {
 		connection.setAutoCommit(false);
 		try {
 			processUsageRecordUpdates(connection, context.getUpdatedUsageRecords(), context);
 			connection.commit();
-		} catch (SQLException e) {
+		}
+		catch (SQLException ex) {
 			connection.rollback();
-			LOGGER.log(Level.SEVERE, "Rolling back transaction due to error: ", e);
-			throw new UsageRepositoryException("Failed to update/insert usage records", e);
-		} finally {
+			LOGGER.log(Level.SEVERE, "Rolling back transaction due to error: ", ex);
+			throw new RuntimeException("Failed to update/insert usage records", ex);
+		}
+		finally {
 			try {
 				connection.setAutoCommit(true);
-			} catch (SQLException ex) {
+			}
+			catch (SQLException ex) {
 				LOGGER.log(Level.SEVERE, "Failed to restore auto-commit after transaction: ", ex);
 			}
 		}
@@ -308,30 +358,32 @@ public class JDBCUsageRepository implements UsageRepository {
 	public void deleteOldRecords(ZonedDateTime expirationDate) {
 		try (Connection connection = dataSource.getConnection()) {
 			deleteRecordsInTransaction(connection, expirationDate);
-		} catch (SQLException e) {
-			LOGGER.log(Level.SEVERE, "Failed to connect to the database for deleting records: ", e);
-			throw new UsageRepositoryException("Failed to connect to the database for deleting records", e);
+		}
+		catch (SQLException ex) {
+			LOGGER.log(Level.SEVERE, "Failed to connect to the database for deleting records: ", ex);
+			throw new RuntimeException("Failed to connect to the database for deleting records", ex);
 		}
 	}
 
-	private void deleteRecordsInTransaction(Connection connection, ZonedDateTime expirationDate) throws SQLException {
+	private void deleteRecordsInTransaction(Connection connection, ZonedDateTime expirationDate)
+			throws SQLException {
 		connection.setAutoCommit(false);
 		try {
 			deleteRecords(connection, expirationDate);
 			connection.commit();
-		} catch (SQLException e) {
+		}
+		catch (SQLException ex) {
 			connection.rollback();
-			LOGGER.log(Level.SEVERE, "Failed to delete old records, rolling back transaction:", e);
-			throw new UsageRepositoryException("Failed to delete old records", e);
-		} finally {
+			LOGGER.log(Level.SEVERE, "Failed to delete old records, rolling back transaction:", ex);
+			throw new RuntimeException("Failed to delete old records", ex);
+		}
+		finally {
 			try {
 				connection.setAutoCommit(true);
-			} catch (SQLException ex) {
+			}
+			catch (SQLException ex) {
 				LOGGER.log(Level.SEVERE, "Failed to reset auto-commit after deleting records: ", ex);
 			}
 		}
 	}
 }
-
-
-
