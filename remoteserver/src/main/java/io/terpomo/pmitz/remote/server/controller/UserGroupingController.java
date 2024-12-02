@@ -14,34 +14,34 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/user-groupings")
-public class PmitzServerController {
+@RequestMapping()
+public class UserGroupingController {
 
 	private final FeatureUsageTracker featureUsageTracker;
 
-	public PmitzServerController(@Autowired(required = false) FeatureUsageTracker featureUsageTracker) {
+	public UserGroupingController(@Autowired(required = false) FeatureUsageTracker featureUsageTracker) {
 		this.featureUsageTracker = featureUsageTracker;
 	}
 
-	@GetMapping("/hello/{productId}/{featureId}")
-	public FeatureUsageInfo hello(@PathVariable String productId,
-			@PathVariable String featureId) {
-		return new FeatureUsageInfo(FeatureStatus.AVAILABLE, Collections.emptyMap());
-	}
-
-	@GetMapping("/user/{userGroupingId}/usage/{productId}/{featureId}")
+	@GetMapping("/users/{userGroupingId}/limits/{productId}/{featureId}")
 	public FeatureUsageInfo userUsageInfo(@PathVariable String productId,
 			@PathVariable String featureId, @PathVariable String userGroupingId) {
 		return new FeatureUsageInfo(FeatureStatus.AVAILABLE, Collections.emptyMap());
 	}
 
-	@GetMapping("/subscription/{userGroupingId}/usage/{productId}/{featureId}")
+	@GetMapping("/directory-groups/{userGroupingId}/limits/{productId}/{featureId}")
+	public FeatureUsageInfo groupUsageInfo(@PathVariable String productId,
+										  @PathVariable String featureId, @PathVariable String userGroupingId) {
+		return new FeatureUsageInfo(FeatureStatus.AVAILABLE, Collections.emptyMap());
+	}
+
+	@GetMapping("/subscriptions/{userGroupingId}/limits/{productId}/{featureId}")
 	public FeatureUsageInfo subscriptionUsageInfo(@PathVariable String productId,
 			@PathVariable String featureId, @PathVariable String userGroupingId) {
 		return new FeatureUsageInfo(FeatureStatus.AVAILABLE, Collections.emptyMap());
 	}
 
-	@PostMapping("/user/{userGroupingId}/usage/{productId}/{featureId}")
+	@PostMapping("/users/{userGroupingId}/usage/{productId}/{featureId}")
 	public ResponseEntity<Void> recordOrReduceUserFeatureUsage(UsageRecordRequest usageRecordRequest,
 			@PathVariable String productId, @PathVariable String featureId, @PathVariable String userGroupingId) {
 
@@ -49,7 +49,14 @@ public class PmitzServerController {
 
 	}
 
-	@PostMapping("/subscription/{userGroupingId}/usage/{productId}/{featureId}")
+	@PostMapping("/directory-groups/{userGroupingId}/usage/{productId}/{featureId}")
+	public ResponseEntity<Void> recordOrReduceGroupFeatureUsage(UsageRecordRequest usageRecordRequest,
+															   @PathVariable String productId, @PathVariable String featureId, @PathVariable String userGroupingId) {
+
+		return ResponseEntity.ok().build();
+	}
+
+	@PostMapping("/subscriptions/{userGroupingId}/usage/{productId}/{featureId}")
 	public ResponseEntity<Void> recordOrReduceSubscriptionFeatureUsage(UsageRecordRequest usageRecordRequest,
 			@PathVariable String productId, @PathVariable String featureId, @PathVariable String userGroupingId) {
 
@@ -57,14 +64,21 @@ public class PmitzServerController {
 
 	}
 
-	@PostMapping("/user/{userGroupingId}/usage-check/{productId}/{featureId}")
+	@PostMapping("/users/{userGroupingId}/usage-check/{productId}/{featureId}")
 	public FeatureUsageInfo verifyUserFeatureUsage(UsageRecordRequest usageRecordRequest, @PathVariable String productId,
 			@PathVariable String featureId, @PathVariable String userGroupingId) {
 
 		return new FeatureUsageInfo(FeatureStatus.LIMIT_EXCEEDED, Collections.emptyMap());
 	}
 
-	@PostMapping("/subscription/{userGroupingId}/usage-check/{productId}/{featureId}")
+	@PostMapping("/directory-groups/{userGroupingId}/usage-check/{productId}/{featureId}")
+	public FeatureUsageInfo verifyGroupFeatureUsage(UsageRecordRequest usageRecordRequest, @PathVariable String productId,
+												   @PathVariable String featureId, @PathVariable String userGroupingId) {
+
+		return new FeatureUsageInfo(FeatureStatus.LIMIT_EXCEEDED, Collections.emptyMap());
+	}
+
+	@PostMapping("/subscriptions/{userGroupingId}/usage-check/{productId}/{featureId}")
 	public FeatureUsageInfo verifySubscriptionFeatureUsage(UsageRecordRequest usageRecordRequest,
 			@PathVariable String productId, @PathVariable String featureId, @PathVariable String userGroupingId) {
 		return new FeatureUsageInfo(FeatureStatus.AVAILABLE, Collections.emptyMap());
