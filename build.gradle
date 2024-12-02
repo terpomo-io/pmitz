@@ -4,7 +4,6 @@ group 'io.terpomo.pmitz'
 version '1.0.0-SNAPSHOT'
 
 subprojects {
-    apply plugin: 'java'
     apply plugin: 'checkstyle'
 
     checkstyle {
@@ -22,10 +21,6 @@ subprojects {
 
     dependencies {
         checkstyle libs.spring.javaformat
-
-        testImplementation libs.junit.jupiter
-        testImplementation libs.mockito.junit.jupiter
-        testImplementation libs.assertj.core
     }
 
     configurations.checkstyle {
@@ -42,9 +37,5 @@ subprojects {
 
     repositories {
         mavenCentral()
-    }
-
-    test {
-        useJUnitPlatform()
     }
 }

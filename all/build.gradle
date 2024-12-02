@@ -1,4 +1,14 @@
+apply plugin: 'java'
+
 dependencies {
     implementation project(':core')
     implementation project(':limits')
+
+    testImplementation libs.junit.jupiter
+    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.assertj.core
+}
+
+test {
+    useJUnitPlatform()
 }
