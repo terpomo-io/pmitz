@@ -2,7 +2,8 @@
  * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * You may obtain a copy at
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  *      https://www.apache.org/licenses/LICENSE-2.0
  *
@@ -13,18 +14,8 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.limits.usage.repository;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
-import io.terpomo.pmitz.core.subjects.IndividualUser;
-import io.terpomo.pmitz.limits.UsageRecord;
-import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRecordRepoMetadata;
-import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
-import org.h2.jdbcx.JdbcDataSource;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+package io.terpomo.pmitz.limits.usage.repository;
 
 import java.sql.Connection;
 import java.sql.Statement;
@@ -34,7 +25,20 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Product;
+import io.terpomo.pmitz.core.subjects.IndividualUser;
+import io.terpomo.pmitz.limits.UsageRecord;
+import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRecordRepoMetadata;
+import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
+
 import static org.assertj.core.api.Assertions.assertThat;
+
 
 class JDBCUsageRepositoryTests {
 
