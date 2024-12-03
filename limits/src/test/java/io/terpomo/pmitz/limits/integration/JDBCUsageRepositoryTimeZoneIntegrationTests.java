@@ -95,36 +95,76 @@ class JDBCUsageRepositoryTimeZoneIntegrationTests {
 		try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
 			switch (databaseType) {
 				case "mysql" -> {
+					// Create schema if it doesn't exist
 					stmt.execute("CREATE SCHEMA IF NOT EXISTS `" + CUSTOM_SCHEMA + "`");
+
+					// Define schema prefix with backticks for MySQL
 					schemaPrefix = "`" + CUSTOM_SCHEMA + "`.";
-					createTableQuery = "CREATE TABLE IF NOT EXISTS " + schemaPrefix + "`Usage` (" +
-							"usage_id INT AUTO_INCREMENT PRIMARY KEY, feature_id VARCHAR(255), product_id VARCHAR(255), " +
-							"user_grouping VARCHAR(255), limit_id VARCHAR(255), window_start TIMESTAMP, " +
-							"window_end TIMESTAMP, units INT, expiration_date TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)";
+
+					// Use TABLE_NAME with backticks for MySQL
+					createTableQuery = "CREATE TABLE IF NOT EXISTS " + schemaPrefix + "`" + TABLE_NAME + "` (" +
+							"usage_id INT AUTO_INCREMENT PRIMARY KEY, " +
+							"feature_id VARCHAR(255) NOT NULL, " +
+							"product_id VARCHAR(255) NOT NULL, " +
+							"user_grouping VARCHAR(255) NOT NULL, " +
+							"limit_id VARCHAR(255) NOT NULL, " +
+							"window_start TIMESTAMP NULL, " +
+							"window_end TIMESTAMP NULL, " +
+							"units INT NOT NULL, " +
+							"expiration_date TIMESTAMP NULL, " +
+							"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL" +
+							")";
 				}
 				case "postgres" -> {
+					// Create schema if it doesn't exist
 					stmt.execute("CREATE SCHEMA IF NOT EXISTS " + CUSTOM_SCHEMA);
+
+					// Define schema prefix for PostgreSQL
 					schemaPrefix = CUSTOM_SCHEMA + ".";
+
+					// Use TABLE_NAME without quotes for PostgreSQL
 					createTableQuery = "CREATE TABLE IF NOT EXISTS " + schemaPrefix + TABLE_NAME + " (" +
-							"usage_id SERIAL PRIMARY KEY, feature_id VARCHAR(255), product_id VARCHAR(255), " +
-							"user_grouping VARCHAR(255), limit_id VARCHAR(255), window_start TIMESTAMP WITH TIME ZONE, " +
-							"window_end TIMESTAMP WITH TIME ZONE, units INT, expiration_date TIMESTAMP WITH TIME ZONE, " +
-							"updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP)";
+							"usage_id SERIAL PRIMARY KEY, " +
+							"feature_id VARCHAR(255) NOT NULL, " +
+							"product_id VARCHAR(255) NOT NULL, " +
+							"user_grouping VARCHAR(255) NOT NULL, " +
+							"limit_id VARCHAR(255) NOT NULL, " +
+							"window_start TIMESTAMP WITH TIME ZONE NULL, " +
+							"window_end TIMESTAMP WITH TIME ZONE NULL, " +
+							"units INT NOT NULL, " +
+							"expiration_date TIMESTAMP WITH TIME ZONE NULL, " +
+							"updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL" +
+							")";
 				}
 				case "sqlserver" -> {
+					// Create schema if it doesn't exist
 					stmt.execute("IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '" + CUSTOM_SCHEMA + "') " +
 							"EXEC('CREATE SCHEMA " + CUSTOM_SCHEMA + "');");
+
+					// Define schema prefix for SQL Server
 					schemaPrefix = CUSTOM_SCHEMA + ".";
+
+					// Use TABLE_NAME with square brackets for SQL Server
 					createTableQuery = "CREATE TABLE " + schemaPrefix + "[" + TABLE_NAME + "] (" +
-							"usage_id INT IDENTITY(1,1) PRIMARY KEY, feature_id NVARCHAR(255), " +
-							"product_id NVARCHAR(255), user_grouping NVARCHAR(255), limit_id NVARCHAR(255), " +
-							"window_start DATETIME2, window_end DATETIME2, units INT, expiration_date DATETIME2, updated_at DATETIME2 DEFAULT SYSUTCDATETIME())";
+							"usage_id INT IDENTITY(1,1) PRIMARY KEY, " +
+							"feature_id NVARCHAR(255) NOT NULL, " +
+							"product_id NVARCHAR(255) NOT NULL, " +
+							"user_grouping NVARCHAR(255) NOT NULL, " +
+							"limit_id NVARCHAR(255) NOT NULL, " +
+							"window_start DATETIME2 NULL, " +
+							"window_end DATETIME2 NULL, " +
+							"units INT NOT NULL, " +
+							"expiration_date DATETIME2 NULL, " +
+							"updated_at DATETIME2 DEFAULT SYSUTCDATETIME() NOT NULL" +
+							")";
 				}
 				default -> throw new IllegalArgumentException("Unsupported database type: " + databaseType);
 			}
+			// Execute the constructed CREATE TABLE query
 			stmt.execute(createTableQuery);
 		}
 	}
+
 
 	private void insertRecords(Connection connection, String databaseType, List<Timestamp> timestamps) throws SQLException {
 		String insertQuery = "INSERT INTO %s (feature_id, product_id, user_grouping, limit_id, window_start, window_end, units, expiration_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
