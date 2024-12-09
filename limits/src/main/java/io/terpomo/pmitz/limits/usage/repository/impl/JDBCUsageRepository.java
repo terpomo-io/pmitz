@@ -161,7 +161,7 @@ public class JDBCUsageRepository implements UsageRepository {
 			context.addCurrentUsageRecords(records);
 		}
 		catch (SQLException ex) {
-			throw new RuntimeException("Failed to load usage data", ex);
+			throw new UsageRepositoryException("Failed to load usage data", ex);
 		}
 	}
 
@@ -218,7 +218,7 @@ public class JDBCUsageRepository implements UsageRepository {
 		insertStatement.setLong(index++, usageRecord.units());
 
 		ZonedDateTime expirationDate = usageRecord.expirationDate();
-		insertStatement.setTimestamp(index++, (expirationDate != null)
+		insertStatement.setTimestamp(index, (expirationDate != null)
 				? Timestamp.from(expirationDate.toInstant())
 				: null);
 
@@ -320,8 +320,7 @@ public class JDBCUsageRepository implements UsageRepository {
 			performUpdatesInTransaction(connection, context);
 		}
 		catch (SQLException ex) {
-			LOGGER.log(Level.SEVERE, "Error updating usage records: ", ex);
-			throw new RuntimeException("Error updating usage records", ex);
+			throw new UsageRepositoryException("Error updating usage records", ex);
 		}
 	}
 
@@ -334,8 +333,7 @@ public class JDBCUsageRepository implements UsageRepository {
 		}
 		catch (SQLException ex) {
 			connection.rollback();
-			LOGGER.log(Level.SEVERE, "Rolling back transaction due to error: ", ex);
-			throw new RuntimeException("Failed to update/insert usage records", ex);
+			throw new UsageRepositoryException("Failed to update/insert usage records", ex);
 		}
 		finally {
 			try {
@@ -360,8 +358,7 @@ public class JDBCUsageRepository implements UsageRepository {
 			deleteRecordsInTransaction(connection, expirationDate);
 		}
 		catch (SQLException ex) {
-			LOGGER.log(Level.SEVERE, "Failed to connect to the database for deleting records: ", ex);
-			throw new RuntimeException("Failed to connect to the database for deleting records", ex);
+			throw new UsageRepositoryException("Failed to connect to the database for deleting records", ex);
 		}
 	}
 
@@ -374,8 +371,7 @@ public class JDBCUsageRepository implements UsageRepository {
 		}
 		catch (SQLException ex) {
 			connection.rollback();
-			LOGGER.log(Level.SEVERE, "Failed to delete old records, rolling back transaction:", ex);
-			throw new RuntimeException("Failed to delete old records", ex);
+			throw new UsageRepositoryException("Failed to delete old records", ex);
 		}
 		finally {
 			try {
