@@ -16,6 +16,7 @@
 
 package io.terpomo.pmitz.limits.integration;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,6 +29,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
+import io.terpomo.pmitz.utils.JDBCUtils;
 
 @Testcontainers
 public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
@@ -52,42 +54,21 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 	}
 
 	@Override
-	protected void setupDatabase() throws SQLException {
+	protected void setupDatabase() throws SQLException, IOException {
 		try (Connection conn = dataSource.getConnection();
-				Statement stmt = conn.createStatement()) {
+			Statement stmt = conn.createStatement()) {
 
-			stmt.execute("IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '" + CUSTOM_SCHEMA + "') " +
-					"EXEC('CREATE SCHEMA " + CUSTOM_SCHEMA + "')");
-
-			String createTable = "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Usage' AND schema_id = SCHEMA_ID('" + CUSTOM_SCHEMA + "')) " +
-					"CREATE TABLE " + getFullTableName() + " (" +
-					"usage_id INT PRIMARY KEY IDENTITY(1,1), " +
-					"feature_id NVARCHAR(255) NOT NULL, " +
-					"product_id NVARCHAR(255) NOT NULL, " +
-					"user_grouping NVARCHAR(255) NOT NULL, " +
-					"limit_id NVARCHAR(255) NOT NULL, " +
-					"window_start DATETIME2 NULL, " +
-					"window_end DATETIME2 NULL, " +
-					"units INT NOT NULL, " +
-					"expiration_date DATETIME2 NULL, " +
-					"updated_at DATETIME2 DEFAULT SYSUTCDATETIME() NOT NULL" +
-					");";
-
-			stmt.execute(createTable);
-
-			stmt.execute("IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_limit_id' AND object_id = OBJECT_ID('" + getFullTableName() + "')) " +
-					"CREATE INDEX idx_limit_id ON " + getFullTableName() + " (limit_id);");
-
-			stmt.execute("IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_feature_product_user' AND object_id = OBJECT_ID('" + getFullTableName() + "')) " +
-					"CREATE INDEX idx_feature_product_user ON " + getFullTableName() + " (feature_id, product_id, user_grouping);");
+			JDBCUtils.executeStatementsFile(
+					stmt, "../resources/scripts/repos/sql/sqlserver_create.sql", CUSTOM_SCHEMA);
 		}
 	}
 
 	@Override
-	protected void tearDownDatabase() throws SQLException {
+	protected void tearDownDatabase() throws SQLException, IOException {
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
-			stmt.execute("TRUNCATE TABLE " + getFullTableName());
+			JDBCUtils.executeStatementsFile(
+					stmt, "../resources/scripts/repos/sql/sqlserver_drop.sql", CUSTOM_SCHEMA);
 		}
 	}
 
