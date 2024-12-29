@@ -8,7 +8,8 @@
 --    Alternatively, you can change the default schema in your SQL client before running
 --    the script using 'USE your_schema;'. Be careful as this affects all subsequent commands!
 
-CREATE TABLE IF NOT EXISTS Usage (
+CREATE SCHEMA IF NOT EXISTS your_schema;
+CREATE TABLE IF NOT EXISTS your_schema.Usage (
     usage_id INT AUTO_INCREMENT PRIMARY KEY,
     feature_id VARCHAR(255) NOT NULL,
     product_id VARCHAR(255) NOT NULL,
@@ -19,10 +20,21 @@ CREATE TABLE IF NOT EXISTS Usage (
     units INT NOT NULL,
     expiration_date TIMESTAMP NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    INDEX idx_limit_id (limit_id),  -- Index on limit_id
-    INDEX idx_feature_product_user (feature_id, product_id, user_grouping) -- Composite index
+    INDEX idx_limit_id (limit_id),
+    INDEX idx_feature_product_user (feature_id, product_id, user_grouping)
 );
 
 -- User Limit Table
 
---
+CREATE TABLE IF NOT EXISTS your_schema.user_usage_limit (
+    usage_id INT AUTO_INCREMENT PRIMARY KEY,
+    limit_id VARCHAR(255),
+    feature_id VARCHAR(255),
+    user_group_id VARCHAR(255),
+    limit_type VARCHAR(255),
+    limit_value INT,
+    limit_unit VARCHAR(255),
+    limit_interval VARCHAR(255),
+    limit_duration INT
+) ENGINE=InnoDB;
+ALTER TABLE your_schema.user_usage_limit ADD CONSTRAINT c_limit UNIQUE (limit_id,feature_id,user_group_id);

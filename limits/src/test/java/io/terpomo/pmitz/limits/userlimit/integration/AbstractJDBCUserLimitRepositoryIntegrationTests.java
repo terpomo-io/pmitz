@@ -16,6 +16,7 @@
 
 package io.terpomo.pmitz.limits.userlimit.integration;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Optional;
 
@@ -23,6 +24,8 @@ import org.apache.commons.dbcp2.BasicDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
@@ -36,8 +39,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
 
-	protected static final String SCHEMA_NAME = "public";
+	private static final Logger logger = LoggerFactory.getLogger(AbstractJDBCUserLimitRepositoryIntegrationTests.class);
+
+	protected static final String CUSTOM_SCHEMA = "pmitz";
 	protected static final String TABLE_NAME = "user_usage_limit";
+
 	protected final Product product = new Product("Picture hosting service");
 	protected final Feature feature = new Feature(this.product, "Uploading pictures");
 	protected final UserGrouping user = new IndividualUser("User1");
@@ -46,22 +52,32 @@ public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
 
 	protected abstract void setupDataSource() throws SQLException;
 
-	protected abstract void setupDatabase() throws SQLException;
+	protected abstract void setupDatabase() throws SQLException, IOException;
+
+	protected abstract void tearDownDatabase() throws SQLException, IOException;
 
 	protected abstract void populateTable() throws SQLException;
 
-	protected abstract void tearDownDatabase() throws SQLException;
-
 	@BeforeEach
-	void setUp() throws SQLException {
-		setupDataSource();
-		setupDatabase();
-		populateTable();
+	void setUp() {
+		try {
+			setupDataSource();
+			setupDatabase();
+			populateTable();
+		}
+		catch (SQLException | IOException ex) {
+			logger.error("Error during setup", ex);
+		}
 	}
 
 	@AfterEach
-	void tearDown() throws Exception {
-		tearDownDatabase();
+	void tearDown() {
+		try {
+			tearDownDatabase();
+		}
+		catch (SQLException | IOException ex) {
+			logger.error("Error during teardown", ex);
+		}
 	}
 
 	@Test

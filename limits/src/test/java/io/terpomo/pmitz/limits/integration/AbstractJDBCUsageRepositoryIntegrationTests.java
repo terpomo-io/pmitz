@@ -16,6 +16,7 @@
 
 package io.terpomo.pmitz.limits.integration;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -43,6 +44,7 @@ import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+
 public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 
 	private static final Logger logger = LoggerFactory.getLogger(AbstractJDBCUsageRepositoryIntegrationTests.class);
@@ -63,7 +65,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			setupDatabase();
 			printDatabaseContents("After setupDatabase");
 		}
-		catch (SQLException ex) {
+		catch (SQLException | IOException ex) {
 			logger.error("Error during setup", ex);
 		}
 	}
@@ -78,7 +80,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			tearDownDatabase();
 			dataSource.close();
 		}
-		catch (SQLException ex) {
+		catch (SQLException | IOException ex) {
 			logger.error("Error during teardown", ex);
 		}
 	}
@@ -87,9 +89,9 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 
 	protected abstract String getTableName();
 
-	protected abstract void setupDatabase() throws SQLException;
+	protected abstract void setupDatabase() throws SQLException, IOException;
 
-	protected abstract void tearDownDatabase() throws SQLException;
+	protected abstract void tearDownDatabase() throws SQLException, IOException;
 
 	protected abstract void printDatabaseContents(String message) throws SQLException;
 
