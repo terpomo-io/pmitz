@@ -35,11 +35,11 @@ IF OBJECT_ID(N'your_schema.user_usage_limit', N'U') IS NULL
 BEGIN
     CREATE TABLE your_schema.[user_usage_limit] (
         usage_id INT PRIMARY KEY IDENTITY(1,1),
-        limit_id VARCHAR(255),
-        feature_id VARCHAR(255),
-        user_group_id VARCHAR(255),
-        limit_type VARCHAR(255),
-        limit_value INT,
+        limit_id VARCHAR(255) NOT NULL,
+        feature_id VARCHAR(255) NOT NULL,
+        user_group_id VARCHAR(255) NOT NULL,
+        limit_type VARCHAR(255) NOT NULL,
+        limit_value INT NOT NULL,
         limit_unit VARCHAR(255),
         limit_interval VARCHAR(255),
         limit_duration INT
