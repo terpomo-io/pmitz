@@ -31,8 +31,6 @@ import org.assertj.core.api.Fail;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
@@ -42,12 +40,9 @@ import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
+import static org.assertj.core.api.Assertions.*;
 
 public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
-
-	private static final Logger logger = LoggerFactory.getLogger(AbstractJDBCUsageRepositoryIntegrationTests.class);
 
 	protected BasicDataSource dataSource;
 	protected JDBCUsageRepository repository;
@@ -59,30 +54,15 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 	}
 
 	@BeforeEach
-	void setUp() {
-		try {
-			setupDataSource();
-			setupDatabase();
-			printDatabaseContents("After setupDatabase");
-		}
-		catch (SQLException | IOException ex) {
-			logger.error("Error during setup", ex);
-		}
+	void setUp() throws SQLException, IOException {
+		setupDataSource();
+		setupDatabase();
+		printDatabaseContents("After setupDatabase");
 	}
 
 	@AfterEach
-	void tearDown() {
-		try {
-			try (Connection conn = dataSource.getConnection()) {
-				conn.setAutoCommit(false);
-				conn.commit();
-			}
-			tearDownDatabase();
-			dataSource.close();
-		}
-		catch (SQLException | IOException ex) {
-			logger.error("Error during teardown", ex);
-		}
+	void tearDown() throws SQLException, IOException {
+		tearDownDatabase();
 	}
 
 	protected abstract void setupDataSource();
@@ -218,7 +198,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			}
 		}
 		catch (SQLException ex) {
-			logger.error("Error updating records with null dates", ex);
+			fail("Error updating records with null dates", ex);
 		}
 	}
 
@@ -252,7 +232,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			assertThat(loadedRecord.units()).isEqualTo(400L);
 		}
 		catch (Exception ex) {
-			logger.error("Error loading data with null window start", ex);
+			fail("Error loading data with null window start", ex);
 		}
 	}
 

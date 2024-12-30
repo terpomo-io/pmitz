@@ -29,7 +29,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
-import io.terpomo.pmitz.utils.JDBCUtils;
+import io.terpomo.pmitz.utils.JDBCTestUtils;
 
 
 @Testcontainers
@@ -58,7 +58,7 @@ public class MySQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageR
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
 
-			JDBCUtils.executeStatementsFile(
+			JDBCTestUtils.executeStatementsFile(
 					stmt, "../resources/scripts/repos/sql/mysql_create.sql", CUSTOM_SCHEMA);
 		}
 	}
@@ -69,7 +69,7 @@ public class MySQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageR
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
 
-			JDBCUtils.executeStatementsFile(
+			JDBCTestUtils.executeStatementsFile(
 					stmt, "../resources/scripts/repos/sql/mysql_drop.sql", CUSTOM_SCHEMA);
 		}
 	}

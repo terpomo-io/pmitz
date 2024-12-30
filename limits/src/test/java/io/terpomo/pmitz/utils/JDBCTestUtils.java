@@ -24,16 +24,21 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class JDBCUtils {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public final class JDBCTestUtils {
+
+	private static final Logger logger = LoggerFactory.getLogger(JDBCTestUtils.class);
 
 	private static final String SCHEMA_PLACEHOLDER = "your_schema";
 	private static final String COMMENT_PLACEHOLDER = "--";
 
-	private JDBCUtils() {
+	private JDBCTestUtils() {
+		// Private constructor to prevent instantiation
 	}
 
 	public static void executeStatementsFile(Statement statement, String sqlFilePath, String schema) throws IOException, SQLException {
-
 		List<String> lines = Files.readAllLines(Paths.get(sqlFilePath));
 		List<String> sqlStatements = new ArrayList<>();
 
@@ -41,18 +46,10 @@ public final class JDBCUtils {
 		boolean insideIfBlock = false;
 
 		for (String line : lines) {
-			line = line.trim();
-
-			// Remove comments
-			if (line.isEmpty() || line.startsWith(COMMENT_PLACEHOLDER)) {
+			line = preprocessLine(line, schema);
+			if (line.isEmpty()) {
 				continue;
 			}
-			if (line.contains(COMMENT_PLACEHOLDER)) {
-				line = line.substring(0, line.indexOf(COMMENT_PLACEHOLDER));
-			}
-
-			// Replace schema placeholder
-			line = line.replace(SCHEMA_PLACEHOLDER, schema);
 
 			// Append the line to the current statement
 			currentStatement.append(line).append(" ");
@@ -80,8 +77,31 @@ public final class JDBCUtils {
 		}
 
 		// Executing statements
+		executeStatements(statement, sqlStatements);
+	}
+
+	private static String preprocessLine(String line, String schema) {
+		String lineProcessed = line.trim();
+
+		// Remove comments
+		if (lineProcessed.startsWith(COMMENT_PLACEHOLDER)) {
+			return "";
+		}
+		if (line.contains(COMMENT_PLACEHOLDER)) {
+			lineProcessed = lineProcessed.substring(0, lineProcessed.indexOf(COMMENT_PLACEHOLDER)).trim();
+		}
+
+		// Replace schema placeholder
+		lineProcessed = lineProcessed.replace(SCHEMA_PLACEHOLDER, schema);
+
+		return lineProcessed;
+	}
+
+	private static void executeStatements(Statement statement, List<String> sqlStatements)
+		throws SQLException {
+
 		for (String sql : sqlStatements) {
-			System.out.println("Executing SQL : " + sql);
+			logger.trace("Executing SQL : {}", sql);
 			statement.execute(sql);
 		}
 	}
