@@ -16,6 +16,7 @@
 
 package io.terpomo.pmitz.limits.userlimit.integration;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -33,53 +34,42 @@ import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
+import io.terpomo.pmitz.utils.JDBCTestUtils;
 
 public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUserLimitRepositoryIntegrationTests {
 
 	@Container
-	private static final PostgreSQLContainer<?> mysqlContainer =
+	private static final PostgreSQLContainer<?> postgresContainer =
 			new PostgreSQLContainer<>("postgres:latest").withEnv("TZ", "Europe/Berlin");
 
 
 	@Override
 	protected void setupDataSource() {
-		mysqlContainer.start();
+		postgresContainer.start();
 		dataSource = new BasicDataSource();
-		dataSource.setUrl(mysqlContainer.getJdbcUrl());
-		dataSource.setUsername(mysqlContainer.getUsername());
-		dataSource.setPassword(mysqlContainer.getPassword());
-		repository = new JDBCUserLimitRepository(dataSource, SCHEMA_NAME, TABLE_NAME);
+		dataSource.setUrl(postgresContainer.getJdbcUrl());
+		dataSource.setUsername(postgresContainer.getUsername());
+		dataSource.setPassword(postgresContainer.getPassword());
+		repository = new JDBCUserLimitRepository(dataSource, CUSTOM_SCHEMA, TABLE_NAME);
 	}
 
 	@Override
-	protected void setupDatabase() throws SQLException {
-		String createQuery = String.format(
-				"""
-						CREATE TABLE IF NOT EXISTS %s.%s (
-							usage_id SERIAL PRIMARY KEY,
-							limit_id VARCHAR(255),
-							feature_id VARCHAR(255),
-							user_group_id VARCHAR(255),
-							limit_type VARCHAR(255),
-							limit_value INT,
-							limit_unit VARCHAR(255),
-							limit_interval VARCHAR(255),
-							limit_duration INT
-						);
-						""",
-				SCHEMA_NAME, TABLE_NAME);
-
-		String addContraintQuery = String.format(
-				"""
-						ALTER TABLE %s.%s
-							ADD CONSTRAINT c_limit UNIQUE (limit_id,feature_id, user_group_id)
-						""",
-				SCHEMA_NAME, TABLE_NAME);
-
+	protected void setupDatabase() throws SQLException, IOException {
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
-			stmt.execute(createQuery);
-			stmt.execute(addContraintQuery);
+
+			JDBCTestUtils.executeStatementsFile(
+					stmt, "../resources/scripts/repos/sql/postgres_create.sql", CUSTOM_SCHEMA);
+		}
+	}
+
+	@Override
+	protected void tearDownDatabase() throws SQLException, IOException {
+		try (Connection conn = dataSource.getConnection();
+			Statement stmt = conn.createStatement()) {
+
+			JDBCTestUtils.executeStatementsFile(
+					stmt, "../resources/scripts/repos/sql/postgres_drop.sql", CUSTOM_SCHEMA);
 		}
 	}
 
@@ -108,12 +98,12 @@ public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJ
 
 		String query = String.format(
 				"""
-						INSERT INTO %s.%s (
-							limit_id, feature_id, user_group_id, limit_type, limit_value,
-							limit_unit, limit_interval, limit_duration
-						) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-						""",
-				SCHEMA_NAME, TABLE_NAME);
+				INSERT INTO %s.%s (
+					limit_id, feature_id, user_group_id, limit_type, limit_value,
+					limit_unit, limit_interval, limit_duration
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+				""",
+				CUSTOM_SCHEMA, TABLE_NAME);
 
 		try (Connection conn = dataSource.getConnection();
 				PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -137,19 +127,6 @@ public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJ
 			stmt.setString(7, limitInterval);
 			stmt.setInt(8, limitDuration);
 			stmt.executeUpdate();
-		}
-	}
-
-	@Override
-	protected void tearDownDatabase() throws SQLException {
-		String dropContraintQuery = String.format(
-				"""
-						DROP TABLE IF EXISTS %s.%s
-						""",
-				SCHEMA_NAME, TABLE_NAME);
-		try (Connection conn = dataSource.getConnection();
-				Statement statement = conn.createStatement()) {
-			statement.execute(dropContraintQuery);
 		}
 	}
 }

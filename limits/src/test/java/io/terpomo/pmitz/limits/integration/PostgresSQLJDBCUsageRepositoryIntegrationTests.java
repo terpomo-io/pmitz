@@ -16,6 +16,7 @@
 
 package io.terpomo.pmitz.limits.integration;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,6 +28,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
+import io.terpomo.pmitz.utils.JDBCTestUtils;
 
 @Testcontainers
 public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
@@ -51,37 +53,22 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 	}
 
 	@Override
-	protected void setupDatabase() throws SQLException {
+	protected void setupDatabase() throws SQLException, IOException {
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
 
-			stmt.execute("CREATE SCHEMA IF NOT EXISTS " + CUSTOM_SCHEMA);
-			stmt.execute("CREATE TABLE IF NOT EXISTS " + CUSTOM_SCHEMA + ".\"Usage\" (" +
-					"usage_id SERIAL PRIMARY KEY, " +
-					"feature_id VARCHAR(255) NOT NULL, " +
-					"product_id VARCHAR(255) NOT NULL, " +
-					"user_grouping VARCHAR(255) NOT NULL, " +
-					"limit_id VARCHAR(255) NOT NULL, " +
-					"window_start TIMESTAMP NULL, " +
-					"window_end TIMESTAMP NULL, " +
-					"units INT NOT NULL, " +
-					"expiration_date TIMESTAMP NULL, " +
-					"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL" +
-					");");
-
-			stmt.execute("CREATE INDEX IF NOT EXISTS idx_limit_id ON " + CUSTOM_SCHEMA + ".\"Usage\" (limit_id);");
-			stmt.execute("CREATE INDEX IF NOT EXISTS idx_feature_product_user ON " + CUSTOM_SCHEMA + ".\"Usage\" (feature_id, product_id, user_grouping);");
+			JDBCTestUtils.executeStatementsFile(
+					stmt, "../resources/scripts/repos/sql/postgres_create.sql", CUSTOM_SCHEMA);
 		}
 	}
 
 	@Override
-	protected void tearDownDatabase() {
+	protected void tearDownDatabase() throws SQLException, IOException {
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
-			stmt.execute("TRUNCATE TABLE " + getFullTableName() + " RESTART IDENTITY CASCADE");
-		}
-		catch (SQLException ex) {
-			System.out.println("Error during tearDownDatabase: " + ex.getMessage());
+
+			JDBCTestUtils.executeStatementsFile(
+					stmt, "../resources/scripts/repos/sql/postgres_drop.sql", CUSTOM_SCHEMA);
 		}
 	}
 

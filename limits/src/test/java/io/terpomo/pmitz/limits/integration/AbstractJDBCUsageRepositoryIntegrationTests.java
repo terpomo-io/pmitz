@@ -16,6 +16,7 @@
 
 package io.terpomo.pmitz.limits.integration;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,8 +31,6 @@ import org.assertj.core.api.Fail;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
@@ -41,11 +40,9 @@ import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
-public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
+import static org.assertj.core.api.Assertions.*;
 
-	private static final Logger logger = LoggerFactory.getLogger(AbstractJDBCUsageRepositoryIntegrationTests.class);
+public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 
 	protected BasicDataSource dataSource;
 	protected JDBCUsageRepository repository;
@@ -57,39 +54,24 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 	}
 
 	@BeforeEach
-	void setUp() {
-		try {
-			setupDataSource();
-			setupDatabase();
-			printDatabaseContents("After setupDatabase");
-		}
-		catch (SQLException ex) {
-			logger.error("Error during setup", ex);
-		}
+	void setUp() throws SQLException, IOException {
+		setupDataSource();
+		setupDatabase();
+		printDatabaseContents("After setupDatabase");
 	}
 
 	@AfterEach
-	void tearDown() {
-		try {
-			try (Connection conn = dataSource.getConnection()) {
-				conn.setAutoCommit(false);
-				conn.commit();
-			}
-			tearDownDatabase();
-			dataSource.close();
-		}
-		catch (SQLException ex) {
-			logger.error("Error during teardown", ex);
-		}
+	void tearDown() throws SQLException, IOException {
+		tearDownDatabase();
 	}
 
 	protected abstract void setupDataSource();
 
 	protected abstract String getTableName();
 
-	protected abstract void setupDatabase() throws SQLException;
+	protected abstract void setupDatabase() throws SQLException, IOException;
 
-	protected abstract void tearDownDatabase() throws SQLException;
+	protected abstract void tearDownDatabase() throws SQLException, IOException;
 
 	protected abstract void printDatabaseContents(String message) throws SQLException;
 
@@ -216,7 +198,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			}
 		}
 		catch (SQLException ex) {
-			logger.error("Error updating records with null dates", ex);
+			fail("Error updating records with null dates", ex);
 		}
 	}
 
@@ -250,7 +232,7 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 			assertThat(loadedRecord.units()).isEqualTo(400L);
 		}
 		catch (Exception ex) {
-			logger.error("Error loading data with null window start", ex);
+			fail("Error loading data with null window start", ex);
 		}
 	}
 

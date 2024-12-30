@@ -16,6 +16,7 @@
 
 package io.terpomo.pmitz.limits.integration;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,6 +29,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
+import io.terpomo.pmitz.utils.JDBCTestUtils;
 
 
 @Testcontainers
@@ -52,36 +54,23 @@ public class MySQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageR
 	}
 
 	@Override
-	protected void setupDatabase() throws SQLException {
+	protected void setupDatabase() throws SQLException, IOException {
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
 
-			stmt.execute("CREATE SCHEMA IF NOT EXISTS " + CUSTOM_SCHEMA);
-			stmt.execute("CREATE TABLE IF NOT EXISTS " + CUSTOM_SCHEMA + ".`Usage` (" +
-					"usage_id INT AUTO_INCREMENT PRIMARY KEY, " +
-					"feature_id VARCHAR(255) NOT NULL, " +
-					"product_id VARCHAR(255) NOT NULL, " +
-					"user_grouping VARCHAR(255) NOT NULL, " +
-					"limit_id VARCHAR(255) NOT NULL, " +
-					"window_start TIMESTAMP NULL, " +
-					"window_end TIMESTAMP NULL, " +
-					"units INT NOT NULL, " +
-					"expiration_date TIMESTAMP NULL, " +
-					"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL, " +
-					"INDEX idx_limit_id (`limit_id`), " +
-					"INDEX idx_feature_product_user (`feature_id`, `product_id`, `user_grouping`)" +
-					");");
+			JDBCTestUtils.executeStatementsFile(
+					stmt, "../resources/scripts/repos/sql/mysql_create.sql", CUSTOM_SCHEMA);
 		}
 	}
 
+
 	@Override
-	protected void tearDownDatabase() throws SQLException {
+	protected void tearDownDatabase() throws SQLException, IOException {
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
 
-			stmt.execute("SET FOREIGN_KEY_CHECKS=0");
-			stmt.execute("TRUNCATE TABLE " + CUSTOM_SCHEMA + "." + getTableName());
-			stmt.execute("SET FOREIGN_KEY_CHECKS=1");
+			JDBCTestUtils.executeStatementsFile(
+					stmt, "../resources/scripts/repos/sql/mysql_drop.sql", CUSTOM_SCHEMA);
 		}
 	}
 

@@ -16,6 +16,7 @@
 
 package io.terpomo.pmitz.limits.userlimit.integration;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Optional;
 
@@ -36,8 +37,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
 
-	protected static final String SCHEMA_NAME = "public";
+	protected static final String CUSTOM_SCHEMA = "pmitz";
 	protected static final String TABLE_NAME = "user_usage_limit";
+
 	protected final Product product = new Product("Picture hosting service");
 	protected final Feature feature = new Feature(this.product, "Uploading pictures");
 	protected final UserGrouping user = new IndividualUser("User1");
@@ -46,21 +48,21 @@ public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
 
 	protected abstract void setupDataSource() throws SQLException;
 
-	protected abstract void setupDatabase() throws SQLException;
+	protected abstract void setupDatabase() throws SQLException, IOException;
+
+	protected abstract void tearDownDatabase() throws SQLException, IOException;
 
 	protected abstract void populateTable() throws SQLException;
 
-	protected abstract void tearDownDatabase() throws SQLException;
-
 	@BeforeEach
-	void setUp() throws SQLException {
+	void setUp() throws SQLException, IOException {
 		setupDataSource();
 		setupDatabase();
 		populateTable();
 	}
 
 	@AfterEach
-	void tearDown() throws Exception {
+	void tearDown() throws SQLException, IOException {
 		tearDownDatabase();
 	}
 
