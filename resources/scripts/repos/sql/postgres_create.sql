@@ -31,11 +31,11 @@ CREATE INDEX IF NOT EXISTS idx_feature_product_user ON your_schema."Usage" (feat
 CREATE SCHEMA IF NOT EXISTS your_schema;
 CREATE TABLE IF NOT EXISTS your_schema.user_usage_limit (
     usage_id SERIAL PRIMARY KEY,
-    limit_id VARCHAR(255),
-    feature_id VARCHAR(255),
-    user_group_id VARCHAR(255),
-    limit_type VARCHAR(255),
-    limit_value INT,
+    limit_id VARCHAR(255) NOT NULL,
+    feature_id VARCHAR(255) NOT NULL,
+    user_group_id VARCHAR(255) NOT NULL,
+    limit_type VARCHAR(255) NOT NULL,
+    limit_value INT NOT NULL,
     limit_unit VARCHAR(255),
     limit_interval VARCHAR(255),
     limit_duration INT
