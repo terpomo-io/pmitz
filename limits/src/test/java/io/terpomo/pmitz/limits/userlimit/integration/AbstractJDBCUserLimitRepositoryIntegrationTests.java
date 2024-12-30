@@ -24,8 +24,6 @@ import org.apache.commons.dbcp2.BasicDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
@@ -38,8 +36,6 @@ import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
-
-	private static final Logger logger = LoggerFactory.getLogger(AbstractJDBCUserLimitRepositoryIntegrationTests.class);
 
 	protected static final String CUSTOM_SCHEMA = "pmitz";
 	protected static final String TABLE_NAME = "user_usage_limit";
@@ -59,25 +55,15 @@ public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
 	protected abstract void populateTable() throws SQLException;
 
 	@BeforeEach
-	void setUp() {
-		try {
-			setupDataSource();
-			setupDatabase();
-			populateTable();
-		}
-		catch (SQLException | IOException ex) {
-			logger.error("Error during setup", ex);
-		}
+	void setUp() throws SQLException, IOException {
+		setupDataSource();
+		setupDatabase();
+		populateTable();
 	}
 
 	@AfterEach
-	void tearDown() {
-		try {
-			tearDownDatabase();
-		}
-		catch (SQLException | IOException ex) {
-			logger.error("Error during teardown", ex);
-		}
+	void tearDown() throws SQLException, IOException {
+		tearDownDatabase();
 	}
 
 	@Test

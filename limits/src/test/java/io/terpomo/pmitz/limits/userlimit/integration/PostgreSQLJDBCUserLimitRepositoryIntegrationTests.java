@@ -34,7 +34,7 @@ import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
-import io.terpomo.pmitz.utils.JDBCUtils;
+import io.terpomo.pmitz.utils.JDBCTestUtils;
 
 public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUserLimitRepositoryIntegrationTests {
 
@@ -58,7 +58,7 @@ public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJ
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
 
-			JDBCUtils.executeStatementsFile(
+			JDBCTestUtils.executeStatementsFile(
 					stmt, "../resources/scripts/repos/sql/postgres_create.sql", CUSTOM_SCHEMA);
 		}
 	}
@@ -68,7 +68,7 @@ public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJ
 		try (Connection conn = dataSource.getConnection();
 			Statement stmt = conn.createStatement()) {
 
-			JDBCUtils.executeStatementsFile(
+			JDBCTestUtils.executeStatementsFile(
 					stmt, "../resources/scripts/repos/sql/postgres_drop.sql", CUSTOM_SCHEMA);
 		}
 	}
