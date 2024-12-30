@@ -25,35 +25,25 @@ import java.sql.Timestamp;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
+
+@Testcontainers
 public class MySQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
 
 	@Container
 	private static final MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:latest")
-			.withDatabaseName(CUSTOM_SCHEMA)
-			.withEnv("TZ", "UTC")
-			.withCommand("--default-time-zone=UTC");
+			.withDatabaseName(CUSTOM_SCHEMA);
 
 	@Override
 	protected void setupDataSource() {
-		mysqlContainer.start();
 		dataSource = new BasicDataSource();
 		dataSource.setUrl(mysqlContainer.getJdbcUrl());
 		dataSource.setUsername(mysqlContainer.getUsername());
 		dataSource.setPassword(mysqlContainer.getPassword());
 		repository = new JDBCUsageRepository(dataSource, CUSTOM_SCHEMA, getTableName());
-	}
-
-	@Override
-	protected String getTimeZoneQuery() {
-		return "SELECT @@global.time_zone, @@session.time_zone";
-	}
-
-	@Override
-	protected boolean isSingleTimeZoneQuery() {
-		return false; // MySQL returns two values
 	}
 
 	@Override
@@ -63,72 +53,45 @@ public class MySQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageR
 
 	@Override
 	protected void setupDatabase() throws SQLException {
-		mysqlContainer.start();
-		dataSource = new BasicDataSource();
-		dataSource.setUrl(mysqlContainer.getJdbcUrl());
-		dataSource.setUsername(mysqlContainer.getUsername());
-		dataSource.setPassword(mysqlContainer.getPassword());
-
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
 
-			// Only set the session timezone
-			stmt.execute("SET time_zone = '+00:00';");
-
-			// Create schema and tables
 			stmt.execute("CREATE SCHEMA IF NOT EXISTS " + CUSTOM_SCHEMA);
 			stmt.execute("CREATE TABLE IF NOT EXISTS " + CUSTOM_SCHEMA + ".`Usage` (" +
 					"usage_id INT AUTO_INCREMENT PRIMARY KEY, " +
-					"feature_id VARCHAR(255), " +
-					"product_id VARCHAR(255), " +
-					"user_grouping VARCHAR(255), " +
-					"limit_id VARCHAR(255), " +
-					"window_start DATETIME, " +
-					"window_end DATETIME, " +
-					"units INT, " +
-					"expiration_date DATETIME, " +
-					"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+					"feature_id VARCHAR(255) NOT NULL, " +
+					"product_id VARCHAR(255) NOT NULL, " +
+					"user_grouping VARCHAR(255) NOT NULL, " +
+					"limit_id VARCHAR(255) NOT NULL, " +
+					"window_start TIMESTAMP NULL, " +
+					"window_end TIMESTAMP NULL, " +
+					"units INT NOT NULL, " +
+					"expiration_date TIMESTAMP NULL, " +
+					"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL, " +
+					"INDEX idx_limit_id (`limit_id`), " +
+					"INDEX idx_feature_product_user (`feature_id`, `product_id`, `user_grouping`)" +
 					");");
-
-			// Output the session timezone
-			ResultSet rs = stmt.executeQuery("SELECT @@session.time_zone;");
-			if (rs.next()) {
-				System.out.println("MySQL Session Timezone: " + rs.getString(1));
-			}
 		}
 	}
 
 	@Override
 	protected void tearDownDatabase() throws SQLException {
 		try (Connection conn = dataSource.getConnection();
-				Statement statement = conn.createStatement()) {
+				Statement stmt = conn.createStatement()) {
 
-			// Disable foreign key checks to avoid constraint issues during truncation
-			statement.execute("SET FOREIGN_KEY_CHECKS=0");
-
-			// Check if table exists before truncating
-			ResultSet rs = statement.executeQuery(
-					"SELECT COUNT(*) FROM information_schema.tables " +
-							"WHERE table_schema = '" + CUSTOM_SCHEMA + "' " +
-							"AND table_name = '" + getTableName().replace("`", "") + "'");
-
-			if (rs.next() && rs.getInt(1) > 0) {
-				// Truncate the table in the custom schema if it exists
-				statement.execute("TRUNCATE TABLE " + CUSTOM_SCHEMA + "." + getTableName());
-			}
-
-			// Re-enable foreign key checks
-			statement.execute("SET FOREIGN_KEY_CHECKS=1");
+			stmt.execute("SET FOREIGN_KEY_CHECKS=0");
+			stmt.execute("TRUNCATE TABLE " + CUSTOM_SCHEMA + "." + getTableName());
+			stmt.execute("SET FOREIGN_KEY_CHECKS=1");
 		}
 	}
-
 
 	@Override
 	protected void printDatabaseContents(String message) throws SQLException {
 		System.out.println("---- " + message + " ----");
 		try (Connection conn = dataSource.getConnection();
-				Statement stmt = conn.createStatement()) {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM " + CUSTOM_SCHEMA + "." + getTableName());
+				Statement stmt = conn.createStatement();
+				ResultSet rs = stmt.executeQuery("SELECT * FROM " + CUSTOM_SCHEMA + "." + getTableName())) {
+
 			while (rs.next()) {
 				int usageId = rs.getInt("usage_id");
 				String featureId = rs.getString("feature_id");
@@ -141,11 +104,16 @@ public class MySQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageR
 				Timestamp expirationDate = rs.getTimestamp("expiration_date");
 				Timestamp updatedAt = rs.getTimestamp("updated_at");
 
-				// Simply print the timestamp values as-is
-				System.out.println("UsageId: " + usageId + ", FeatureId: " + featureId + ", ProductId: " + productId
-						+ ", UserGrouping: " + userGrouping + ", LimitId: " + limitId + ", WindowStart: " + windowStart
-						+ ", WindowEnd: " + windowEnd + ", Units: " + units + ", ExpirationDate: " + expirationDate
-						+ ", UpdatedAt: " + updatedAt);
+				System.out.println("UsageId: " + usageId +
+						", FeatureId: " + featureId +
+						", ProductId: " + productId +
+						", UserGrouping: " + userGrouping +
+						", LimitId: " + limitId +
+						", WindowStart: " + windowStart +
+						", WindowEnd: " + windowEnd +
+						", Units: " + units +
+						", ExpirationDate: " + expirationDate +
+						", UpdatedAt: " + updatedAt);
 			}
 		}
 	}

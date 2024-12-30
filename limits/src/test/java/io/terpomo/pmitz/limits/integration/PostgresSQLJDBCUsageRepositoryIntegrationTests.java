@@ -20,59 +20,29 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
+@Testcontainers
 public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
 
+	@Container
 	private static final PostgreSQLContainer<?> postgresqlContainer =
-			new PostgreSQLContainer<>("postgres:latest")
-					.withEnv("TZ", "UTC")
-					.withCommand("postgres", "-c", "timezone=UTC");
-
-	@BeforeAll
-	public static void setUpClass() {
-		// Start the container before all tests
-		postgresqlContainer.start();
-		// Set timezone to UTC
-		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-	}
-
-	@AfterAll
-	public static void tearDownClass() {
-		// Stop the container after all tests
-		if (postgresqlContainer != null) {
-			postgresqlContainer.stop();
-		}
-	}
+			new PostgreSQLContainer<>("postgres:latest");
 
 	@Override
 	protected void setupDataSource() {
-		// Set up the data source using the container's JDBC URL
 		dataSource = new BasicDataSource();
-		String jdbcUrlWithTimezone = postgresqlContainer.getJdbcUrl() + "?sessionTimezone=UTC";
-		dataSource.setUrl(jdbcUrlWithTimezone);
+		dataSource.setUrl(postgresqlContainer.getJdbcUrl());
 		dataSource.setUsername(postgresqlContainer.getUsername());
 		dataSource.setPassword(postgresqlContainer.getPassword());
 
 		repository = new JDBCUsageRepository(dataSource, CUSTOM_SCHEMA, getTableName());
-	}
-
-	@Override
-	protected String getTimeZoneQuery() {
-		return "SHOW timezone";
-	}
-
-	@Override
-	protected boolean isSingleTimeZoneQuery() {
-		return true; // PostgreSQL only returns one value
 	}
 
 	@Override
@@ -85,36 +55,30 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement()) {
 
-			// Set session timezone for the current connection
-			stmt.execute("SET LOCAL TIME ZONE 'UTC';");
-
-			// Create schema and tables
 			stmt.execute("CREATE SCHEMA IF NOT EXISTS " + CUSTOM_SCHEMA);
 			stmt.execute("CREATE TABLE IF NOT EXISTS " + CUSTOM_SCHEMA + ".\"Usage\" (" +
 					"usage_id SERIAL PRIMARY KEY, " +
-					"feature_id VARCHAR(255), " +
-					"product_id VARCHAR(255), " +
-					"user_grouping VARCHAR(255), " +
-					"limit_id VARCHAR(255), " +
-					"window_start TIMESTAMP, " +
-					"window_end TIMESTAMP, " +
-					"units INT, " +
-					"expiration_date TIMESTAMP, " +
-					"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+					"feature_id VARCHAR(255) NOT NULL, " +
+					"product_id VARCHAR(255) NOT NULL, " +
+					"user_grouping VARCHAR(255) NOT NULL, " +
+					"limit_id VARCHAR(255) NOT NULL, " +
+					"window_start TIMESTAMP NULL, " +
+					"window_end TIMESTAMP NULL, " +
+					"units INT NOT NULL, " +
+					"expiration_date TIMESTAMP NULL, " +
+					"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL" +
 					");");
 
-			ResultSet rs = stmt.executeQuery("SHOW timezone;");
-			if (rs.next()) {
-				System.out.println("PostgreSQL Timezone: " + rs.getString(1));
-			}
+			stmt.execute("CREATE INDEX IF NOT EXISTS idx_limit_id ON " + CUSTOM_SCHEMA + ".\"Usage\" (limit_id);");
+			stmt.execute("CREATE INDEX IF NOT EXISTS idx_feature_product_user ON " + CUSTOM_SCHEMA + ".\"Usage\" (feature_id, product_id, user_grouping);");
 		}
 	}
 
 	@Override
 	protected void tearDownDatabase() {
 		try (Connection conn = dataSource.getConnection();
-				Statement statement = conn.createStatement()) {
-			statement.execute("TRUNCATE TABLE " + getFullTableName() + " RESTART IDENTITY CASCADE");
+				Statement stmt = conn.createStatement()) {
+			stmt.execute("TRUNCATE TABLE " + getFullTableName() + " RESTART IDENTITY CASCADE");
 		}
 		catch (SQLException ex) {
 			System.out.println("Error during tearDownDatabase: " + ex.getMessage());
@@ -125,25 +89,31 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 	protected void printDatabaseContents(String message) {
 		System.out.println("---- " + message + " ----");
 		try (Connection conn = dataSource.getConnection();
-				Statement stmt = conn.createStatement()) {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM " + CUSTOM_SCHEMA + "." + getTableName());
+				Statement stmt = conn.createStatement();
+				ResultSet rs = stmt.executeQuery("SELECT * FROM " + CUSTOM_SCHEMA + "." + getTableName())) {
+
 			while (rs.next()) {
 				int usageId = rs.getInt("usage_id");
 				String featureId = rs.getString("feature_id");
 				String productId = rs.getString("product_id");
 				String userGrouping = rs.getString("user_grouping");
 				String limitId = rs.getString("limit_id");
-				Timestamp windowStart = rs.getTimestamp("window_start");
-				Timestamp windowEnd = rs.getTimestamp("window_end");
+				java.sql.Timestamp windowStart = rs.getTimestamp("window_start");
+				java.sql.Timestamp windowEnd = rs.getTimestamp("window_end");
 				int units = rs.getInt("units");
-				Timestamp expirationDate = rs.getTimestamp("expiration_date");
-				Timestamp updatedAt = rs.getTimestamp("updated_at");
+				java.sql.Timestamp expirationDate = rs.getTimestamp("expiration_date");
+				java.sql.Timestamp updatedAt = rs.getTimestamp("updated_at");
 
-				// Simply print the timestamp values as-is
-				System.out.println("UsageId: " + usageId + ", FeatureId: " + featureId + ", ProductId: " + productId
-						+ ", UserGrouping: " + userGrouping + ", LimitId: " + limitId + ", WindowStart: " + windowStart
-						+ ", WindowEnd: " + windowEnd + ", Units: " + units + ", ExpirationDate: " + expirationDate
-						+ ", UpdatedAt: " + updatedAt);
+				System.out.println("UsageId: " + usageId +
+						", FeatureId: " + featureId +
+						", ProductId: " + productId +
+						", UserGrouping: " + userGrouping +
+						", LimitId: " + limitId +
+						", WindowStart: " + windowStart +
+						", WindowEnd: " + windowEnd +
+						", Units: " + units +
+						", ExpirationDate: " + expirationDate +
+						", UpdatedAt: " + updatedAt);
 			}
 		}
 		catch (SQLException ex) {

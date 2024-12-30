@@ -16,13 +16,18 @@
 
 package io.terpomo.pmitz.limits.usage.repository.impl;
 
-import java.sql.*;
-import java.time.LocalDateTime;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
@@ -32,6 +37,8 @@ import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
 import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
 
 public class JDBCUsageRepository implements UsageRepository {
+
+	private static final Logger LOGGER = Logger.getLogger(JDBCUsageRepository.class.getName());
 
 	private final DataSource dataSource;
 	private final String schemaName;
@@ -43,200 +50,336 @@ public class JDBCUsageRepository implements UsageRepository {
 		this.tableName = tableName;
 	}
 
+	public DataSource getDataSource() {
+		return dataSource;
+	}
+
 	public String getFullTableName() {
 		return schemaName + "." + tableName;
 	}
 
-	@Override
-	public void loadUsageData(LimitTrackingContext limitTrackingContext) {
-		String query = "SELECT usage_id, limit_id, window_start, window_end, expiration_date, updated_at, units " +
-				"FROM " + getFullTableName() + " WHERE ";
-		List<String> conditions = new ArrayList<>();
-		List<Object> parameters = new ArrayList<>();
+	private List<UsageRecord> loadUsageRecords(Connection connection, LimitTrackingContext context)
+			throws SQLException {
+		StringBuilder query = new StringBuilder("SELECT usage_id, limit_id, window_start, window_end, expiration_date, units ")
+				.append("FROM ").append(getFullTableName())
+				.append(" WHERE feature_id = ? AND product_id = ? AND user_grouping = ?");
 
-		try (Connection connection = dataSource.getConnection()) {
+		List<Object> parameters = buildLoadParameters(context);
+		List<String> criteriaConditions = buildCriteriaConditions(context, parameters);
 
-			for (RecordSearchCriteria criteria : limitTrackingContext.getSearchCriteria()) {
-				if (criteria.limitId() != null) {
-					conditions.add("limit_id = ?");
-					parameters.add(criteria.limitId());
-				}
-				if (criteria.windowStart() != null) {
-					conditions.add("window_start >= ?");
-					parameters.add(Timestamp.valueOf(criteria.windowStart().withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()));
-				}
-				if (criteria.windowEnd() != null) {
-					conditions.add("(window_end <= ? OR window_end IS NULL)");
-					parameters.add(Timestamp.valueOf(criteria.windowEnd().withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()));
-				}
-			}
-
-			if (conditions.isEmpty()) {
-				System.out.println("No search criteria provided, returning no records.");
-				limitTrackingContext.addCurrentUsageRecords(new ArrayList<>());
-				return;
-			}
-
-			String finalQuery = query + String.join(" AND ", conditions);
-			System.out.println("Executing Query: " + finalQuery);
-
-			try (PreparedStatement statement = connection.prepareStatement(finalQuery)) {
-				for (int i = 0; i < parameters.size(); i++) {
-					statement.setObject(i + 1, parameters.get(i));
-				}
-
-				try (ResultSet resultSet = statement.executeQuery()) {
-					List<UsageRecord> loadedRecords = new ArrayList<>();
-					while (resultSet.next()) {
-						UsageRecord usageRecord = mapResultSetToUsageRecord(resultSet);
-						loadedRecords.add(usageRecord);
-					}
-					limitTrackingContext.addCurrentUsageRecords(loadedRecords);
-				}
-			}
-
-		}
-		catch (SQLException ex) {
-			throw new RuntimeException("Failed to load usage data", ex);
-		}
-	}
-
-	private UsageRecord mapResultSetToUsageRecord(ResultSet resultSet) throws SQLException {
-		long usageId = resultSet.getLong("usage_id");
-		String limitId = resultSet.getString("limit_id");
-
-		// Convert result to UTC ZonedDateTime
-		ZonedDateTime windowStart = (resultSet.getTimestamp("window_start") != null)
-				? resultSet.getTimestamp("window_start").toLocalDateTime().atZone(ZoneOffset.UTC)
-				: null;
-
-		ZonedDateTime windowEnd = (resultSet.getTimestamp("window_end") != null)
-				? resultSet.getTimestamp("window_end").toLocalDateTime().atZone(ZoneOffset.UTC)
-				: null;
-
-		ZonedDateTime expirationDate = (resultSet.getTimestamp("expiration_date") != null)
-				? resultSet.getTimestamp("expiration_date").toLocalDateTime().atZone(ZoneOffset.UTC)
-				: null;
-
-		System.out.println("Loaded record: UsageId=" + usageId +
-				", LimitId=" + limitId +
-				", StartTime=" + windowStart +
-				", EndTime=" + windowEnd +
-				", ExpirationDate=" + expirationDate);
-
-		JDBCUsageRecordRepoMetadata repoMetadata = new JDBCUsageRecordRepoMetadata(usageId, windowStart);
-
-		return new UsageRecord(repoMetadata, limitId, windowStart, windowEnd, resultSet.getLong("units"), expirationDate);
-	}
-
-	@Override
-	public void updateUsageRecords(LimitTrackingContext limitTrackingContext) {
-		try (Connection connection = dataSource.getConnection()) {
-			String updateQuery = "UPDATE " + getFullTableName() + " SET feature_id = ?, product_id = ?, user_grouping = ?, limit_id = ?, " +
-					"window_start = ?, window_end = ?, units = ?, expiration_date = ? WHERE usage_id = ?";
-			String insertQuery = "INSERT INTO " + getFullTableName() + " (feature_id, product_id, user_grouping, limit_id, " +
-					"window_start, window_end, units, expiration_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-			String selectQuery = "SELECT usage_id FROM " + getFullTableName() + " WHERE limit_id = ? AND (window_start = ? OR window_start IS NULL)";
-
-			try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery);
-					PreparedStatement insertStatement = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
-					PreparedStatement selectStatement = connection.prepareStatement(selectQuery)) {
-
-				connection.setAutoCommit(false);
-
-				for (UsageRecord record : limitTrackingContext.getUpdatedUsageRecords()) {
-					System.out.println("Processing record: LimitId=" + record.limitId() +
-							", StartTime=" + record.startTime() +
-							", EndTime=" + record.endTime() +
-							", Units=" + record.units() +
-							", ExpirationDate=" + record.expirationDate());
-
-					// Convert ZonedDateTime to LocalDateTime for UTC storage, if not null
-					LocalDateTime startTime = (record.startTime() != null)
-							? record.startTime().withZoneSameInstant(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).toLocalDateTime()
-							: null;
-					LocalDateTime endTime = (record.endTime() != null)
-							? record.endTime().withZoneSameInstant(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).toLocalDateTime()
-							: null;
-					LocalDateTime expirationDate = (record.expirationDate() != null)
-							? record.expirationDate().withZoneSameInstant(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).toLocalDateTime()
-							: null;
-
-					System.out.println("Converted StartTime (UTC): " + startTime);
-					System.out.println("Converted EndTime (UTC): " + endTime);
-					System.out.println("Converted ExpirationDate (UTC): " + expirationDate);
-
-					// Set limitId and startTime (handle null startTime with SQL logic)
-					selectStatement.setString(1, record.limitId());
-					setNullableTimestamp(selectStatement, 2, startTime); // Handle null case with helper method
-
-					// Execute the select query
-					try (ResultSet resultSet = selectStatement.executeQuery()) {
-						if (resultSet.next()) {
-							long usageId = resultSet.getLong("usage_id");
-							System.out.println("Updating existing record with usageId: " + usageId);
-
-							updateStatement.setString(1, limitTrackingContext.getFeature().getFeatureId());
-							updateStatement.setString(2, limitTrackingContext.getFeature().getProduct().getProductId());
-							updateStatement.setString(3, limitTrackingContext.getUserGrouping().getId());
-							updateStatement.setString(4, record.limitId());
-							setNullableTimestamp(updateStatement, 5, startTime);  // Handle null case with helper method
-							setNullableTimestamp(updateStatement, 6, endTime);    // Handle null case with helper method
-							updateStatement.setLong(7, record.units());
-							setNullableTimestamp(updateStatement, 8, expirationDate); // Handle null expiration date
-							updateStatement.setLong(9, usageId);
-
-							updateStatement.addBatch();
-						}
-						else {
-							System.out.println("No existing record found for limitId: " + record.limitId() +
-									" and startTime: " + startTime + ". Inserting new record.");
-
-							insertStatement.setString(1, limitTrackingContext.getFeature().getFeatureId());
-							insertStatement.setString(2, limitTrackingContext.getFeature().getProduct().getProductId());
-							insertStatement.setString(3, limitTrackingContext.getUserGrouping().getId());
-							insertStatement.setString(4, record.limitId());
-							setNullableTimestamp(insertStatement, 5, startTime);  // Handle null case with helper method
-							setNullableTimestamp(insertStatement, 6, endTime);    // Handle null case with helper method
-							insertStatement.setLong(7, record.units());
-							setNullableTimestamp(insertStatement, 8, expirationDate); // Handle null expiration date
-
-							insertStatement.addBatch();
-						}
-					}
-				}
-
-				updateStatement.executeBatch();
-				insertStatement.executeBatch();
-				connection.commit();
-			}
-
-		}
-		catch (SQLException ex) {
-			throw new RuntimeException("Failed to update usage records", ex);
-		}
-	}
-
-	private void setNullableTimestamp(PreparedStatement statement, int parameterIndex, LocalDateTime dateTime) throws SQLException {
-		if (dateTime != null) {
-			statement.setTimestamp(parameterIndex, Timestamp.valueOf(dateTime));
+		if (!criteriaConditions.isEmpty()) {
+			query.append(" AND (").append(String.join(" OR ", criteriaConditions)).append(")");
 		}
 		else {
-			statement.setNull(parameterIndex, Types.TIMESTAMP);
+			return new ArrayList<>();
+		}
+
+		try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
+			setParameters(statement, parameters);
+			try (ResultSet resultSet = statement.executeQuery()) {
+				return extractUsageRecords(resultSet);
+			}
 		}
 	}
 
-	public void deleteOldRecords(LocalDateTime expirationDate) {
-		try (Connection connection = dataSource.getConnection()) {
-			String deleteQuery = "DELETE FROM " + getFullTableName() + " WHERE expiration_date <= ?";
+	private List<UsageRecord> extractUsageRecords(ResultSet resultSet) throws SQLException {
+		List<UsageRecord> records = new ArrayList<>();
+		while (resultSet.next()) {
+			Timestamp windowStartTs = resultSet.getTimestamp("window_start");
+			Timestamp windowEndTs = resultSet.getTimestamp("window_end");
+			Timestamp expirationDateTs = resultSet.getTimestamp("expiration_date");
 
-			try (PreparedStatement statement = connection.prepareStatement(deleteQuery)) {
-				statement.setObject(1, Timestamp.valueOf(expirationDate.atZone(ZoneOffset.UTC).toLocalDateTime()));
-				statement.executeUpdate();
+			ZonedDateTime windowStart = (windowStartTs != null)
+					? windowStartTs.toInstant().atZone(ZoneOffset.UTC)
+					: null;
+			ZonedDateTime windowEnd = (windowEndTs != null)
+					? windowEndTs.toInstant().atZone(ZoneOffset.UTC)
+					: null;
+			ZonedDateTime expirationDate = (expirationDateTs != null)
+					? expirationDateTs.toInstant().atZone(ZoneOffset.UTC)
+					: null;
+
+			JDBCUsageRecordRepoMetadata metadata = new JDBCUsageRecordRepoMetadata(
+					resultSet.getLong("usage_id"), windowStart
+			);
+
+			UsageRecord usageRecord = new UsageRecord(
+					metadata,
+					resultSet.getString("limit_id"),
+					windowStart,
+					windowEnd,
+					resultSet.getLong("units"),
+					expirationDate
+			);
+
+			records.add(usageRecord);
+		}
+		return records;
+	}
+
+	private List<Object> buildLoadParameters(LimitTrackingContext context) {
+		List<Object> parameters = new ArrayList<>();
+		parameters.add(context.getFeature().getFeatureId());
+		parameters.add(context.getFeature().getProduct().getProductId());
+		parameters.add(context.getUserGrouping().getId());
+		return parameters;
+	}
+
+	private List<String> buildCriteriaConditions(LimitTrackingContext context, List<Object> parameters) {
+		List<String> conditionsList = new ArrayList<>();
+		for (RecordSearchCriteria criteria : context.getSearchCriteria()) {
+			List<String> conditions = new ArrayList<>();
+			if (criteria.limitId() != null) {
+				conditions.add("limit_id = ?");
+				parameters.add(criteria.limitId());
+			}
+			if (criteria.windowStart() != null) {
+				conditions.add("(window_end >= ? OR window_end IS NULL)");
+				parameters.add(Timestamp.from(criteria.windowStart().toInstant()));
+			}
+			if (criteria.windowEnd() != null) {
+				conditions.add("(window_start <= ? OR window_start IS NULL)");
+				parameters.add(Timestamp.from(criteria.windowEnd().toInstant()));
+			}
+			if (!conditions.isEmpty()) {
+				conditionsList.add("(" + String.join(" AND ", conditions) + ")");
 			}
 		}
+		return conditionsList;
+	}
+
+	private void setParameters(PreparedStatement statement, List<Object> parameters) throws SQLException {
+		for (int i = 0; i < parameters.size(); i++) {
+			statement.setObject(i + 1, parameters.get(i));
+		}
+	}
+
+	@Override
+	public void loadUsageData(LimitTrackingContext context) {
+		try (Connection connection = dataSource.getConnection()) {
+			List<UsageRecord> records = loadUsageRecords(connection, context);
+			context.addCurrentUsageRecords(records);
+		}
 		catch (SQLException ex) {
-			throw new RuntimeException("Failed to delete old records", ex);
+			throw new UsageRepositoryException("Failed to load usage data", ex);
+		}
+	}
+
+	private void updateUsageRecord(PreparedStatement updateStatement, UsageRecord usageRecord,
+			LimitTrackingContext context, long usageId) throws SQLException {
+		updateStatement.clearParameters();
+		int index = 1;
+		updateStatement.setString(index++, context.getFeature().getFeatureId());
+		updateStatement.setString(index++, context.getFeature().getProduct().getProductId());
+		updateStatement.setString(index++, context.getUserGrouping().getId());
+		updateStatement.setString(index++, usageRecord.limitId());
+
+		ZonedDateTime startTime = usageRecord.startTime();
+		updateStatement.setTimestamp(index++, (startTime != null)
+				? Timestamp.from(startTime.toInstant())
+				: null);
+
+		ZonedDateTime endTime = usageRecord.endTime();
+		updateStatement.setTimestamp(index++, (endTime != null)
+				? Timestamp.from(endTime.toInstant())
+				: null);
+
+		updateStatement.setLong(index++, usageRecord.units());
+
+		ZonedDateTime expirationDate = usageRecord.expirationDate();
+		updateStatement.setTimestamp(index++, (expirationDate != null)
+				? Timestamp.from(expirationDate.toInstant())
+				: null);
+
+		updateStatement.setLong(index, usageId);
+
+		updateStatement.addBatch();
+	}
+
+	private void insertUsageRecord(PreparedStatement insertStatement, UsageRecord usageRecord,
+			LimitTrackingContext context) throws SQLException {
+		insertStatement.clearParameters();
+		int index = 1;
+		insertStatement.setString(index++, context.getFeature().getFeatureId());
+		insertStatement.setString(index++, context.getFeature().getProduct().getProductId());
+		insertStatement.setString(index++, context.getUserGrouping().getId());
+		insertStatement.setString(index++, usageRecord.limitId());
+
+		ZonedDateTime startTime = usageRecord.startTime();
+		insertStatement.setTimestamp(index++, (startTime != null)
+				? Timestamp.from(startTime.toInstant())
+				: null);
+
+		ZonedDateTime endTime = usageRecord.endTime();
+		insertStatement.setTimestamp(index++, (endTime != null)
+				? Timestamp.from(endTime.toInstant())
+				: null);
+
+		insertStatement.setLong(index++, usageRecord.units());
+
+		ZonedDateTime expirationDate = usageRecord.expirationDate();
+		insertStatement.setTimestamp(index, (expirationDate != null)
+				? Timestamp.from(expirationDate.toInstant())
+				: null);
+
+		insertStatement.addBatch();
+	}
+
+	private long findRecordId(Connection connection, UsageRecord usageRecord,
+			LimitTrackingContext context) throws SQLException {
+		StringBuilder query = new StringBuilder("SELECT usage_id FROM ").append(getFullTableName())
+				.append(" WHERE limit_id = ?");
+
+		List<Object> params = new ArrayList<>();
+		params.add(usageRecord.limitId());
+
+		ZonedDateTime startTime = usageRecord.startTime();
+		if (startTime != null) {
+			query.append(" AND window_start = ?");
+			params.add(Timestamp.from(startTime.toInstant()));
+		}
+		else {
+			query.append(" AND window_start IS NULL");
+		}
+		query.append(" AND feature_id = ? AND product_id = ? AND user_grouping = ?");
+		params.add(context.getFeature().getFeatureId());
+		params.add(context.getFeature().getProduct().getProductId());
+		params.add(context.getUserGrouping().getId());
+
+		try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
+			setParameters(statement, params);
+			try (ResultSet resultSet = statement.executeQuery()) {
+				if (resultSet.next()) {
+					return resultSet.getLong("usage_id");
+				}
+			}
+		}
+		return -1;
+	}
+
+	private void processUsageRecordUpdates(Connection connection, List<UsageRecord> usageRecords,
+			LimitTrackingContext context) throws SQLException {
+		String updateQuery = "UPDATE " + getFullTableName()
+				+ " SET feature_id = ?, product_id = ?, user_grouping = ?, limit_id = ?, "
+				+ "window_start = ?, window_end = ?, units = ?, expiration_date = ? WHERE usage_id = ?";
+
+		String insertQuery = "INSERT INTO " + getFullTableName()
+				+ " (feature_id, product_id, user_grouping, limit_id, window_start, window_end, units, expiration_date) "
+				+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+		try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery);
+				PreparedStatement insertStatement = connection.prepareStatement(insertQuery,
+						Statement.RETURN_GENERATED_KEYS)) {
+
+			for (UsageRecord usageRecord : usageRecords) {
+				if (usageRecord.limitId() == null) {
+					LOGGER.warning("UsageRecord with null limitId encountered. Skipping.");
+					continue;
+				}
+
+				if (usageRecord.startTime() != null && usageRecord.endTime() != null
+						&& usageRecord.endTime().isBefore(usageRecord.startTime())) {
+					throw new IllegalArgumentException("endTime cannot be before startTime in UsageRecord");
+				}
+				if (usageRecord.expirationDate() != null) {
+					if (usageRecord.startTime() != null
+							&& usageRecord.expirationDate().isBefore(usageRecord.startTime())) {
+						throw new IllegalArgumentException("expirationDate cannot be before startTime in UsageRecord");
+					}
+					if (usageRecord.endTime() != null
+							&& usageRecord.expirationDate().isBefore(usageRecord.endTime())) {
+						throw new IllegalArgumentException("expirationDate cannot be before endTime in UsageRecord");
+					}
+				}
+
+				JDBCUsageRecordRepoMetadata metadata = (JDBCUsageRecordRepoMetadata) usageRecord.repoMetadata();
+				long usageId = (metadata != null) ? metadata.usageId() : -1;
+
+				if (usageId != -1) {
+					updateUsageRecord(updateStatement, usageRecord, context, usageId);
+				}
+				else {
+					usageId = findRecordId(connection, usageRecord, context);
+					if (usageId != -1) {
+						updateUsageRecord(updateStatement, usageRecord, context, usageId);
+					}
+					else {
+						insertUsageRecord(insertStatement, usageRecord, context);
+					}
+				}
+			}
+
+			updateStatement.executeBatch();
+			insertStatement.executeBatch();
+		}
+	}
+
+	@Override
+	public void updateUsageRecords(LimitTrackingContext context) {
+		try (Connection connection = dataSource.getConnection()) {
+			performUpdatesInTransaction(connection, context);
+		}
+		catch (SQLException ex) {
+			throw new UsageRepositoryException("Error updating usage records", ex);
+		}
+	}
+
+	private void performUpdatesInTransaction(Connection connection, LimitTrackingContext context)
+			throws SQLException {
+		connection.setAutoCommit(false);
+		try {
+			processUsageRecordUpdates(connection, context.getUpdatedUsageRecords(), context);
+			connection.commit();
+		}
+		catch (SQLException ex) {
+			connection.rollback();
+			throw new UsageRepositoryException("Failed to update/insert usage records", ex);
+		}
+		finally {
+			try {
+				connection.setAutoCommit(true);
+			}
+			catch (SQLException ex) {
+				LOGGER.log(Level.SEVERE, "Failed to restore auto-commit after transaction: ", ex);
+			}
+		}
+	}
+
+	private void deleteRecords(Connection connection, ZonedDateTime expirationDate) throws SQLException {
+		String deleteQuery = "DELETE FROM " + getFullTableName() + " WHERE expiration_date <= ?";
+		try (PreparedStatement statement = connection.prepareStatement(deleteQuery)) {
+			statement.setTimestamp(1, Timestamp.from(expirationDate.toInstant()));
+			statement.executeUpdate();
+		}
+	}
+
+	public void deleteOldRecords(ZonedDateTime expirationDate) {
+		try (Connection connection = dataSource.getConnection()) {
+			deleteRecordsInTransaction(connection, expirationDate);
+		}
+		catch (SQLException ex) {
+			throw new UsageRepositoryException("Failed to connect to the database for deleting records", ex);
+		}
+	}
+
+	private void deleteRecordsInTransaction(Connection connection, ZonedDateTime expirationDate)
+			throws SQLException {
+		connection.setAutoCommit(false);
+		try {
+			deleteRecords(connection, expirationDate);
+			connection.commit();
+		}
+		catch (SQLException ex) {
+			connection.rollback();
+			throw new UsageRepositoryException("Failed to delete old records", ex);
+		}
+		finally {
+			try {
+				connection.setAutoCommit(true);
+			}
+			catch (SQLException ex) {
+				LOGGER.log(Level.SEVERE, "Failed to reset auto-commit after deleting records: ", ex);
+			}
 		}
 	}
 }

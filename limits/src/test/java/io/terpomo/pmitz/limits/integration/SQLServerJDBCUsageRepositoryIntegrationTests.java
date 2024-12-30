@@ -25,34 +25,25 @@ import java.sql.Timestamp;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
+@Testcontainers
 public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
 
 	@Container
 	private static final MSSQLServerContainer<?> mssqlServerContainer =
 			new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:latest")
-					.withEnv("TZ", "UTC");  // Set container timezone to UTC
+					.acceptLicense();
 
 	@Override
 	protected void setupDataSource() {
-		mssqlServerContainer.start();
 		dataSource = new BasicDataSource();
 		dataSource.setUrl(mssqlServerContainer.getJdbcUrl());
 		dataSource.setUsername(mssqlServerContainer.getUsername());
 		dataSource.setPassword(mssqlServerContainer.getPassword());
 		repository = new JDBCUsageRepository(dataSource, CUSTOM_SCHEMA, getTableName());
-	}
-
-	@Override
-	protected String getTimeZoneQuery() {
-		return "SELECT CURRENT_TIMEZONE()";
-	}
-
-	@Override
-	protected boolean isSingleTimeZoneQuery() {
-		return true; // SQL Server only returns one value
 	}
 
 	@Override
@@ -63,53 +54,50 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 	@Override
 	protected void setupDatabase() throws SQLException {
 		try (Connection conn = dataSource.getConnection();
-				Statement statement = conn.createStatement()) {
+				Statement stmt = conn.createStatement()) {
 
-			statement.execute("IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '" + CUSTOM_SCHEMA + "') " +
+			stmt.execute("IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '" + CUSTOM_SCHEMA + "') " +
 					"EXEC('CREATE SCHEMA " + CUSTOM_SCHEMA + "')");
-
-			// Set the session time zone to UTC (SQL Server doesn't directly support session time zones, but ensure UTC consistency)
-			statement.execute("SET LANGUAGE us_english;"); // Ensure language consistency to handle dates properly
-			statement.execute("SET DATEFORMAT ymd;"); // Ensure date format consistency for UTC handling
 
 			String createTable = "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Usage' AND schema_id = SCHEMA_ID('" + CUSTOM_SCHEMA + "')) " +
 					"CREATE TABLE " + getFullTableName() + " (" +
 					"usage_id INT PRIMARY KEY IDENTITY(1,1), " +
-					"feature_id VARCHAR(255), " +
-					"product_id VARCHAR(255), " +
-					"user_grouping VARCHAR(255), " +
-					"limit_id VARCHAR(255), " +
-					"window_start DATETIME2, " +
-					"window_end DATETIME2, " +
-					"units INT, " +
-					"expiration_date DATETIME2, " +
-					"updated_at DATETIME DEFAULT CURRENT_TIMESTAMP" +
+					"feature_id NVARCHAR(255) NOT NULL, " +
+					"product_id NVARCHAR(255) NOT NULL, " +
+					"user_grouping NVARCHAR(255) NOT NULL, " +
+					"limit_id NVARCHAR(255) NOT NULL, " +
+					"window_start DATETIME2 NULL, " +
+					"window_end DATETIME2 NULL, " +
+					"units INT NOT NULL, " +
+					"expiration_date DATETIME2 NULL, " +
+					"updated_at DATETIME2 DEFAULT SYSUTCDATETIME() NOT NULL" +
 					");";
-			statement.execute(createTable);
 
-			try (ResultSet rs = statement.executeQuery("SELECT SYSDATETIMEOFFSET()")) {
-				if (rs.next()) {
-					System.out.println("SQL Server current datetime with timezone: " + rs.getString(1));
-				}
-			}
+			stmt.execute(createTable);
+
+			stmt.execute("IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_limit_id' AND object_id = OBJECT_ID('" + getFullTableName() + "')) " +
+					"CREATE INDEX idx_limit_id ON " + getFullTableName() + " (limit_id);");
+
+			stmt.execute("IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_feature_product_user' AND object_id = OBJECT_ID('" + getFullTableName() + "')) " +
+					"CREATE INDEX idx_feature_product_user ON " + getFullTableName() + " (feature_id, product_id, user_grouping);");
 		}
 	}
 
 	@Override
 	protected void tearDownDatabase() throws SQLException {
 		try (Connection conn = dataSource.getConnection();
-				Statement statement = conn.createStatement()) {
-			// Truncate the table between tests
-			statement.execute("TRUNCATE TABLE " + getFullTableName());
+				Statement stmt = conn.createStatement()) {
+			stmt.execute("TRUNCATE TABLE " + getFullTableName());
 		}
 	}
 
 	@Override
-	protected void printDatabaseContents(String message) throws SQLException {
+	protected void printDatabaseContents(String message) {
 		System.out.println("---- " + message + " ----");
 		try (Connection conn = dataSource.getConnection();
-				Statement stmt = conn.createStatement()) {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM " + getFullTableName());
+				Statement stmt = conn.createStatement();
+				ResultSet rs = stmt.executeQuery("SELECT * FROM " + getFullTableName())) {
+
 			while (rs.next()) {
 				int usageId = rs.getInt("usage_id");
 				String featureId = rs.getString("feature_id");
@@ -122,11 +110,16 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 				Timestamp expirationDate = rs.getTimestamp("expiration_date");
 				Timestamp updatedAt = rs.getTimestamp("updated_at");
 
-				// Simply print the timestamp values as-is without converting to UTC
-				System.out.println("UsageId: " + usageId + ", FeatureId: " + featureId + ", ProductId: " + productId
-						+ ", UserGrouping: " + userGrouping + ", LimitId: " + limitId + ", WindowStart: " + windowStart
-						+ ", WindowEnd: " + windowEnd + ", Units: " + units + ", ExpirationDate: " + expirationDate
-						+ ", UpdatedAt: " + updatedAt);
+				System.out.println("UsageId: " + usageId +
+						", FeatureId: " + featureId +
+						", ProductId: " + productId +
+						", UserGrouping: " + userGrouping +
+						", LimitId: " + limitId +
+						", WindowStart: " + windowStart +
+						", WindowEnd: " + windowEnd +
+						", Units: " + units +
+						", ExpirationDate: " + expirationDate +
+						", UpdatedAt: " + updatedAt);
 			}
 		}
 		catch (SQLException ex) {
