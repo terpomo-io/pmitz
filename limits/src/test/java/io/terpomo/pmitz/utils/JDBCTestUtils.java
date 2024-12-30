@@ -84,9 +84,6 @@ public final class JDBCTestUtils {
 		String lineProcessed = line.trim();
 
 		// Remove comments
-		if (lineProcessed.startsWith(COMMENT_PLACEHOLDER)) {
-			return "";
-		}
 		if (line.contains(COMMENT_PLACEHOLDER)) {
 			lineProcessed = lineProcessed.substring(0, lineProcessed.indexOf(COMMENT_PLACEHOLDER)).trim();
 		}
