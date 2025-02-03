@@ -23,6 +23,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -30,8 +32,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 import io.terpomo.pmitz.utils.JDBCTestUtils;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 @Testcontainers
 public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
+
+	private static final Logger logger = LoggerFactory.getLogger(PostgresSQLJDBCUsageRepositoryIntegrationTests.class);
 
 	@Container
 	private static final PostgreSQLContainer<?> postgresqlContainer =
@@ -74,7 +80,7 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 
 	@Override
 	protected void printDatabaseContents(String message) {
-		System.out.println("---- " + message + " ----");
+		logger.info("---- {} ----", message);
 		try (Connection conn = dataSource.getConnection();
 				Statement stmt = conn.createStatement();
 				ResultSet rs = stmt.executeQuery("SELECT * FROM " + CUSTOM_SCHEMA + "." + getTableName())) {
@@ -91,20 +97,16 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 				java.sql.Timestamp expirationDate = rs.getTimestamp("expiration_date");
 				java.sql.Timestamp updatedAt = rs.getTimestamp("updated_at");
 
-				System.out.println("UsageId: " + usageId +
-						", FeatureId: " + featureId +
-						", ProductId: " + productId +
-						", UserGrouping: " + userGrouping +
-						", LimitId: " + limitId +
-						", WindowStart: " + windowStart +
-						", WindowEnd: " + windowEnd +
-						", Units: " + units +
-						", ExpirationDate: " + expirationDate +
-						", UpdatedAt: " + updatedAt);
+				logger.info("""
+						UsageId: {}, FeatureId: {}, ProductId: {}, UserGrouping: {}, LimitId: {}, \
+						WindowStart: {}, WindowEnd: {}, Units: {}, ExpirationDate: {}, UpdatedAt: {}\
+						""",
+						usageId, featureId, productId, userGrouping, limitId, windowStart, windowEnd, units,
+						expirationDate, updatedAt);
 			}
 		}
 		catch (SQLException ex) {
-			System.out.println("Error while printing database contents: " + ex.getMessage());
+			fail("Error while printing database contents", ex);
 		}
 	}
 }
