@@ -4,8 +4,10 @@ dependencies {
     implementation libs.slf4j
     implementation libs.jackson.databind
 
-    testImplementation libs.json.path
     testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
+
+    testImplementation libs.json.path
     testImplementation libs.mockito.junit.jupiter
     testImplementation libs.assertj.core
 }
