@@ -14,16 +14,9 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.remote.server;
+package io.terpomo.pmitz.remote.client.http;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import java.util.Map;
 
-@SpringBootApplication
-public class PmitzRemoteServer {
-
-	public static void main(String[] args) {
-		SpringApplication.run(PmitzRemoteServer.class, args);
-	}
-
+public record RecordOrReduceRequest(boolean reduceUnits, Map<String, Long> units) {
 }

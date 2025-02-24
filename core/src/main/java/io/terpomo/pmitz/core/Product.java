@@ -19,6 +19,7 @@ package io.terpomo.pmitz.core;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Product implements Serializable {
 
@@ -37,5 +38,19 @@ public class Product implements Serializable {
 
 	public List<Feature> getFeatures() {
 		return features;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		Product product = (Product) o;
+		return Objects.equals(productId, product.productId);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(productId);
 	}
 }

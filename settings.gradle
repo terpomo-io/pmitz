@@ -1,5 +1,5 @@
 rootProject.name = 'pmitz'
-include 'core', 'subscriptions', 'limits', 'all', 'examples', 'remoteserver'
+include 'core', 'subscriptions', 'limits', 'all', 'examples', 'remoteserver', 'remoteclient'
 
 dependencyResolutionManagement {
     versionCatalogs {

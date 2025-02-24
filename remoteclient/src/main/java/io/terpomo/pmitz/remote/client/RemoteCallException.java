@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.remote.server;
+package io.terpomo.pmitz.remote.client;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class PmitzRemoteServer {
-
-	public static void main(String[] args) {
-		SpringApplication.run(PmitzRemoteServer.class, args);
+public class RemoteCallException extends RuntimeException {
+	public RemoteCallException(String message) {
+		super(message);
 	}
 
+	public RemoteCallException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

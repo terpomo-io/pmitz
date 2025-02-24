@@ -17,6 +17,7 @@
 package io.terpomo.pmitz.core.subscriptions;
 
 import java.time.ZonedDateTime;
+import java.util.Objects;
 
 import io.terpomo.pmitz.core.Plan;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
@@ -61,5 +62,19 @@ public class Subscription extends UserGrouping {
 
 	public ZonedDateTime getExpirationDate() {
 		return expirationDate;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		Subscription that = (Subscription) o;
+		return Objects.equals(subscriptionId, that.subscriptionId);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(subscriptionId);
 	}
 }

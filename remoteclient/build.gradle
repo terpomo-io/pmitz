@@ -1,0 +1,24 @@
+apply plugin: 'java'
+
+dependencies {
+    implementation project(':core')
+    implementation project(':limits')
+
+    implementation libs.slf4j
+    implementation libs.jackson.databind
+
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.1'
+
+    // Testing
+    testRuntimeOnly libs.junit.jupiter.engine
+
+    testImplementation libs.junit.jupiter
+    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.assertj.core
+    testImplementation 'org.wiremock:wiremock:3.10.0'
+
+}
+
+test {
+    useJUnitPlatform()
+}

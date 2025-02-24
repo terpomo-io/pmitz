@@ -1,0 +1,48 @@
+/*
+ * Copyright 2023-2024 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.terpomo.pmitz.remote.server.controller;
+
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+
+import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Product;
+import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
+import io.terpomo.pmitz.core.limits.types.CountLimit;
+import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
+import io.terpomo.pmitz.core.repository.product.inmemory.CalendarPeriodRateLimitMixIn;
+import io.terpomo.pmitz.core.repository.product.inmemory.CountLimitMixIn;
+import io.terpomo.pmitz.core.repository.product.inmemory.FeatureMixIn;
+import io.terpomo.pmitz.core.repository.product.inmemory.ProductMixIn;
+import io.terpomo.pmitz.core.repository.product.inmemory.SlidingWindowRateLimitMixIn;
+import io.terpomo.pmitz.core.repository.product.inmemory.UsageLimitMixIn;
+
+@Configuration
+public class Jackson2ObjectMapperBuilderMixinCustomizer implements Jackson2ObjectMapperBuilderCustomizer {
+	@Override
+	public void customize(Jackson2ObjectMapperBuilder jacksonObjectMapperBuilder) {
+		jacksonObjectMapperBuilder
+				.mixIn(Product.class, ProductMixIn.class)
+				.mixIn(Feature.class, FeatureMixIn.class)
+				.mixIn(UsageLimit.class, UsageLimitMixIn.class)
+				.mixIn(SlidingWindowRateLimit.class, SlidingWindowRateLimitMixIn.class)
+				.mixIn(CalendarPeriodRateLimit.class, CalendarPeriodRateLimitMixIn.class)
+				.mixIn(CountLimit.class, CountLimitMixIn.class);
+	}
+}

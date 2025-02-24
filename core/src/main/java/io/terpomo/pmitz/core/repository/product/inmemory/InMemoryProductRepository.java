@@ -85,6 +85,7 @@ public class InMemoryProductRepository implements ProductRepository {
 			if (existingProduct != null) {
 				throw new RepositoryException(String.format("Product '%s' already exists", productId));
 			}
+			linkProductFeatures(product);
 			return product;
 		});
 	}
@@ -226,16 +227,7 @@ public class InMemoryProductRepository implements ProductRepository {
 		List<Product> loadedProducts = this.mapper.readValue(inputStream, typeRef);
 
 		loadedProducts.forEach(product -> {
-			List<Feature> updatedFeatures = product.getFeatures().stream()
-					.map(f -> {
-						Feature newFeature = new Feature(product, f.getFeatureId());
-						newFeature.getLimits().addAll(f.getLimits());
-						return newFeature;
-					})
-					.toList();
-
-			product.getFeatures().clear();
-			product.getFeatures().addAll(updatedFeatures);
+			linkProductFeatures(product);
 		});
 
 		this.products = loadedProducts.stream()
@@ -245,6 +237,19 @@ public class InMemoryProductRepository implements ProductRepository {
 	public void store(OutputStream outputStream) throws IOException {
 
 		this.mapper.writeValue(outputStream, this.products.values());
+	}
+
+	private void linkProductFeatures(Product product) {
+		List<Feature> updatedFeatures = product.getFeatures().stream()
+				.map(f -> {
+					Feature newFeature = new Feature(product, f.getFeatureId());
+					newFeature.getLimits().addAll(f.getLimits());
+					return newFeature;
+				})
+				.toList();
+
+		product.getFeatures().clear();
+		product.getFeatures().addAll(updatedFeatures);
 	}
 
 
