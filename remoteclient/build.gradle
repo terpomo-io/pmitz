@@ -4,18 +4,19 @@ dependencies {
     implementation project(':core')
     implementation project(':limits')
 
-    implementation libs.slf4jApi
+    implementation libs.slf4j
     implementation libs.jackson.databind
 
-    implementation libs.httpcomponents.client5.httpclient5
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.1'
 
     // Testing
-    testImplementation libs.junitJuniper
-    testRuntimeOnly libs.junitPlatformLauncher
+    testRuntimeOnly libs.junit.jupiter.engine
 
-    testImplementation libs.mockito.junitJuniper
+    testImplementation libs.junit.jupiter
+    testImplementation libs.mockito.junit.jupiter
     testImplementation libs.assertj.core
-    testImplementation libs.wiremock
+    testImplementation 'org.wiremock:wiremock:3.10.0'
+
 }
 
 test {
