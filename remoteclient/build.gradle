@@ -7,15 +7,16 @@ dependencies {
     implementation libs.slf4j
     implementation libs.jackson.databind
 
-    implementation libs.httpclient
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.1'
 
     // Testing
-    testImplementation libs.junit.jupiter
-    testRuntimeOnly libs.junit.platform.launcher
+    testRuntimeOnly libs.junit.jupiter.engine
 
+    testImplementation libs.junit.jupiter
     testImplementation libs.mockito.junit.jupiter
     testImplementation libs.assertj.core
-    testImplementation libs.wiremock
+    testImplementation 'org.wiremock:wiremock:3.10.0'
+
 }
 
 test {
