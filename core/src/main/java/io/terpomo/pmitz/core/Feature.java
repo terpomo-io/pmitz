@@ -19,6 +19,7 @@ package io.terpomo.pmitz.core;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import io.terpomo.pmitz.core.limits.UsageLimit;
 
@@ -50,5 +51,19 @@ public class Feature implements Serializable {
 
 	public List<String> getLimitsIds() {
 		return limits.stream().map(UsageLimit::getId).toList();
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		Feature feature = (Feature) o;
+		return Objects.equals(featureId, feature.featureId) && Objects.equals(product, feature.product);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(featureId, product);
 	}
 }

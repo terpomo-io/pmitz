@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.remote.server;
+package io.terpomo.pmitz.remote.client;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import java.io.InputStream;
+import java.util.Map;
 
-@SpringBootApplication
-public class PmitzRemoteServer {
+import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.FeatureUsageInfo;
+import io.terpomo.pmitz.core.subjects.UserGrouping;
 
-	public static void main(String[] args) {
-		SpringApplication.run(PmitzRemoteServer.class, args);
-	}
+public interface PmitzClient {
 
+	FeatureUsageInfo getUsageInfo(Feature feature, UserGrouping userGrouping);
+
+	void recordOrReduce(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits, boolean isReduce);
+
+	void uploadProduct(InputStream inputStream);
+
+	void removeProduct(String productId);
 }

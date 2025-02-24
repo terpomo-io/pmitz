@@ -1,6 +1,7 @@
 apply plugin: 'java'
 
 dependencies {
+    implementation project(':remoteclient')
     implementation project(':limits')
     implementation project(':core')
 

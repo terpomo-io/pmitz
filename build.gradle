@@ -27,7 +27,7 @@ subprojects {
                 'headerType': 'apache2',
                 'headerCopyrightPattern': '20\\d\\d(-20\\d\\d)?',
                 'projectRootPackage': 'io.terpomo',
-                'avoidStaticImportExcludes': "org.assertj.core.api.AssertionsForClassTypes.*"
+                'avoidStaticImportExcludes': "org.assertj.core.api.AssertionsForClassTypes.*,com.github.tomakehurst.wiremock.client.WireMock.*"
         ]
     }
 

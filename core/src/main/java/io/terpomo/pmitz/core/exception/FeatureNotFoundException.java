@@ -14,16 +14,10 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.remote.server;
+package io.terpomo.pmitz.core.exception;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class PmitzRemoteServer {
-
-	public static void main(String[] args) {
-		SpringApplication.run(PmitzRemoteServer.class, args);
+public class FeatureNotFoundException extends RuntimeException {
+	public FeatureNotFoundException(String message) {
+		super(message);
 	}
-
 }

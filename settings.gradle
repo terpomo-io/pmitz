@@ -1,8 +1,40 @@
 rootProject.name = 'pmitz'
-include 'core'
-include 'subscriptions'
-include 'limits'
-include 'all'
-include 'examples'
-include 'remoteserver'
+include 'core', 'subscriptions', 'limits', 'all', 'examples', 'remoteserver', 'remoteclient'
+
+dependencyResolutionManagement {
+    versionCatalogs {
+        libs {
+            version('junit', '5.11.3')
+            version('testcontainers', '1.20.3')
+
+            // Common libraries
+            library('slf4j', 'org.slf4j:slf4j-api:2.0.16')
+            library('commons.dbcp2', 'org.apache.commons:commons-dbcp2:2.12.0')
+            library('jackson.databind', 'com.fasterxml.jackson.core:jackson-databind:2.18.1')
+            library('json.path', 'com.jayway.jsonpath:json-path:2.9.0')
+
+            // Database drivers
+            library('h2', 'com.h2database:h2:2.3.232')
+            library('postgres', 'org.postgresql:postgresql:42.7.4')
+            library('mysql', 'mysql:mysql-connector-java:8.0.33')
+            library('sqlserver', 'com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11')
+
+            // Testcontainers libraries
+            library('testcontainers', 'org.testcontainers', 'testcontainers').versionRef('testcontainers')
+            library('testcontainers.postgresql','org.testcontainers', 'postgresql').versionRef('testcontainers')
+            library('testcontainers.mysql', 'org.testcontainers', 'mysql').versionRef('testcontainers')
+            library('testcontainers.mssqlserver', 'org.testcontainers', 'mssqlserver').versionRef('testcontainers')
+            library('testcontainers.junitJupiter', 'org.testcontainers', 'junit-jupiter').versionRef('testcontainers')
+
+            // Library for CheckStyle
+            library('spring.javaformat', 'io.spring.javaformat:spring-javaformat-checkstyle:0.0.41')
+
+            // Libraries for testing
+            library('junit.jupiter', 'org.junit.jupiter', 'junit-jupiter').versionRef('junit')
+            library('junit.jupiter.engine', 'org.junit.jupiter', 'junit-jupiter-engine').versionRef('junit')
+            library('mockito.junit.jupiter', 'org.mockito:mockito-junit-jupiter:5.14.2')
+            library('assertj.core', 'org.assertj:assertj-core:3.26.3')
+        }
+    }
+}
 

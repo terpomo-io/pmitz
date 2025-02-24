@@ -14,16 +14,34 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.remote.server;
+package io.terpomo.pmitz.core.subjects;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import java.util.Objects;
 
-@SpringBootApplication
-public class PmitzRemoteServer {
+public class DirectoryGroup extends UserGrouping {
 
-	public static void main(String[] args) {
-		SpringApplication.run(PmitzRemoteServer.class, args);
+	private String groupId;
+
+	public DirectoryGroup(String groupId) {
+		this.groupId = groupId;
 	}
 
+	@Override
+	public String getId() {
+		return groupId;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		DirectoryGroup that = (DirectoryGroup) o;
+		return Objects.equals(groupId, that.groupId);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(groupId);
+	}
 }
