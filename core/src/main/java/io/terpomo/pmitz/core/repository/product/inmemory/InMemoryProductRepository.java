@@ -226,9 +226,7 @@ public class InMemoryProductRepository implements ProductRepository {
 		TypeReference<List<Product>> typeRef = new TypeReference<>() { };
 		List<Product> loadedProducts = this.mapper.readValue(inputStream, typeRef);
 
-		loadedProducts.forEach(product -> {
-			linkProductFeatures(product);
-		});
+		loadedProducts.forEach(product -> linkProductFeatures(product));
 
 		this.products = loadedProducts.stream()
 				.collect(Collectors.toMap(Product::getProductId, product -> product));
