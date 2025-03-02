@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.hc.client5.http.classic.methods.HttpDelete;
@@ -49,15 +50,17 @@ import io.terpomo.pmitz.remote.client.RemoteCallException;
 public class PmitzHttpClient implements PmitzClient {
 
 	public static final String URL_DELIMITER = "/";
-	private String url;
+	private final String url;
 
-	private CloseableHttpClient httpClient;
+	private final CloseableHttpClient httpClient;
 
-	private ObjectMapper objectMapper = new ObjectMapper();
+	private final ObjectMapper objectMapper = new ObjectMapper();
 
-	private final Map<Class, String> userGroupingTypes;
+	private final Map<Class<?>, String> userGroupingTypes;
 
 	public PmitzHttpClient(String url) {
+		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
 		this.url = url;
 
 		httpClient = HttpClients.createDefault();
@@ -69,10 +72,53 @@ public class PmitzHttpClient implements PmitzClient {
 
 	@Override
 	public FeatureUsageInfo getUsageInfo(Feature feature, UserGrouping userGrouping) {
-		HttpGet httpGet = new HttpGet(url + URL_DELIMITER + formatEndpoint("limits", userGrouping, feature));
-		JsonNode responseData = null;
+		HttpGet httpGet = new HttpGet(url + URL_DELIMITER + formatEndpoint("usage", userGrouping, feature));
+		JsonNode responseData;
 		try {
 			responseData = httpClient.execute(httpGet, response -> {
+				if (response.getCode() >= 400 && response.getCode() < 500) {
+					throw new FeatureNotFoundException("Invalid productId or FeatureId : " + response.getReasonPhrase());
+				}
+				else if (response.getCode() >= 300) {
+					throw new RemoteCallException(response.getReasonPhrase());
+				}
+				final HttpEntity responseEntity = response.getEntity();
+				if (responseEntity == null) {
+					throw new RemoteCallException("Unexpected response from server (response empty)");
+				}
+				try (InputStream inputStream = responseEntity.getContent()) {
+					return objectMapper.readTree(inputStream);
+				}
+			});
+		}
+		catch (IOException ioEx) {
+			throw new RemoteCallException("Unexpected error while calling remote server", ioEx);
+		}
+
+		try {
+			return objectMapper.treeToValue(responseData, FeatureUsageInfo.class);
+		}
+		catch (JsonProcessingException jsonEx) {
+			throw new RemoteCallException("Unexpected error while parsing server response", jsonEx);
+		}
+	}
+
+	@Override
+	public FeatureUsageInfo verifyLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
+		HttpPost httpPost = new HttpPost(url + URL_DELIMITER + formatEndpoint("limits-check", userGrouping, feature));
+
+		try {
+			var jsonBody = objectMapper.writeValueAsString(additionalUnits);
+			httpPost.setEntity(new StringEntity(jsonBody));
+			httpPost.setHeader("Content-Type", "application/json");
+		}
+		catch (JsonProcessingException jsonEx) {
+			throw new RemoteCallException("Unexpected exception while preparing request", jsonEx);
+		}
+
+		JsonNode responseData;
+		try {
+			responseData = httpClient.execute(httpPost, response -> {
 				if (response.getCode() >= 400 && response.getCode() < 500) {
 					throw new FeatureNotFoundException("Invalid productId or FeatureId : " + response.getReasonPhrase());
 				}
