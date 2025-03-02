@@ -24,6 +24,7 @@ import io.terpomo.pmitz.core.exception.FeatureNotFoundException;
 import io.terpomo.pmitz.core.exception.LimitExceededException;
 import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
+import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.UsageLimitVerifier;
 import io.terpomo.pmitz.remote.client.RemoteCallException;
 import io.terpomo.pmitz.remote.client.UsageLimitVerifierRemoteClient;
@@ -38,8 +39,20 @@ public class RemoteClientSample {
 		var product = new Product("library");
 		var feature = new Feature(product, "reserve");
 		try {
-			usageLimitVerifier.recordFeatureUsage(feature, new IndividualUser("user001"), Map.of("maxborrowed", 5L));
+			UserGrouping user = new IndividualUser("user001");
+			var withinLimits = usageLimitVerifier.isWithinLimits(feature, user, Map.of("maxborrowed", 7L));
+
+			System.out.println("Can user borrow 7 books? " + withinLimits);
+
+			withinLimits = usageLimitVerifier.isWithinLimits(feature, user, Map.of("maxborrowed", 5L));
+
+			System.out.println("Can user borrow 5 books? " + withinLimits);
+
+			usageLimitVerifier.recordFeatureUsage(feature, user, Map.of("maxborrowed", 5L));
 			System.out.println("Books reserved!");
+
+			Map<String, Long> remainingUnits = usageLimitVerifier.getLimitsRemainingUnits(feature, user);
+			System.out.println("Remaining units " + remainingUnits);
 		}
 		catch (FeatureNotFoundException ex) {
 			System.out.println("Invalid feature or product");

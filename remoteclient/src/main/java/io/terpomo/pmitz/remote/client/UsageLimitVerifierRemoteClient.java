@@ -17,38 +17,43 @@
 package io.terpomo.pmitz.remote.client;
 
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Map;
 
 import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.UsageLimitVerifier;
 import io.terpomo.pmitz.remote.client.http.PmitzHttpClient;
 
 public class UsageLimitVerifierRemoteClient implements UsageLimitVerifier {
 
-	private PmitzClient pmitzClient;
+	private final PmitzClient pmitzClient;
 
 	public UsageLimitVerifierRemoteClient(String url) {
-		pmitzClient = new PmitzHttpClient(url);
+		this(url, new PmitzHttpClient(url));
+	}
+
+	public UsageLimitVerifierRemoteClient(String url, PmitzClient pmitzClient) {
+		this.pmitzClient = pmitzClient;
 	}
 
 	@Override
 	public Map<String, Long> getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping) {
-		var usageInfo = pmitzClient.getUsageInfo(feature, userGrouping);
+		FeatureUsageInfo usageInfo = pmitzClient.verifyLimits(feature, userGrouping, Collections.emptyMap());
 		return usageInfo.remainingUsageUnits();
 	}
 
 	@Override
 	public boolean isWithinLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
-
-		//TODO complete implementation
-		return false;
+		FeatureUsageInfo usageInfo = pmitzClient.verifyLimits(feature, userGrouping, additionalUnits);
+		Map<String, Long> remainingUsageUnits = usageInfo.remainingUsageUnits();
+		return remainingUsageUnits != null && remainingUsageUnits.values().stream().noneMatch(v -> v < 0);
 	}
 
 	@Override
 	public void recordFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
 		pmitzClient.recordOrReduce(feature, userGrouping, additionalUnits, false);
-
 	}
 
 	@Override
@@ -57,7 +62,6 @@ public class UsageLimitVerifierRemoteClient implements UsageLimitVerifier {
 	}
 
 	public void uploadProduct(InputStream inputStream) {
-		((PmitzHttpClient) pmitzClient).uploadProduct(inputStream);
+		pmitzClient.uploadProduct(inputStream);
 	}
-
 }

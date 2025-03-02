@@ -40,19 +40,13 @@ import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.remote.client.RemoteCallException;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.delete;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static org.assertj.core.api.Assertions.*;
 
 @WireMockTest
 class PmitzHttpClientTests {
 
-	private String jsonRequestBody = """
+	private final String jsonRequestBody = """
 			{
 				"reduceUnits" : false,
 				"units" : {
@@ -62,9 +56,17 @@ class PmitzHttpClientTests {
 			}
 			""";
 
+	private static Stream<Arguments> userGroupingsProvider() {
+		return Stream.of(
+				Arguments.of(new Subscription("paidCustomer001"), "/subscriptions/paidCustomer001"),
+				Arguments.of(new IndividualUser("user001"), "/users/user001"),
+				Arguments.of(new DirectoryGroup("internalUsers"), "/directory-groups/internalUsers")
+		);
+	}
+
 	@ParameterizedTest
 	@MethodSource({"userGroupingsProvider"})
-	void getUsageInfoAndRemoteResponse200ShouldParseHttpResponse(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+	void getUsageInfoShouldParseHttpResponseWhenRemoteResponse200(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
 
@@ -78,7 +80,7 @@ class PmitzHttpClientTests {
 				}
 				""";
 
-		stubFor(get(endpoint + "/limits/picUpload/newPicUpload")
+		stubFor(get(endpoint + "/usage/picUpload/newPicUpload")
 				.willReturn(aResponse().withBody(jsonResponse).withStatus(200)));
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
@@ -93,19 +95,37 @@ class PmitzHttpClientTests {
 				.containsEntry("limit2", 6L);
 	}
 
-	@Test
-	void getUsageInfoAndRemoteResponse425ShouldThrowException() {
-		//TODO complete
-	}
+	@ParameterizedTest
+	@MethodSource({"userGroupingsProvider"})
+	void getUsageInfoShouldThrowExceptionWhenRemote4xx(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 
-	@Test
-	void getUsageInfoAndRemoteResponseErrorShouldThrowException() {
-		//TODO complete implementation
+		stubFor(get(endpoint + "/usage/picUpload/newPicUpload")
+				.willReturn(aResponse().withStatus(400)));
+
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+
+		var feature = new Feature(new Product("picUpload"), "newPicUpload");
+		assertThatThrownBy(() -> pmitzHttpClient.getUsageInfo(feature, userGrouping))
+				.isInstanceOf(FeatureNotFoundException.class);
 	}
 
 	@ParameterizedTest
 	@MethodSource({"userGroupingsProvider"})
-	void recordOrReduceRemoteResponse200ShouldNotThrowException(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+	void getUsageInfoShouldThrowExceptionWhenRemoteError(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+
+		stubFor(get(endpoint + "/usage/picUpload/newPicUpload")
+				.willReturn(aResponse().withStatus(500)));
+
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+
+		var feature = new Feature(new Product("picUpload"), "newPicUpload");
+		assertThatThrownBy(() -> pmitzHttpClient.getUsageInfo(feature, userGrouping))
+				.isInstanceOf(RemoteCallException.class);
+	}
+
+	@ParameterizedTest
+	@MethodSource({"userGroupingsProvider"})
+	void recordOrReduceRemoteShouldNotThrowExceptionWhenResponse200(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
 		var feature = new Feature(new Product(productId), featureId);
@@ -121,7 +141,7 @@ class PmitzHttpClientTests {
 
 	@ParameterizedTest
 	@MethodSource({"userGroupingsProvider"})
-	void recordOrReduceRemoteResponse422ShouldThrowLimitExceededException(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+	void recordOrReduceRemoteShouldThrowLimitExceededExceptionWhenResponse422(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
 		var feature = new Feature(new Product(productId), featureId);
@@ -138,7 +158,7 @@ class PmitzHttpClientTests {
 
 	@ParameterizedTest
 	@MethodSource({"userGroupingsProvider"})
-	void recordOrReduceRemoteResponse4xxShouldThrowRemoteCallException(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+	void recordOrReduceRemoteShouldThrowRemoteCallExceptionWnenResponse4xx(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
 		var feature = new Feature(new Product(productId), featureId);
@@ -155,7 +175,7 @@ class PmitzHttpClientTests {
 
 	@ParameterizedTest
 	@MethodSource({"userGroupingsProvider"})
-	void recordOrReduceRemoteResponse5xxShouldThrowRemoteCallException(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+	void recordOrReduceRemoteShouldThrowRemoteCallExceptionWhenResponse5xx(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
 		var feature = new Feature(new Product(productId), featureId);
@@ -168,6 +188,37 @@ class PmitzHttpClientTests {
 
 		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(feature, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
 				.isInstanceOf(RemoteCallException.class);
+	}
+
+	@ParameterizedTest
+	@MethodSource({"userGroupingsProvider"})
+	void verifyLimitsShouldReturnRemoteResponse(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+		String featureId = "newPicUpload";
+		String productId = "picUpload";
+
+		String jsonResponse = """
+				{
+					"featureStatus" : "AVAILABLE",
+					"remainingUsageUnits" : {
+						"limit1" : 10,
+						"limit2" : 6
+					}
+				}
+				""";
+
+		stubFor(post(endpoint + "/limits-check/picUpload/newPicUpload")
+				.willReturn(aResponse().withBody(jsonResponse).withStatus(200)));
+
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+
+		var feature = new Feature(new Product(productId), featureId);
+		var featureUsageInfo = pmitzHttpClient.verifyLimits(feature, userGrouping, Map.of("limit1", 1L));
+
+		assertThat(featureUsageInfo).isNotNull();
+		assertThat(featureUsageInfo.featureStatus()).isEqualTo(FeatureStatus.AVAILABLE);
+		var remainigUnits = featureUsageInfo.remainingUsageUnits();
+		assertThat(remainigUnits).containsEntry("limit1", 10L)
+				.containsEntry("limit2", 6L);
 	}
 
 	@Test
@@ -216,7 +267,7 @@ class PmitzHttpClientTests {
 	}
 
 	@Test
-	void removeProductWhenRemoteResponse404ShouldThrowException(WireMockRuntimeInfo wmRuntimeInfo) {
+	void removeProductShouldThrowExceptionWhenRemoteResponse404(WireMockRuntimeInfo wmRuntimeInfo) {
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
 
 		stubFor(delete("/products/aProductId")
@@ -225,13 +276,5 @@ class PmitzHttpClientTests {
 		assertThatThrownBy(() -> pmitzHttpClient.removeProduct("aProductId"))
 				.isInstanceOf(RepositoryException.class)
 				.hasMessage("Product not found with id aProductId");
-	}
-
-	private static Stream<Arguments> userGroupingsProvider() {
-		return Stream.of(
-				Arguments.of(new Subscription("paidCustomer001"), "/subscriptions/paidCustomer001"),
-				Arguments.of(new IndividualUser("user001"), "/users/user001"),
-				Arguments.of(new DirectoryGroup("internalUsers"), "/directory-groups/internalUsers")
-		);
 	}
 }

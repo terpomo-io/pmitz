@@ -23,5 +23,4 @@ public record FeatureUsageInfo(FeatureStatus featureStatus, Map<String, Long> re
 	public boolean isLimitReached() {
 		return remainingUsageUnits != null && remainingUsageUnits.values().stream().anyMatch(v -> v <= 0);
 	}
-
 }
