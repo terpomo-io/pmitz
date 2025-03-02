@@ -31,6 +31,8 @@ public interface PmitzClient {
 
 	FeatureUsageInfo verifyLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
 
+	FeatureUsageInfo verifyLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
+
 	void recordOrReduce(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits, boolean isReduce);
 
 	void uploadProduct(InputStream inputStream);
