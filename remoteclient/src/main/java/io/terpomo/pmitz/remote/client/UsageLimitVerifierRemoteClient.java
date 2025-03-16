@@ -17,7 +17,6 @@
 package io.terpomo.pmitz.remote.client;
 
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.Map;
 
 import io.terpomo.pmitz.core.Feature;
@@ -40,7 +39,7 @@ public class UsageLimitVerifierRemoteClient implements UsageLimitVerifier {
 
 	@Override
 	public Map<String, Long> getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping) {
-		FeatureUsageInfo usageInfo = pmitzClient.verifyLimits(feature, userGrouping, Collections.emptyMap());
+		FeatureUsageInfo usageInfo = pmitzClient.getLimitsRemainingUnits(feature, userGrouping);
 		return usageInfo.remainingUsageUnits();
 	}
 
