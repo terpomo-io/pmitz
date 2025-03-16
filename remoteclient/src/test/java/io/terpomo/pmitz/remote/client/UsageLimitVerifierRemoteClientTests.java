@@ -18,7 +18,6 @@ package io.terpomo.pmitz.remote.client;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -60,12 +59,12 @@ class UsageLimitVerifierRemoteClientTests {
 	void getLimitsRemainingUnitsShouldCallPmitzClient() {
 		var expectedRemainingUnits = Map.of("limit1", 10L);
 		var featureUsageInfo = new FeatureUsageInfo(FeatureStatus.AVAILABLE, expectedRemainingUnits);
-		when(pmitzClient.verifyLimits(feature, userGrouping, Collections.emptyMap())).thenReturn(featureUsageInfo);
+		when(pmitzClient.getLimitsRemainingUnits(feature, userGrouping)).thenReturn(featureUsageInfo);
 
 		var returnedRemainingUnits = usageLimitVerifierRemoteClient.getLimitsRemainingUnits(feature, userGrouping);
 
 		assertThat(returnedRemainingUnits).isSameAs(expectedRemainingUnits);
-		verify(pmitzClient).verifyLimits(feature, userGrouping, Collections.emptyMap());
+		verify(pmitzClient).getLimitsRemainingUnits(feature, userGrouping);
 	}
 
 	@Test

@@ -16,7 +16,9 @@
 
 package io.terpomo.pmitz;
 
+import java.security.SecureRandom;
 import java.util.Map;
+import java.util.Random;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
@@ -31,6 +33,8 @@ import io.terpomo.pmitz.remote.client.UsageLimitVerifierRemoteClient;
 
 public class RemoteClientSample {
 
+	private static Random random = new SecureRandom();
+
 	public static void main(String[] args) {
 		RemoteClientSample remoteClientSample = new RemoteClientSample();
 
@@ -39,7 +43,7 @@ public class RemoteClientSample {
 		var product = new Product("library");
 		var feature = new Feature(product, "reserve");
 		try {
-			UserGrouping user = new IndividualUser("user001");
+			UserGrouping user = new IndividualUser("user00" + random.nextInt(10_000));
 			var withinLimits = usageLimitVerifier.isWithinLimits(feature, user, Map.of("maxborrowed", 7L));
 
 			System.out.println("Can user borrow 7 books? " + withinLimits);
