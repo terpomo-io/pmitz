@@ -43,6 +43,7 @@ import io.terpomo.pmitz.core.subjects.DirectoryGroup;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.limits.impl.LimitsValidationUtil;
 import io.terpomo.pmitz.remote.client.PmitzClient;
 import io.terpomo.pmitz.remote.client.RemoteCallException;
 
@@ -71,7 +72,7 @@ public class PmitzHttpClient implements PmitzClient {
 	}
 
 	@Override
-	public FeatureUsageInfo getUsageInfo(Feature feature, UserGrouping userGrouping) {
+	public FeatureUsageInfo getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping) {
 		HttpGet httpGet = new HttpGet(url + URL_DELIMITER + formatEndpoint("usage", userGrouping, feature));
 		JsonNode responseData;
 		try {
@@ -148,7 +149,7 @@ public class PmitzHttpClient implements PmitzClient {
 
 	@Override
 	public void recordOrReduce(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits, boolean isReduce) {
-		//TODO add validation of positive values
+		LimitsValidationUtil.validateAdditionalUnits(additionalUnits);
 		HttpPost httpPost = new HttpPost(url + URL_DELIMITER + formatEndpoint("usage", userGrouping, feature));
 
 		var recordOrReduceRequest = new RecordOrReduceRequest(isReduce, additionalUnits);

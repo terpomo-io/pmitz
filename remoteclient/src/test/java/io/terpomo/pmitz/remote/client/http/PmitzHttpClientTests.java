@@ -66,7 +66,7 @@ class PmitzHttpClientTests {
 
 	@ParameterizedTest
 	@MethodSource({"userGroupingsProvider"})
-	void getUsageInfoShouldParseHttpResponseWhenRemoteResponse200(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+	void getLimitsRemainingUnitsShouldParseHttpResponseWhenRemoteResponse200(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
 
@@ -86,7 +86,7 @@ class PmitzHttpClientTests {
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
 
 		var feature = new Feature(new Product(productId), featureId);
-		var featureUsageInfo = pmitzHttpClient.getUsageInfo(feature, userGrouping);
+		var featureUsageInfo = pmitzHttpClient.getLimitsRemainingUnits(feature, userGrouping);
 
 		assertThat(featureUsageInfo).isNotNull();
 		assertThat(featureUsageInfo.featureStatus()).isEqualTo(FeatureStatus.AVAILABLE);
@@ -97,7 +97,7 @@ class PmitzHttpClientTests {
 
 	@ParameterizedTest
 	@MethodSource({"userGroupingsProvider"})
-	void getUsageInfoShouldThrowExceptionWhenRemote4xx(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+	void getLimitsRemainingUnitsShouldThrowExceptionWhenRemote4Xx(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 
 		stubFor(get(endpoint + "/usage/picUpload/newPicUpload")
 				.willReturn(aResponse().withStatus(400)));
@@ -105,13 +105,13 @@ class PmitzHttpClientTests {
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
 
 		var feature = new Feature(new Product("picUpload"), "newPicUpload");
-		assertThatThrownBy(() -> pmitzHttpClient.getUsageInfo(feature, userGrouping))
+		assertThatThrownBy(() -> pmitzHttpClient.getLimitsRemainingUnits(feature, userGrouping))
 				.isInstanceOf(FeatureNotFoundException.class);
 	}
 
 	@ParameterizedTest
 	@MethodSource({"userGroupingsProvider"})
-	void getUsageInfoShouldThrowExceptionWhenRemoteError(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+	void getLimitsRemainingUnitsShouldThrowExceptionWhenRemoteError(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 
 		stubFor(get(endpoint + "/usage/picUpload/newPicUpload")
 				.willReturn(aResponse().withStatus(500)));
@@ -119,7 +119,7 @@ class PmitzHttpClientTests {
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
 
 		var feature = new Feature(new Product("picUpload"), "newPicUpload");
-		assertThatThrownBy(() -> pmitzHttpClient.getUsageInfo(feature, userGrouping))
+		assertThatThrownBy(() -> pmitzHttpClient.getLimitsRemainingUnits(feature, userGrouping))
 				.isInstanceOf(RemoteCallException.class);
 	}
 

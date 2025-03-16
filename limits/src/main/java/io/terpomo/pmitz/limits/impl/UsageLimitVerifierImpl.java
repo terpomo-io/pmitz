@@ -50,14 +50,8 @@ public class UsageLimitVerifierImpl implements UsageLimitVerifier {
 
 	@Override
 	public void recordFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
-		if (additionalUnits == null || additionalUnits.isEmpty()) {
-			throw new IllegalArgumentException("Additional units cannot be empty");
-		}
-		if (additionalUnits.values().stream().anyMatch(v -> v == null || v <= 0)) {
-			throw new IllegalArgumentException("Additional units must be positive numbers");
-		}
+		LimitsValidationUtil.validateAdditionalUnits(additionalUnits);
 		recordOrReduce(feature, userGrouping, additionalUnits, true);
-
 	}
 
 	@Override

@@ -14,24 +14,22 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.remote.client;
+package io.terpomo.pmitz.limits.impl;
 
-import java.io.InputStream;
 import java.util.Map;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.FeatureUsageInfo;
-import io.terpomo.pmitz.core.subjects.UserGrouping;
+public final class LimitsValidationUtil {
 
-public interface PmitzClient {
+	private LimitsValidationUtil() {
+		//Private constructor to prevent instantiation
+	}
 
-	FeatureUsageInfo getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping);
-
-	FeatureUsageInfo verifyLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
-
-	void recordOrReduce(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits, boolean isReduce);
-
-	void uploadProduct(InputStream inputStream);
-
-	void removeProduct(String productId);
+	public static void validateAdditionalUnits(Map<String, Long> additionalUnits) {
+		if (additionalUnits == null || additionalUnits.isEmpty()) {
+			throw new IllegalArgumentException("Additional units cannot be empty");
+		}
+		if (additionalUnits.values().stream().anyMatch(v -> v == null || v <= 0)) {
+			throw new IllegalArgumentException("Additional units must be positive numbers");
+		}
+	}
 }

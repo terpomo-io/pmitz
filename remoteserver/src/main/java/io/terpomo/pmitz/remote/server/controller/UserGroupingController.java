@@ -34,6 +34,7 @@ import io.terpomo.pmitz.core.subjects.DirectoryGroup;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.limits.impl.LimitsValidationUtil;
 
 @RestController
 public class UserGroupingController {
@@ -48,8 +49,8 @@ public class UserGroupingController {
 
 	@GetMapping("/users/{userGroupingId}/usage/{productId}/{featureId}")
 	public FeatureUsageInfo verifyUserFeatureUsage(@PathVariable String productId,
-												@PathVariable String featureId,
-												@PathVariable String userGroupingId) {
+			@PathVariable String featureId,
+			@PathVariable String userGroupingId) {
 
 		Feature feature = findFeature(productId, featureId);
 		UserGrouping userGrouping = new IndividualUser(userGroupingId);
@@ -59,8 +60,8 @@ public class UserGroupingController {
 
 	@GetMapping("/directory-groups/{userGroupingId}/usage/{productId}/{featureId}")
 	public FeatureUsageInfo verifyGroupFeatureUsage(@PathVariable String productId,
-													@PathVariable String featureId,
-													@PathVariable String userGroupingId) {
+			@PathVariable String featureId,
+			@PathVariable String userGroupingId) {
 
 		Feature feature = findFeature(productId, featureId);
 		UserGrouping userGrouping = new DirectoryGroup(userGroupingId);
@@ -70,8 +71,8 @@ public class UserGroupingController {
 
 	@GetMapping("/subscriptions/{userGroupingId}/usage/{productId}/{featureId}")
 	public FeatureUsageInfo verifySubscriptionFeatureUsage(@PathVariable String productId,
-														@PathVariable String featureId,
-														@PathVariable String userGroupingId) {
+			@PathVariable String featureId,
+			@PathVariable String userGroupingId) {
 		Feature feature = findFeature(productId, featureId);
 		UserGrouping userGrouping = new Subscription(userGroupingId);
 
@@ -80,9 +81,9 @@ public class UserGroupingController {
 
 	@PostMapping("/users/{userGroupingId}/usage/{productId}/{featureId}")
 	public ResponseEntity<Void> recordOrReduceUserFeatureUsage(@RequestBody UsageRecordRequest usageRecordRequest,
-															@PathVariable String productId,
-															@PathVariable String featureId,
-															@PathVariable String userGroupingId) {
+			@PathVariable String productId,
+			@PathVariable String featureId,
+			@PathVariable String userGroupingId) {
 		Feature feature = findFeature(productId, featureId);
 		UserGrouping userGrouping = new IndividualUser(userGroupingId);
 
@@ -91,9 +92,9 @@ public class UserGroupingController {
 
 	@PostMapping("/directory-groups/{userGroupingId}/usage/{productId}/{featureId}")
 	public ResponseEntity<Void> recordOrReduceGroupFeatureUsage(@RequestBody UsageRecordRequest usageRecordRequest,
-																@PathVariable String productId,
-																@PathVariable String featureId,
-																@PathVariable String userGroupingId) {
+			@PathVariable String productId,
+			@PathVariable String featureId,
+			@PathVariable String userGroupingId) {
 		Feature feature = findFeature(productId, featureId);
 		UserGrouping userGrouping = new DirectoryGroup(userGroupingId);
 
@@ -102,9 +103,9 @@ public class UserGroupingController {
 
 	@PostMapping("/subscriptions/{userGroupingId}/usage/{productId}/{featureId}")
 	public ResponseEntity<Void> recordOrReduceSubscriptionFeatureUsage(@RequestBody UsageRecordRequest usageRecordRequest,
-																	@PathVariable String productId,
-																	@PathVariable String featureId,
-																	@PathVariable String userGroupingId) {
+			@PathVariable String productId,
+			@PathVariable String featureId,
+			@PathVariable String userGroupingId) {
 		Feature feature = findFeature(productId, featureId);
 		Subscription userGrouping = new Subscription(userGroupingId);
 
@@ -113,27 +114,27 @@ public class UserGroupingController {
 
 	@PostMapping("/users/{userGroupingId}/limits-check/{productId}/{featureId}")
 	public FeatureUsageInfo verifyUserLimits(@RequestBody Map<String, Long> additionalUnits,
-											@PathVariable String productId,
-											@PathVariable String featureId,
-											@PathVariable String userGroupingId) {
+			@PathVariable String productId,
+			@PathVariable String featureId,
+			@PathVariable String userGroupingId) {
 		Feature feature = findFeature(productId, featureId);
 		return featureUsageTracker.verifyLimits(feature, new IndividualUser(userGroupingId), additionalUnits);
 	}
 
 	@PostMapping("/directory-groups/{userGroupingId}/limits-check/{productId}/{featureId}")
 	public FeatureUsageInfo verifyGroupLimits(@RequestBody Map<String, Long> additionalUnits,
-											@PathVariable String productId,
-											@PathVariable String featureId,
-											@PathVariable String userGroupingId) {
+			@PathVariable String productId,
+			@PathVariable String featureId,
+			@PathVariable String userGroupingId) {
 		Feature feature = findFeature(productId, featureId);
 		return featureUsageTracker.verifyLimits(feature, new DirectoryGroup(userGroupingId), additionalUnits);
 	}
 
 	@PostMapping("/subscriptions/{userGroupingId}/limits-check/{productId}/{featureId}")
 	public FeatureUsageInfo verifySubscriptionLimits(@RequestBody Map<String, Long> additionalUnits,
-													@PathVariable String productId,
-													@PathVariable String featureId,
-													@PathVariable String userGroupingId) {
+			@PathVariable String productId,
+			@PathVariable String featureId,
+			@PathVariable String userGroupingId) {
 		Feature feature = findFeature(productId, featureId);
 		return featureUsageTracker.verifyLimits(feature, new Subscription(userGroupingId), additionalUnits);
 	}
@@ -144,6 +145,13 @@ public class UserGroupingController {
 	}
 
 	private ResponseEntity<Void> recordOrReduceFeatureUsage(Feature feature, UserGrouping userGrouping, UsageRecordRequest usageRecordRequest) {
+		try {
+			LimitsValidationUtil.validateAdditionalUnits(usageRecordRequest.getUnits());
+		}
+		catch (IllegalArgumentException exception) {
+			ResponseEntity.status(400).body(exception.getMessage());
+		}
+
 		if (usageRecordRequest.isReduceUnits()) {
 			featureUsageTracker.reduceFeatureUsage(feature, userGrouping, usageRecordRequest.getUnits());
 		}
