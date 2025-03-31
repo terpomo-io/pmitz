@@ -1,7 +1,7 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.4.2'
-    id 'io.spring.dependency-management' version '1.1.7'
+    alias libs.plugins.springboot
+    alias libs.plugins.springDependencyManagement
 }
 
 group = 'com.example'
@@ -39,5 +39,5 @@ tasks.named('test') {
 }
 
 task wrapper(type: Wrapper){
-    gradleVersion = '8.5'
+    gradleVersion = '8.11'
 }

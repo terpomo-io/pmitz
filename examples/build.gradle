@@ -5,12 +5,12 @@ dependencies {
     implementation project(':limits')
     implementation project(':core')
 
-    implementation libs.h2
+    implementation libs.h2database.h2
 
-    testImplementation libs.junit.jupiter
-    testRuntimeOnly libs.junit.platform.launcher
+    testImplementation libs.junitJuniper
+    testRuntimeOnly libs.junitPlatformLauncher
 
-    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.mockito.junitJuniper
     testImplementation libs.assertj.core
 }
 
