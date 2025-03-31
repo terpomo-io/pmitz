@@ -32,7 +32,7 @@ subprojects {
     }
 
     dependencies {
-        checkstyle libs.spring.javaformat
+        checkstyle libs.springJavaformatCheckstyle
     }
 
     configurations.checkstyle {
