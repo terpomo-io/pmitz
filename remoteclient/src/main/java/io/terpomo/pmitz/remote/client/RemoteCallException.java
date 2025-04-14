@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core;
+package io.terpomo.pmitz.remote.client;
 
-import java.util.Map;
+public class RemoteCallException extends RuntimeException {
+	public RemoteCallException(String message) {
+		super(message);
+	}
 
-public record FeatureUsageInfo(FeatureStatus featureStatus, Map<String, Long> remainingUsageUnits) {
-
-	public boolean isLimitReached() {
-		return remainingUsageUnits != null && remainingUsageUnits.values().stream().anyMatch(v -> v <= 0);
+	public RemoteCallException(String message, Throwable cause) {
+		super(message, cause);
 	}
 }

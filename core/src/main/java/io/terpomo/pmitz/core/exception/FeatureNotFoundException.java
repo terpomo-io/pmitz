@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core;
+package io.terpomo.pmitz.core.exception;
 
-import java.util.Map;
-
-public record FeatureUsageInfo(FeatureStatus featureStatus, Map<String, Long> remainingUsageUnits) {
-
-	public boolean isLimitReached() {
-		return remainingUsageUnits != null && remainingUsageUnits.values().stream().anyMatch(v -> v <= 0);
+public class FeatureNotFoundException extends RuntimeException {
+	public FeatureNotFoundException(String message) {
+		super(message);
 	}
 }

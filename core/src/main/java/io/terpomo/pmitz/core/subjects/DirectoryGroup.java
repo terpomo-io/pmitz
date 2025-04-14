@@ -14,13 +14,34 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core;
+package io.terpomo.pmitz.core.subjects;
 
-import java.util.Map;
+import java.util.Objects;
 
-public record FeatureUsageInfo(FeatureStatus featureStatus, Map<String, Long> remainingUsageUnits) {
+public class DirectoryGroup extends UserGrouping {
 
-	public boolean isLimitReached() {
-		return remainingUsageUnits != null && remainingUsageUnits.values().stream().anyMatch(v -> v <= 0);
+	private String groupId;
+
+	public DirectoryGroup(String groupId) {
+		this.groupId = groupId;
+	}
+
+	@Override
+	public String getId() {
+		return groupId;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		DirectoryGroup that = (DirectoryGroup) o;
+		return Objects.equals(groupId, that.groupId);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(groupId);
 	}
 }

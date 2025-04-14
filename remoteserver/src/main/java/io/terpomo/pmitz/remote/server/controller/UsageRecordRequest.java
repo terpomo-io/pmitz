@@ -14,13 +14,28 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core;
+package io.terpomo.pmitz.remote.server.controller;
 
 import java.util.Map;
 
-public record FeatureUsageInfo(FeatureStatus featureStatus, Map<String, Long> remainingUsageUnits) {
+public class UsageRecordRequest {
 
-	public boolean isLimitReached() {
-		return remainingUsageUnits != null && remainingUsageUnits.values().stream().anyMatch(v -> v <= 0);
+	private boolean reduceUnits;
+	private Map<String, Long> units;
+
+	public boolean isReduceUnits() {
+		return reduceUnits;
+	}
+
+	public void setReduceUnits(boolean reduceUnits) {
+		this.reduceUnits = reduceUnits;
+	}
+
+	public Map<String, Long> getUnits() {
+		return units;
+	}
+
+	public void setUnits(Map<String, Long> units) {
+		this.units = units;
 	}
 }

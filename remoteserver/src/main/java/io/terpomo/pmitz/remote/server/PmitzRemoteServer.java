@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core;
+package io.terpomo.pmitz.remote.server;
 
-import java.util.Map;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-public record FeatureUsageInfo(FeatureStatus featureStatus, Map<String, Long> remainingUsageUnits) {
+@SpringBootApplication
+public class PmitzRemoteServer {
 
-	public boolean isLimitReached() {
-		return remainingUsageUnits != null && remainingUsageUnits.values().stream().anyMatch(v -> v <= 0);
+	public static void main(String[] args) {
+		SpringApplication.run(PmitzRemoteServer.class, args);
 	}
+
 }

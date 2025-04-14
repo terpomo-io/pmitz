@@ -1,17 +1,21 @@
 apply plugin: 'java'
 
 dependencies {
-    implementation project(':remoteclient')
-    implementation project(':limits')
     implementation project(':core')
+    implementation project(':limits')
 
-    implementation libs.h2
+    implementation libs.slf4j
+    implementation libs.jackson.databind
 
+    implementation libs.httpclient
+
+    // Testing
     testImplementation libs.junit.jupiter
     testRuntimeOnly libs.junit.platform.launcher
 
     testImplementation libs.mockito.junit.jupiter
     testImplementation libs.assertj.core
+    testImplementation libs.wiremock
 }
 
 test {

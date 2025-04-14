@@ -14,13 +14,24 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core;
+package io.terpomo.pmitz.remote.client;
 
+import java.io.InputStream;
 import java.util.Map;
 
-public record FeatureUsageInfo(FeatureStatus featureStatus, Map<String, Long> remainingUsageUnits) {
+import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.FeatureUsageInfo;
+import io.terpomo.pmitz.core.subjects.UserGrouping;
 
-	public boolean isLimitReached() {
-		return remainingUsageUnits != null && remainingUsageUnits.values().stream().anyMatch(v -> v <= 0);
-	}
+public interface PmitzClient {
+
+	FeatureUsageInfo getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping);
+
+	FeatureUsageInfo verifyLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
+
+	void recordOrReduce(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits, boolean isReduce);
+
+	void uploadProduct(InputStream inputStream);
+
+	void removeProduct(String productId);
 }

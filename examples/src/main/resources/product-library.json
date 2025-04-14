@@ -1,0 +1,15 @@
+{
+  "productId": "library",
+  "features": [
+    {
+      "featureId": "reserve",
+      "limits": [
+        {
+          "type": "CountLimit",
+          "id": "maxborrowed",
+          "count": 5
+        }
+      ]
+    }
+  ]
+}

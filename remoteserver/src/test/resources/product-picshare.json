@@ -1,0 +1,41 @@
+{
+  "productId": "picshare",
+  "features": [
+    {
+      "featureId": "upload",
+      "limits": [
+        {
+          "type": "CountLimit",
+          "id": "Maximum picture size",
+          "count": 10,
+          "unit": "Go"
+        },
+        {
+          "type": "SlidingWindowRateLimit",
+          "id": "Maximum of pictures uploaded by hour",
+          "quota": 10,
+          "interval": "HOURS",
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "featureId": "Downloading pictures",
+      "limits": [
+        {
+          "type": "SlidingWindowRateLimit",
+          "id": "Maximum of pictures downloaded by hour",
+          "quota": 8,
+          "interval": "MINUTES",
+          "duration": 60
+        },
+        {
+          "type": "CalendarPeriodRateLimit",
+          "id": "Maximum of pictures downloaded by calendar month",
+          "quota": 10,
+          "periodicity": "MONTH"
+        }
+      ]
+    }
+  ]
+}

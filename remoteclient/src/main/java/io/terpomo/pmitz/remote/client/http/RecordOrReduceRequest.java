@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core;
+package io.terpomo.pmitz.remote.client.http;
 
 import java.util.Map;
 
-public record FeatureUsageInfo(FeatureStatus featureStatus, Map<String, Long> remainingUsageUnits) {
-
-	public boolean isLimitReached() {
-		return remainingUsageUnits != null && remainingUsageUnits.values().stream().anyMatch(v -> v <= 0);
-	}
+public record RecordOrReduceRequest(boolean reduceUnits, Map<String, Long> units) {
 }

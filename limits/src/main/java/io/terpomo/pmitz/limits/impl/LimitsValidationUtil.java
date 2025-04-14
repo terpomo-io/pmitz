@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core;
+package io.terpomo.pmitz.limits.impl;
 
 import java.util.Map;
 
-public record FeatureUsageInfo(FeatureStatus featureStatus, Map<String, Long> remainingUsageUnits) {
+public final class LimitsValidationUtil {
 
-	public boolean isLimitReached() {
-		return remainingUsageUnits != null && remainingUsageUnits.values().stream().anyMatch(v -> v <= 0);
+	private LimitsValidationUtil() {
+		//Private constructor to prevent instantiation
+	}
+
+	public static void validateAdditionalUnits(Map<String, Long> additionalUnits) {
+		if (additionalUnits == null || additionalUnits.isEmpty()) {
+			throw new IllegalArgumentException("Additional units cannot be empty");
+		}
+		if (additionalUnits.values().stream().anyMatch(v -> v == null || v <= 0)) {
+			throw new IllegalArgumentException("Additional units must be positive numbers");
+		}
 	}
 }

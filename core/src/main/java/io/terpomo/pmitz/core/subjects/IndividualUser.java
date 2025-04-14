@@ -16,6 +16,8 @@
 
 package io.terpomo.pmitz.core.subjects;
 
+import java.util.Objects;
+
 public class IndividualUser extends UserGrouping {
 
 	private String userId;
@@ -28,5 +30,19 @@ public class IndividualUser extends UserGrouping {
 	@Override
 	public String getId() {
 		return userId;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		IndividualUser that = (IndividualUser) o;
+		return Objects.equals(userId, that.userId);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(userId);
 	}
 }
