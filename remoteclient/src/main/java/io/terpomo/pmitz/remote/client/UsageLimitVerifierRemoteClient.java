@@ -23,6 +23,7 @@ import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.UsageLimitVerifier;
+import io.terpomo.pmitz.remote.client.http.PmitzApiKeyAuthenticationProvider;
 import io.terpomo.pmitz.remote.client.http.PmitzHttpClient;
 
 public class UsageLimitVerifierRemoteClient implements UsageLimitVerifier {
@@ -30,10 +31,10 @@ public class UsageLimitVerifierRemoteClient implements UsageLimitVerifier {
 	private final PmitzClient pmitzClient;
 
 	public UsageLimitVerifierRemoteClient(String url) {
-		this(url, new PmitzHttpClient(url));
+		this(new PmitzHttpClient(url, new PmitzApiKeyAuthenticationProvider()));
 	}
 
-	public UsageLimitVerifierRemoteClient(String url, PmitzClient pmitzClient) {
+	public UsageLimitVerifierRemoteClient(PmitzClient pmitzClient) {
 		this.pmitzClient = pmitzClient;
 	}
 

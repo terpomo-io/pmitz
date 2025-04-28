@@ -36,6 +36,10 @@ public class RemoteClientSample {
 	private static Random random = new SecureRandom();
 
 	public static void main(String[] args) {
+
+		//TODO read from env  variable
+		System.setProperty("pmitz.api.key", "pmitz-api-key");
+
 		RemoteClientSample remoteClientSample = new RemoteClientSample();
 
 		var usageLimitVerifier = remoteClientSample.initRemoteLimitVerifier("http://localhost:8080", "/product-library.json");

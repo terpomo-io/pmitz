@@ -24,9 +24,12 @@ import java.util.stream.Stream;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureStatus;
@@ -44,7 +47,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.*;
 
 @WireMockTest
+@ExtendWith(MockitoExtension.class)
 class PmitzHttpClientTests {
+
+	@Mock
+	PmitzHttpAuthProvider httpAuthProviderMock;
 
 	private final String jsonRequestBody = """
 			{
@@ -83,7 +90,7 @@ class PmitzHttpClientTests {
 		stubFor(get(endpoint + "/usage/picUpload/newPicUpload")
 				.willReturn(aResponse().withBody(jsonResponse).withStatus(200)));
 
-		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		var feature = new Feature(new Product(productId), featureId);
 		var featureUsageInfo = pmitzHttpClient.getLimitsRemainingUnits(feature, userGrouping);
@@ -102,7 +109,7 @@ class PmitzHttpClientTests {
 		stubFor(get(endpoint + "/usage/picUpload/newPicUpload")
 				.willReturn(aResponse().withStatus(400)));
 
-		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		var feature = new Feature(new Product("picUpload"), "newPicUpload");
 		assertThatThrownBy(() -> pmitzHttpClient.getLimitsRemainingUnits(feature, userGrouping))
@@ -116,7 +123,7 @@ class PmitzHttpClientTests {
 		stubFor(get(endpoint + "/usage/picUpload/newPicUpload")
 				.willReturn(aResponse().withStatus(500)));
 
-		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		var feature = new Feature(new Product("picUpload"), "newPicUpload");
 		assertThatThrownBy(() -> pmitzHttpClient.getLimitsRemainingUnits(feature, userGrouping))
@@ -134,7 +141,7 @@ class PmitzHttpClientTests {
 				.withRequestBody(equalToJson(jsonRequestBody))
 				.willReturn(aResponse().withStatus(200)));
 
-		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		pmitzHttpClient.recordOrReduce(feature, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false);
 	}
@@ -150,7 +157,7 @@ class PmitzHttpClientTests {
 				.withRequestBody(equalToJson(jsonRequestBody))
 				.willReturn(aResponse().withStatus(422)));
 
-		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(feature, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
 				.isInstanceOf(LimitExceededException.class);
@@ -167,7 +174,7 @@ class PmitzHttpClientTests {
 				.withRequestBody(equalToJson(jsonRequestBody))
 				.willReturn(aResponse().withStatus(400)));
 
-		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(feature, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
 				.isInstanceOf(FeatureNotFoundException.class);
@@ -184,7 +191,7 @@ class PmitzHttpClientTests {
 				.withRequestBody(equalToJson(jsonRequestBody))
 				.willReturn(aResponse().withStatus(500)));
 
-		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(feature, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
 				.isInstanceOf(RemoteCallException.class);
@@ -209,7 +216,7 @@ class PmitzHttpClientTests {
 		stubFor(post(endpoint + "/limits-check/picUpload/newPicUpload")
 				.willReturn(aResponse().withBody(jsonResponse).withStatus(200)));
 
-		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		var feature = new Feature(new Product(productId), featureId);
 		var featureUsageInfo = pmitzHttpClient.verifyLimits(feature, userGrouping, Map.of("limit1", 1L));
@@ -223,7 +230,7 @@ class PmitzHttpClientTests {
 
 	@Test
 	void uploadProductShouldSendPostRequest(WireMockRuntimeInfo wmRuntimeInfo) {
-		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		String jsonProduct = """
 				{"productId": "picshare"}
@@ -239,7 +246,7 @@ class PmitzHttpClientTests {
 
 	@Test
 	void uploadProductShouldThrowExceptionWhenProductExists(WireMockRuntimeInfo wmRuntimeInfo) {
-		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		String jsonProduct = """
 				{"productId": "picshare"}
@@ -258,7 +265,7 @@ class PmitzHttpClientTests {
 
 	@Test
 	void removeProductShouldSendDeleteRequest(WireMockRuntimeInfo wmRuntimeInfo) {
-		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		stubFor(delete("/products/aProductId")
 				.willReturn(aResponse().withStatus(200)));
@@ -268,7 +275,7 @@ class PmitzHttpClientTests {
 
 	@Test
 	void removeProductShouldThrowExceptionWhenRemoteResponse404(WireMockRuntimeInfo wmRuntimeInfo) {
-		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl());
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		stubFor(delete("/products/aProductId")
 				.willReturn(aResponse().withStatus(404)));
