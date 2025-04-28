@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.remote.client.http;
+package io.terpomo.pmitz.remote.server.security;
 
-import java.util.Map;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-public interface PmitzHttpAuthProvider {
+@ConfigurationProperties
+public record ApiKeyProperties(String pmitzApiKey) {
 
-	Map<String, String> getAuthenticationHeaders();
 }

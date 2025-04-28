@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.remote.client.http;
+package io.terpomo.pmitz.remote.client;
 
-import java.util.Map;
-
-public interface PmitzHttpAuthProvider {
-
-	Map<String, String> getAuthenticationHeaders();
+public class AuthenticationException extends RemoteCallException {
+	public AuthenticationException(String message) {
+		super(message);
+	}
+	public AuthenticationException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

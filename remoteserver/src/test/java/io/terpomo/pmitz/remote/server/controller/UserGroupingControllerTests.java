@@ -50,7 +50,6 @@ import io.terpomo.pmitz.remote.server.security.AuthenticationService;
 import io.terpomo.pmitz.remote.server.security.SecurityConfig;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -73,7 +72,7 @@ class UserGroupingControllerTests {
 	@Autowired
 	MockMvc mockMvc;
 
-	private ApiKeyAuthentication apiKeyAuthentication = new ApiKeyAuthentication("test-api-key", Collections.emptyList());
+	private final ApiKeyAuthentication apiKeyAuthentication = new ApiKeyAuthentication("test-api-key", Collections.emptyList());
 
 	private static Stream<Arguments> usageUrlsAndUserGroupingsProvider() {
 		return Stream.of(

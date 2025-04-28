@@ -52,7 +52,7 @@ class UsageLimitVerifierRemoteClientTests {
 	void setUp() {
 		userGrouping = new IndividualUser("user001");
 		feature = new Feature(new Product("productId"), "featureId");
-		usageLimitVerifierRemoteClient = new UsageLimitVerifierRemoteClient("url", pmitzClient);
+		usageLimitVerifierRemoteClient = new UsageLimitVerifierRemoteClient(pmitzClient);
 	}
 
 	@Test

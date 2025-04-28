@@ -45,6 +45,7 @@ import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.limits.impl.LimitsValidationUtil;
+import io.terpomo.pmitz.remote.client.AuthenticationException;
 import io.terpomo.pmitz.remote.client.PmitzClient;
 import io.terpomo.pmitz.remote.client.RemoteCallException;
 
@@ -82,6 +83,9 @@ public class PmitzHttpClient implements PmitzClient {
 		addAuthenticationHeaders(httpGet);
 		try {
 			responseData = httpClient.execute(httpGet, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
 				if (response.getCode() >= 400 && response.getCode() < 500) {
 					throw new FeatureNotFoundException("Invalid productId or FeatureId : " + response.getReasonPhrase());
 				}
@@ -126,6 +130,9 @@ public class PmitzHttpClient implements PmitzClient {
 		JsonNode responseData;
 		try {
 			responseData = httpClient.execute(httpPost, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
 				if (response.getCode() >= 400 && response.getCode() < 500) {
 					throw new FeatureNotFoundException("Invalid productId or FeatureId : " + response.getReasonPhrase());
 				}
@@ -171,6 +178,9 @@ public class PmitzHttpClient implements PmitzClient {
 
 		try {
 			httpClient.execute(httpPost, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
 				if (response.getCode() == 422) {
 					throw new LimitExceededException("Limit exceeded", feature, userGrouping);
 				}
@@ -195,6 +205,9 @@ public class PmitzHttpClient implements PmitzClient {
 		addAuthenticationHeaders(httpPost);
 		try {
 			httpClient.execute(httpPost, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
 				if (response.getCode() == 409) {
 					throw new RepositoryException("Product already exists");
 				}
@@ -215,6 +228,9 @@ public class PmitzHttpClient implements PmitzClient {
 		try {
 			addAuthenticationHeaders(httpDelete);
 			httpClient.execute(httpDelete, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
 				if (response.getCode() == 404) {
 					throw new RepositoryException("Product not found with id " + productId);
 				}
@@ -236,7 +252,7 @@ public class PmitzHttpClient implements PmitzClient {
 		return String.join(URL_DELIMITER, rootEndpoint, userGrouping.getId(), resource, productId, featureId);
 	}
 
-	private void addAuthenticationHeaders(HttpUriRequestBase httpUriRequestBase){
+	private void addAuthenticationHeaders(HttpUriRequestBase httpUriRequestBase) {
 		authProvider.getAuthenticationHeaders().entrySet()
 				.forEach(entry -> httpUriRequestBase.setHeader(entry.getKey(), entry.getValue()));
 	}
