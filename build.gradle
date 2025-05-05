@@ -1,8 +1,8 @@
 apply plugin: 'java'
 apply plugin: 'com.github.ben-manes.versions'
 
-group 'io.terpomo.pmitz'
-version '1.0.0-SNAPSHOT'
+group = 'io.terpomo.pmitz'
+version = '1.0.0-SNAPSHOT'
 
 buildscript {
     repositories {
