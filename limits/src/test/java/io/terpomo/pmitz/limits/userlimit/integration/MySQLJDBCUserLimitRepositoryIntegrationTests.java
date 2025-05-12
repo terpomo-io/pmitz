@@ -40,7 +40,7 @@ public class MySQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUs
 
 	@Container
 	private static final MySQLContainer<?> mysqlContainer =
-			new MySQLContainer<>("mysql:latest")
+			new MySQLContainer<>("mysql:9.2")
 					.withDatabaseName(CUSTOM_SCHEMA)
 					.withEnv("TZ", "America/New_York");
 
