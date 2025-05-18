@@ -3,8 +3,8 @@
 assertj-core-version = '3.27.3'
 commons-dbcp2-version = '2.13.0'
 h2database-h2-version = '2.3.232'
-httpcomponents-client5-httpclient5-version = '5.4.3'
-jackson-databind-version = '2.19.0-rc2'
+httpcomponents-client5-httpclient5-version = '5.4.4'
+jackson-databind-version = '2.19.0'
 json-path-version = '2.9.0'
 junitJuniper-version = '5.12.2'
 junitPlatformLauncher-version = '1.12.2'
@@ -13,12 +13,12 @@ mockito-junitJuniper-version = '5.17.0'
 mysqlConnectorJava-version = '8.0.33'
 postgresql-version = '42.7.5'
 slf4j-version = '2.0.17'
-springboot-version = '3.4.4'
+springboot-version = '3.4.5'
 springDependencyManagement-version = "1.1.7"
-springJavaformatCheckstyle-version = '0.0.43'
+springJavaformatCheckstyle-version = '0.0.44'
 sqlserver-mssqlJdbc-version = '12.10.0.jre11'
-testcontainers-version = '1.20.6'
-wiremock-version = '3.12.1'
+testcontainers-version = '1.21.0'
+wiremock-version = '3.13.0'
 
 
 [libraries]
