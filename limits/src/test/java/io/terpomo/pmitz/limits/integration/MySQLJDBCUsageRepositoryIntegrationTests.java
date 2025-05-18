@@ -41,7 +41,7 @@ public class MySQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageR
 	private static final Logger logger = LoggerFactory.getLogger(MySQLJDBCUsageRepositoryIntegrationTests.class);
 
 	@Container
-	private static final MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:9.2")
+	private static final MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:lts")
 			.withDatabaseName(CUSTOM_SCHEMA);
 
 	@Override
