@@ -40,13 +40,13 @@ public class MySQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUs
 
 	@Container
 	private static final MySQLContainer<?> mysqlContainer =
-			new MySQLContainer<>("mysql:latest")
+			new MySQLContainer<>("mysql:lts")
 					.withDatabaseName(CUSTOM_SCHEMA)
 					.withEnv("TZ", "America/New_York");
 
-
 	@Override
 	protected void setupDataSource() {
+		mysqlContainer.withLogConsumer(outputFrame -> System.out.println(outputFrame.getUtf8String()));
 		mysqlContainer.start();
 		dataSource = new BasicDataSource();
 		dataSource.setUrl(mysqlContainer.getJdbcUrl());

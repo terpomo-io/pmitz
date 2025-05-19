@@ -1,14 +1,14 @@
 apply plugin: 'java'
 
 dependencies {
-    implementation libs.slf4j
+    implementation libs.slf4jApi
     implementation libs.jackson.databind
 
-    testImplementation libs.junit.jupiter
-    testRuntimeOnly libs.junit.platform.launcher
+    testImplementation libs.junitJuniper
+    testRuntimeOnly libs.junitPlatformLauncher
 
     testImplementation libs.json.path
-    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.mockito.junitJuniper
     testImplementation libs.assertj.core
 }
 

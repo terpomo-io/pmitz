@@ -1,0 +1,61 @@
+[versions]
+
+assertj-core-version = '3.27.3'
+commons-dbcp2-version = '2.13.0'
+h2database-h2-version = '2.3.232'
+httpcomponents-client5-httpclient5-version = '5.4.4'
+jackson-databind-version = '2.19.0'
+json-path-version = '2.9.0'
+junitJuniper-version = '5.12.2'
+junitPlatformLauncher-version = '1.12.2'
+logback-version = '1.5.18'
+mockito-junitJuniper-version = '5.17.0'
+mysqlConnectorJava-version = '8.0.33'
+postgresql-version = '42.7.5'
+slf4j-version = '2.0.17'
+springboot-version = '3.4.5'
+springDependencyManagement-version = "1.1.7"
+springJavaformatCheckstyle-version = '0.0.44'
+sqlserver-mssqlJdbc-version = '12.10.0.jre11'
+testcontainers-version = '1.21.0'
+wiremock-version = '3.13.0'
+
+
+[libraries]
+
+# Common libraries
+commons-dbcp2 = { group = 'org.apache.commons', name = 'commons-dbcp2', version.ref = 'commons-dbcp2-version' }
+httpcomponents-client5-httpclient5 = { group = 'org.apache.httpcomponents.client5', name = 'httpclient5', version.ref ='httpcomponents-client5-httpclient5-version' }
+jackson-databind = { group = 'com.fasterxml.jackson.core', name = 'jackson-databind', version.ref = 'jackson-databind-version' }
+json-path = { group = 'com.jayway.jsonpath', name = 'json-path', version.ref = 'json-path-version' }
+slf4jApi = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j-version' }
+
+# Database drivers
+h2database-h2 = { module = 'com.h2database:h2', version.ref = 'h2database-h2-version' }
+mysqlConnectorJava = { group = 'mysql', name = 'mysql-connector-java', version.ref = 'mysqlConnectorJava-version' }
+postgresql = { group = 'org.postgresql', name = 'postgresql', version.ref = 'postgresql-version' }
+sqlserver-mssqlJdbc = { group = 'com.microsoft.sqlserver', name = 'mssql-jdbc', version.ref = 'sqlserver-mssqlJdbc-version' }
+
+# Testcontainers libraries
+testcontainers = { group = 'org.testcontainers', name = 'testcontainers', version.ref = 'testcontainers-version' }
+testcontainers-junitJuniper = { group = 'org.testcontainers', name =  'junit-jupiter', version.ref = 'testcontainers-version' }
+testcontainers-mssqlserver = { group = 'org.testcontainers', name =  'mssqlserver', version.ref = 'testcontainers-version' }
+testcontainers-mysql = { group = 'org.testcontainers', name =  'mysql', version.ref = 'testcontainers-version' }
+testcontainers-postgresql = { group = 'org.testcontainers', name =  'postgresql', version.ref = 'testcontainers-version' }
+
+# Library for CheckStyle
+springJavaformatCheckstyle = { group = 'io.spring.javaformat', name = 'spring-javaformat-checkstyle', version.ref = 'springJavaformatCheckstyle-version' }
+
+# Libraries for testing
+assertj-core = { group = 'org.assertj', name = 'assertj-core', version.ref = 'assertj-core-version' }
+junitJuniper = { group = 'org.junit.jupiter', name = 'junit-jupiter', version.ref = 'junitJuniper-version' }
+junitPlatformLauncher = {group = 'org.junit.platform', name = 'junit-platform-launcher', version.ref = 'junitPlatformLauncher-version' }
+logbackClassic = { group = 'ch.qos.logback', name = 'logback-classic', version.ref = 'logback-version' }
+mockito-junitJuniper = { group = 'org.mockito', name = 'mockito-junit-jupiter', version.ref = 'mockito-junitJuniper-version' }
+wiremock = { group = 'org.wiremock', name = 'wiremock', version.ref = 'wiremock-version' }
+
+
+[plugins]
+
+springboot = { id = "org.springframework.boot", version.ref = 'springboot-version' }
+springDependencyManagement = { id = 'io.spring.dependency-management', version.ref = 'springDependencyManagement-version' }
