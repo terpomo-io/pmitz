@@ -16,7 +16,6 @@
 
 package io.terpomo.pmitz.remote.server.controller;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -31,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -72,7 +72,7 @@ class UserGroupingControllerTests {
 	@Autowired
 	MockMvc mockMvc;
 
-	private final ApiKeyAuthentication apiKeyAuthentication = new ApiKeyAuthentication("test-api-key", Collections.emptyList());
+	private final ApiKeyAuthentication apiKeyAuthentication = new ApiKeyAuthentication("test-api-key", AuthorityUtils.NO_AUTHORITIES);
 
 	private static Stream<Arguments> usageUrlsAndUserGroupingsProvider() {
 		return Stream.of(

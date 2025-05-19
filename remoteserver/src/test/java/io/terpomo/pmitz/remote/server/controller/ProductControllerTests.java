@@ -17,7 +17,6 @@
 package io.terpomo.pmitz.remote.server.controller;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Optional;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +28,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -63,7 +63,7 @@ class ProductControllerTests {
 	@Captor
 	ArgumentCaptor<Product> productArgumentCaptor;
 
-	private ApiKeyAuthentication apiKeyAuthentication = new ApiKeyAuthentication("test-api-key", Collections.emptyList());
+	private ApiKeyAuthentication apiKeyAuthentication = new ApiKeyAuthentication("test-api-key", AuthorityUtils.NO_AUTHORITIES);
 
 	@Test
 	void addProductShouldAddProductToRepository() throws Exception {

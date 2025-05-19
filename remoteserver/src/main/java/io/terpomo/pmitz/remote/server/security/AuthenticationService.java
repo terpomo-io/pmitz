@@ -23,6 +23,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.stereotype.Component;
 
+import io.terpomo.pmitz.core.exception.ConfigurationException;
+
 @Component
 @EnableConfigurationProperties(ApiKeyProperties.class)
 public class AuthenticationService {
@@ -32,6 +34,9 @@ public class AuthenticationService {
 
 	public AuthenticationService(ApiKeyProperties apiKeyProperties) {
 		this.apiKeyProperties = apiKeyProperties;
+		if (apiKeyProperties.pmitzApiKey() == null || apiKeyProperties.pmitzApiKey().isBlank()) {
+			throw new ConfigurationException("Please provide a value for Api Key using env variable PMITZ_API_KEY");
+		}
 	}
 
 	public Authentication getAuthentication(HttpServletRequest request) {

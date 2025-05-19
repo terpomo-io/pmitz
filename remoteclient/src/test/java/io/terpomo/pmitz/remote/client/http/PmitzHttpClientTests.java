@@ -18,11 +18,13 @@ package io.terpomo.pmitz.remote.client.http;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Stream;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -45,13 +47,15 @@ import io.terpomo.pmitz.remote.client.RemoteCallException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @WireMockTest
 @ExtendWith(MockitoExtension.class)
 class PmitzHttpClientTests {
 
-	@Mock
-	PmitzHttpAuthProvider httpAuthProviderMock;
+	private static final String AUTH_HEADER_NAME = "x-api-key";
+
+	private final String authHeaderValue = "api-key-val";
 
 	private final String jsonRequestBody = """
 			{
@@ -62,6 +66,15 @@ class PmitzHttpClientTests {
 				}
 			}
 			""";
+
+	@Mock
+	PmitzHttpAuthProvider httpAuthProviderMock;
+
+	@BeforeEach
+	void setup() {
+		when(httpAuthProviderMock.getAuthenticationHeaders())
+				.thenReturn(Collections.singletonMap(AUTH_HEADER_NAME, authHeaderValue));
+	}
 
 	private static Stream<Arguments> userGroupingsProvider() {
 		return Stream.of(
@@ -88,6 +101,7 @@ class PmitzHttpClientTests {
 				""";
 
 		stubFor(get(endpoint + "/usage/picUpload/newPicUpload")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.willReturn(aResponse().withBody(jsonResponse).withStatus(200)));
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
@@ -107,6 +121,7 @@ class PmitzHttpClientTests {
 	void getLimitsRemainingUnitsShouldThrowExceptionWhenRemote4Xx(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 
 		stubFor(get(endpoint + "/usage/picUpload/newPicUpload")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.willReturn(aResponse().withStatus(400)));
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
@@ -121,6 +136,7 @@ class PmitzHttpClientTests {
 	void getLimitsRemainingUnitsShouldThrowExceptionWhenRemoteError(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 
 		stubFor(get(endpoint + "/usage/picUpload/newPicUpload")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.willReturn(aResponse().withStatus(500)));
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
@@ -138,6 +154,7 @@ class PmitzHttpClientTests {
 		var feature = new Feature(new Product(productId), featureId);
 
 		stubFor(post(endpoint + "/usage/picUpload/newPicUpload")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.withRequestBody(equalToJson(jsonRequestBody))
 				.willReturn(aResponse().withStatus(200)));
 
@@ -154,6 +171,7 @@ class PmitzHttpClientTests {
 		var feature = new Feature(new Product(productId), featureId);
 
 		stubFor(post(endpoint + "/usage/picUpload/newPicUpload")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.withRequestBody(equalToJson(jsonRequestBody))
 				.willReturn(aResponse().withStatus(422)));
 
@@ -171,6 +189,7 @@ class PmitzHttpClientTests {
 		var feature = new Feature(new Product(productId), featureId);
 
 		stubFor(post(endpoint + "/usage/picUpload/newPicUpload")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.withRequestBody(equalToJson(jsonRequestBody))
 				.willReturn(aResponse().withStatus(400)));
 
@@ -188,6 +207,7 @@ class PmitzHttpClientTests {
 		var feature = new Feature(new Product(productId), featureId);
 
 		stubFor(post(endpoint + "/usage/picUpload/newPicUpload")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.withRequestBody(equalToJson(jsonRequestBody))
 				.willReturn(aResponse().withStatus(500)));
 
@@ -214,6 +234,7 @@ class PmitzHttpClientTests {
 				""";
 
 		stubFor(post(endpoint + "/limits-check/picUpload/newPicUpload")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.willReturn(aResponse().withBody(jsonResponse).withStatus(200)));
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
@@ -237,6 +258,7 @@ class PmitzHttpClientTests {
 				""";
 
 		stubFor(post("/products")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.withRequestBody(equalToJson(jsonProduct))
 				.willReturn(aResponse().withStatus(200)));
 
@@ -253,6 +275,7 @@ class PmitzHttpClientTests {
 				""";
 
 		stubFor(post("/products")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.withRequestBody(equalToJson(jsonProduct))
 				.willReturn(aResponse().withStatus(409)));
 
@@ -268,6 +291,7 @@ class PmitzHttpClientTests {
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		stubFor(delete("/products/aProductId")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.willReturn(aResponse().withStatus(200)));
 
 		pmitzHttpClient.removeProduct("aProductId");
@@ -278,6 +302,7 @@ class PmitzHttpClientTests {
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
 		stubFor(delete("/products/aProductId")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.willReturn(aResponse().withStatus(404)));
 
 		assertThatThrownBy(() -> pmitzHttpClient.removeProduct("aProductId"))
