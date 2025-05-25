@@ -21,6 +21,7 @@ dependencyResolutionManagement {
             version('spring-javaformat-checkstyle.version', '0.0.43')
             version('testcontainers.version', '1.20.4')
             version('wiremock.version', '3.10.0')
+            version('system.stubs.version', '2.1.8')
 
             // Common libraries
             library('slf4j', 'org.slf4j', 'slf4j-api').versionRef('slf4j.version')
@@ -52,6 +53,7 @@ dependencyResolutionManagement {
             library('assertj.core', 'org.assertj', 'assertj-core').versionRef('assertj-core.version')
             library('logback', 'ch.qos.logback', 'logback-classic').versionRef('logback-classic.version')
             library('wiremock', 'org.wiremock', 'wiremock').versionRef('wiremock.version')
+            library('system.stubs', 'uk.org.webcompere', 'system-stubs-jupiter').versionRef('system.stubs.version')
         }
     }
 }

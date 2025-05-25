@@ -19,15 +19,13 @@ package io.terpomo.pmitz.remote.client.http;
 import java.util.Collections;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.terpomo.pmitz.core.exception.ConfigurationException;
 
 public class PmitzApiKeyAuthenticationProvider implements PmitzHttpAuthProvider {
 	private static final String API_KEY_ENV_VARIABLE = "PMITZ_API_KEY";
 	private static final String API_KEY_SYSTEM_PROP = "pmitz.api.key";
 	private static final String API_KEY_HEADER = "X-Api-Key";
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(PmitzApiKeyAuthenticationProvider.class);
 	private final String apiKey;
 
 	public PmitzApiKeyAuthenticationProvider() {
@@ -46,8 +44,8 @@ public class PmitzApiKeyAuthenticationProvider implements PmitzHttpAuthProvider 
 			apiKey = System.getProperty(API_KEY_SYSTEM_PROP);
 		}
 		if (apiKey == null || apiKey.isBlank()) {
-			LOGGER.error("Cannot find Api-Key in environment variable {} or system propertu {}. Authentication with Pmitz server will fail.",
-					API_KEY_ENV_VARIABLE, API_KEY_SYSTEM_PROP);
+			throw new ConfigurationException(String.format("Cannot find Api-Key in environment variable %s or system property %s. Authentication with Pmitz server will fail.",
+					API_KEY_ENV_VARIABLE, API_KEY_SYSTEM_PROP));
 		}
 		return apiKey;
 	}
