@@ -3,33 +3,33 @@ apply plugin: 'java'
 dependencies {
     implementation project(':core')
 
-    implementation libs.slf4j
+    implementation libs.slf4jApi
     implementation libs.jackson.databind
 
     // Testing
-    testImplementation( libs.junit.jupiter)
-    testRuntimeOnly libs.junit.platform.launcher
+    testImplementation  libs.junitJuniper
+    testRuntimeOnly libs.junitPlatformLauncher
 
-    testImplementation libs.junit.jupiter
-    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.junitJuniper
+    testImplementation libs.mockito.junitJuniper
     testImplementation libs.assertj.core
 
     testImplementation libs.commons.dbcp2
-    testImplementation libs.h2
+    testImplementation libs.h2database.h2
 
     // JDBC Drivers for test
-    testImplementation libs.postgres
-    testImplementation libs.mysql
-    testImplementation libs.sqlserver
+    testImplementation libs.postgresql
+    testImplementation libs.mysqlConnectorJava
+    testImplementation libs.sqlserver.mssqlJdbc
 
     // TestContainers (for all databases)
     testImplementation libs.testcontainers
     testImplementation libs.testcontainers.postgresql
     testImplementation libs.testcontainers.mysql
     testImplementation libs.testcontainers.mssqlserver
-    testImplementation libs.testcontainers.junitJupiter
+    testImplementation libs.testcontainers.junitJuniper
 
-    testImplementation libs.logback
+    testImplementation libs.logbackClassic
 }
 
 test {

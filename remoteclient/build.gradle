@@ -4,16 +4,16 @@ dependencies {
     implementation project(':core')
     implementation project(':limits')
 
-    implementation libs.slf4j
+    implementation libs.slf4jApi
     implementation libs.jackson.databind
 
-    implementation libs.httpclient
+    implementation libs.httpcomponents.client5.httpclient5
 
     // Testing
-    testImplementation libs.junit.jupiter
-    testRuntimeOnly libs.junit.platform.launcher
+    testImplementation libs.junitJuniper
+    testRuntimeOnly libs.junitPlatformLauncher
 
-    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.mockito.junitJuniper
     testImplementation libs.assertj.core
     testImplementation libs.wiremock
     testImplementation libs.system.stubs

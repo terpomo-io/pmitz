@@ -3,10 +3,10 @@ apply plugin: 'java'
 dependencies {
     implementation project(':core')
 
-    testImplementation libs.junit.jupiter
-    testRuntimeOnly libs.junit.platform.launcher
+    testImplementation libs.junitJuniper
+    testRuntimeOnly libs.junitPlatformLauncher
 
-    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.mockito.junitJuniper
     testImplementation libs.assertj.core
 }
 
