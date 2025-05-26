@@ -36,9 +36,14 @@ public class RemoteClientSample {
 	private static Random random = new SecureRandom();
 
 	public static void main(String[] args) {
+
+		String remoteServerUrl = "http://localhost:8080";
+
+		System.out.printf("URL for remote server is %s. Plase make sure server is running%n", remoteServerUrl);
+
 		RemoteClientSample remoteClientSample = new RemoteClientSample();
 
-		var usageLimitVerifier = remoteClientSample.initRemoteLimitVerifier("http://localhost:8080", "/product-library.json");
+		var usageLimitVerifier = remoteClientSample.initRemoteLimitVerifier(remoteServerUrl, "/product-library.json");
 
 		var product = new Product("library");
 		var feature = new Feature(product, "reserve");

@@ -19,6 +19,7 @@ springJavaformatCheckstyle-version = '0.0.44'
 sqlserver-mssqlJdbc-version = '12.10.0.jre11'
 testcontainers-version = '1.21.0'
 wiremock-version = '3.13.0'
+system-stubs-version='2.1.8'
 
 
 [libraries]
@@ -53,7 +54,7 @@ junitPlatformLauncher = {group = 'org.junit.platform', name = 'junit-platform-la
 logbackClassic = { group = 'ch.qos.logback', name = 'logback-classic', version.ref = 'logback-version' }
 mockito-junitJuniper = { group = 'org.mockito', name = 'mockito-junit-jupiter', version.ref = 'mockito-junitJuniper-version' }
 wiremock = { group = 'org.wiremock', name = 'wiremock', version.ref = 'wiremock-version' }
-
+system-stubs= { group = 'uk.org.webcompere', name = 'system-stubs-jupiter', version.ref = 'system-stubs-version' }
 
 [plugins]
 

@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -27,6 +28,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -41,32 +45,34 @@ import io.terpomo.pmitz.core.subjects.DirectoryGroup;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.remote.server.security.ApiKeyAuthentication;
+import io.terpomo.pmitz.remote.server.security.AuthenticationService;
+import io.terpomo.pmitz.remote.server.security.SecurityConfig;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest
+@Import({SecurityConfig.class})
 class UserGroupingControllerTests {
 
 	private final String productId = "product1";
 	private final String featureId = "feature1";
 	private final Product product = new Product(productId);
 	private final Feature feature = new Feature(product, featureId);
+
+	@MockitoBean
+	AuthenticationService authenticationService;
 	@MockitoBean
 	FeatureUsageTracker featureUsageTracker;
 	@MockitoBean
 	ProductRepository productRepository;
 	@Autowired
 	MockMvc mockMvc;
+
+	private final ApiKeyAuthentication apiKeyAuthentication = new ApiKeyAuthentication("test-api-key", AuthorityUtils.NO_AUTHORITIES);
 
 	private static Stream<Arguments> usageUrlsAndUserGroupingsProvider() {
 		return Stream.of(
@@ -96,6 +102,8 @@ class UserGroupingControllerTests {
 
 		ArgumentMatcher<Map<String, Long>> unitsArgMatcher = arg -> arg != null && arg.getOrDefault("limit1", Long.MAX_VALUE).equals(1L)
 				&& arg.getOrDefault("limit2", Long.MAX_VALUE).equals(2L);
+
+		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
 
 		doReturn(featureUsageInfo).when(featureUsageTracker).verifyLimits(eq(feature), eq(userGrouping),
 				argThat(unitsArgMatcher));
@@ -127,11 +135,33 @@ class UserGroupingControllerTests {
 	}
 
 	@ParameterizedTest
+	@MethodSource("verifyLimitsUrlsAndUserGroupingsProvider")
+	void verifyLimitsShouldReturnStatus401WhenAuthenticationFails(String url, UserGrouping userGrouping) throws Exception {
+		when(authenticationService.getAuthentication(any())).thenThrow(new BadCredentialsException("Authenticaion error"));
+		String jsonContent = """
+				{
+					"limit1" : 1,
+					"limit2" : 2
+				}
+				""";
+
+		mockMvc.perform(post(url)
+						.contentType("application/json")
+						.content(jsonContent))
+				.andExpect(status().is(401));
+
+		verify(featureUsageTracker, never()).verifyLimits(any(), any(), any());
+
+	}
+
+	@ParameterizedTest
 	@MethodSource("usageUrlsAndUserGroupingsProvider")
 	void recordOrReduceFeatureUsageShouldReturnStatus200WhenRecordAndLimitNotExceeded(String url, UserGrouping userGrouping) throws Exception {
 
 		ArgumentMatcher<Map<String, Long>> unitsArgMatcher = arg -> arg != null && arg.getOrDefault("limit1", Long.MAX_VALUE).equals(1L)
 				&& arg.getOrDefault("limit2", Long.MAX_VALUE).equals(2L);
+
+		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
 
 		doNothing().when(featureUsageTracker).recordFeatureUsage(eq(feature), eq(userGrouping),
 				argThat(unitsArgMatcher));
@@ -160,6 +190,8 @@ class UserGroupingControllerTests {
 	void recordOrReduceFeatureUsageShouldReturnStatus422WhenRecordAndLimitExceeded(String url, UserGrouping userGrouping) throws Exception {
 		ArgumentMatcher<Map<String, Long>> unitsArgMatcher = arg -> arg != null && arg.getOrDefault("limit1", Long.MAX_VALUE).equals(1L)
 				&& arg.getOrDefault("limit2", Long.MAX_VALUE).equals(2L);
+
+		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
 
 		var exception = new LimitExceededException("Limit exceeded", feature, userGrouping);
 		doThrow(exception).when(featureUsageTracker).recordFeatureUsage(eq(feature), eq(userGrouping),
@@ -190,6 +222,8 @@ class UserGroupingControllerTests {
 		ArgumentMatcher<Map<String, Long>> unitsArgMatcher = arg -> arg != null && arg.getOrDefault("limit1", Long.MAX_VALUE).equals(1L)
 				&& arg.getOrDefault("limit2", Long.MAX_VALUE).equals(2L);
 
+		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
+
 		doNothing().when(featureUsageTracker).reduceFeatureUsage(eq(feature), eq(userGrouping),
 				argThat(unitsArgMatcher));
 
@@ -214,9 +248,33 @@ class UserGroupingControllerTests {
 
 	@ParameterizedTest
 	@MethodSource("usageUrlsAndUserGroupingsProvider")
+	void recordOrReduceFeatureUsageShouldReturnStatus401WhenAuthenticationFails(String url, UserGrouping userGrouping) throws Exception {
+		when(authenticationService.getAuthentication(any())).thenThrow(new BadCredentialsException("Authentication error"));
+		String jsonContent = """
+				{
+					"reduceUnits" : true,
+					"units" : {
+						"limit1" : 1,
+						"limit2" : 2
+					}
+				}
+				""";
+
+		mockMvc.perform(post(url)
+						.contentType("application/json")
+						.content(jsonContent))
+				.andExpect(status().is(401));
+
+		verify(featureUsageTracker, never()).reduceFeatureUsage(any(), any(), any());
+	}
+
+	@ParameterizedTest
+	@MethodSource("usageUrlsAndUserGroupingsProvider")
 	void verifyFeatureUsageShouldReturnFeatureUsageInfo(String url, UserGrouping userGrouping) throws Exception {
 		var limits = Map.of("limit1", 15L, "limit2", 10L);
 		var featureUsageInfo = new FeatureUsageInfo(FeatureStatus.AVAILABLE, limits);
+
+		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
 
 		doReturn(featureUsageInfo).when(featureUsageTracker).getUsageInfo(eq(feature), eq(userGrouping));
 
@@ -237,5 +295,16 @@ class UserGroupingControllerTests {
 
 		verify(featureUsageTracker, times(1)).getUsageInfo(eq(feature), eq(userGrouping));
 
+	}
+
+	@ParameterizedTest
+	@MethodSource("usageUrlsAndUserGroupingsProvider")
+	void verifyFeatureUsageShouldReturnStatus401WhenAuthenticationFails(String url, UserGrouping userGrouping) throws Exception {
+		when(authenticationService.getAuthentication(any())).thenThrow(new BadCredentialsException("Authentication error"));
+		mockMvc.perform(get(url)
+						.contentType("application/json"))
+				.andExpect(status().is(401));
+
+		verify(featureUsageTracker, never()).getUsageInfo(any(), any());
 	}
 }

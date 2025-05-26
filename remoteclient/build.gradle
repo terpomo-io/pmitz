@@ -16,6 +16,7 @@ dependencies {
     testImplementation libs.mockito.junitJuniper
     testImplementation libs.assertj.core
     testImplementation libs.wiremock
+    testImplementation libs.system.stubs
 }
 
 test {

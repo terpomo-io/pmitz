@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.hc.client5.http.classic.methods.HttpDelete;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ContentType;
@@ -44,6 +45,7 @@ import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.limits.impl.LimitsValidationUtil;
+import io.terpomo.pmitz.remote.client.AuthenticationException;
 import io.terpomo.pmitz.remote.client.PmitzClient;
 import io.terpomo.pmitz.remote.client.RemoteCallException;
 
@@ -58,13 +60,16 @@ public class PmitzHttpClient implements PmitzClient {
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	private final Map<Class<?>, String> userGroupingTypes;
+	private final PmitzHttpAuthProvider authProvider;
 
-	public PmitzHttpClient(String url) {
+	public PmitzHttpClient(String url, PmitzHttpAuthProvider authProvider) {
 		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
 		this.url = url;
 
 		httpClient = HttpClients.createDefault();
+
+		this.authProvider = authProvider;
 
 		userGroupingTypes = Map.of(IndividualUser.class, "users",
 				DirectoryGroup.class, "directory-groups",
@@ -75,8 +80,12 @@ public class PmitzHttpClient implements PmitzClient {
 	public FeatureUsageInfo getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping) {
 		HttpGet httpGet = new HttpGet(url + URL_DELIMITER + formatEndpoint("usage", userGrouping, feature));
 		JsonNode responseData;
+		addAuthenticationHeaders(httpGet);
 		try {
 			responseData = httpClient.execute(httpGet, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
 				if (response.getCode() >= 400 && response.getCode() < 500) {
 					throw new FeatureNotFoundException("Invalid productId or FeatureId : " + response.getReasonPhrase());
 				}
@@ -112,6 +121,7 @@ public class PmitzHttpClient implements PmitzClient {
 			var jsonBody = objectMapper.writeValueAsString(additionalUnits);
 			httpPost.setEntity(new StringEntity(jsonBody));
 			httpPost.setHeader("Content-Type", "application/json");
+			addAuthenticationHeaders(httpPost);
 		}
 		catch (JsonProcessingException jsonEx) {
 			throw new RemoteCallException("Unexpected exception while preparing request", jsonEx);
@@ -120,6 +130,9 @@ public class PmitzHttpClient implements PmitzClient {
 		JsonNode responseData;
 		try {
 			responseData = httpClient.execute(httpPost, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
 				if (response.getCode() >= 400 && response.getCode() < 500) {
 					throw new FeatureNotFoundException("Invalid productId or FeatureId : " + response.getReasonPhrase());
 				}
@@ -157,6 +170,7 @@ public class PmitzHttpClient implements PmitzClient {
 			var jsonBody = objectMapper.writeValueAsString(recordOrReduceRequest);
 			httpPost.setEntity(new StringEntity(jsonBody));
 			httpPost.setHeader("Content-Type", "application/json");
+			addAuthenticationHeaders(httpPost);
 		}
 		catch (JsonProcessingException jsonEx) {
 			throw new RemoteCallException("Unexpected exception while preparing request", jsonEx);
@@ -164,6 +178,9 @@ public class PmitzHttpClient implements PmitzClient {
 
 		try {
 			httpClient.execute(httpPost, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
 				if (response.getCode() == 422) {
 					throw new LimitExceededException("Limit exceeded", feature, userGrouping);
 				}
@@ -185,9 +202,12 @@ public class PmitzHttpClient implements PmitzClient {
 	public void uploadProduct(InputStream inputStream) {
 		HttpPost httpPost = new HttpPost(url + URL_DELIMITER + "products");
 		httpPost.setEntity(new InputStreamEntity(inputStream, ContentType.APPLICATION_JSON));
-
+		addAuthenticationHeaders(httpPost);
 		try {
 			httpClient.execute(httpPost, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
 				if (response.getCode() == 409) {
 					throw new RepositoryException("Product already exists");
 				}
@@ -206,7 +226,11 @@ public class PmitzHttpClient implements PmitzClient {
 	public void removeProduct(String productId) {
 		HttpDelete httpDelete = new HttpDelete(url + URL_DELIMITER + "products" + URL_DELIMITER + productId);
 		try {
+			addAuthenticationHeaders(httpDelete);
 			httpClient.execute(httpDelete, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
 				if (response.getCode() == 404) {
 					throw new RepositoryException("Product not found with id " + productId);
 				}
@@ -226,6 +250,11 @@ public class PmitzHttpClient implements PmitzClient {
 		String productId = feature.getProduct().getProductId();
 		String featureId = feature.getFeatureId();
 		return String.join(URL_DELIMITER, rootEndpoint, userGrouping.getId(), resource, productId, featureId);
+	}
+
+	private void addAuthenticationHeaders(HttpUriRequestBase httpUriRequestBase) {
+		authProvider.getAuthenticationHeaders().entrySet()
+				.forEach(entry -> httpUriRequestBase.setHeader(entry.getKey(), entry.getValue()));
 	}
 
 }

@@ -19,6 +19,7 @@ package io.terpomo.pmitz.remote.server.controller;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -26,29 +27,35 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
+import io.terpomo.pmitz.remote.server.security.ApiKeyAuthentication;
+import io.terpomo.pmitz.remote.server.security.AuthenticationService;
+import io.terpomo.pmitz.remote.server.security.SecurityConfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = ProductController.class)
-@Import(Jackson2ObjectMapperBuilderMixinCustomizer.class)
+@ContextConfiguration
+@Import({SecurityConfig.class, Jackson2ObjectMapperBuilderMixinCustomizer.class})
 class ProductControllerTests {
 
 	@Autowired
 	MockMvc mockMvc;
+
+	@MockitoBean
+	AuthenticationService authenticationService;
 
 	@MockitoBean
 	ProductRepository productRepository;
@@ -56,14 +63,18 @@ class ProductControllerTests {
 	@Captor
 	ArgumentCaptor<Product> productArgumentCaptor;
 
+	private ApiKeyAuthentication apiKeyAuthentication = new ApiKeyAuthentication("test-api-key", AuthorityUtils.NO_AUTHORITIES);
+
 	@Test
 	void addProductShouldAddProductToRepository() throws Exception {
+		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
 		doNothing().when(productRepository).addProduct(productArgumentCaptor.capture());
 
 		String jsonContent = new ClassPathResource("/product-picshare.json").getContentAsString(StandardCharsets.UTF_8);
 
 		String url = "/products";
 		mockMvc.perform(post(url)
+						.header("X-Api-Key", "pmitz-api-key")
 						.contentType("application/json")
 						.content(jsonContent))
 				.andExpect(status().isOk());
@@ -89,7 +100,23 @@ class ProductControllerTests {
 	}
 
 	@Test
+	void addProductWhenAuthenticationFailsShouldReturn401() throws Exception {
+		when(authenticationService.getAuthentication(any())).thenThrow(new BadCredentialsException("Authentication error"));
+		String jsonContent = new ClassPathResource("/product-picshare.json").getContentAsString(StandardCharsets.UTF_8);
+
+		String url = "/products";
+		mockMvc.perform(post(url)
+						.header("X-Api-Key", "pmitz-api-key")
+						.contentType("application/json")
+						.content(jsonContent))
+				.andExpect(status().is(401));
+
+		verify(productRepository, never()).addProduct(any());
+	}
+
+	@Test
 	void addProductWhenAlreadyExistsShouldReturnStatus409() throws Exception {
+		when(authenticationService.getAuthentication(any())).thenReturn(apiKeyAuthentication);
 		when(productRepository.getProductById("picshare")).thenReturn(Optional.of(new Product("picshare")));
 		String jsonContent = new ClassPathResource("/product-picshare.json").getContentAsString(StandardCharsets.UTF_8);
 
@@ -104,6 +131,7 @@ class ProductControllerTests {
 
 	@Test
 	void removeProductShouldRemoveProductFromRepository() throws Exception {
+		when(authenticationService.getAuthentication(any())).thenReturn(apiKeyAuthentication);
 		when(productRepository.getProductById("picshare")).thenReturn(Optional.of(new Product("picshare")));
 		doNothing().when(productRepository).removeProduct(productArgumentCaptor.capture());
 
@@ -120,7 +148,20 @@ class ProductControllerTests {
 	}
 
 	@Test
+	void removeProductWhenAuthenticationFailsShouldReturnStatus401() throws Exception {
+		when(authenticationService.getAuthentication(any())).thenThrow(new BadCredentialsException("Authentication error"));
+
+		String url = "/products/picshare";
+		mockMvc.perform(delete(url)
+						.contentType("application/json"))
+				.andExpect(status().is(401));
+
+		verify(productRepository, never()).removeProduct(any());
+	}
+
+	@Test
 	void removeProductWhenDoesNotExistShouldReturnStatus404() throws Exception {
+		when(authenticationService.getAuthentication(any())).thenReturn(apiKeyAuthentication);
 		when(productRepository.getProductById("aProductId")).thenReturn(Optional.empty());
 
 		String url = "/products/aProductId";
@@ -130,4 +171,5 @@ class ProductControllerTests {
 
 		verify(productRepository, never()).removeProduct(any());
 	}
+
 }
