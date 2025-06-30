@@ -117,7 +117,7 @@ public class UserGroupingController {
 			case "directory-groups" -> new DirectoryGroup(userGroupingId);
 			default -> null;
 		};
-		if (userGrouping == null){
+		if (userGrouping == null) {
 			throw new IllegalArgumentException("Invalid grouping type : Valid values must ne one of users, " +
 					"subscriptions and directory-groups");
 		}
