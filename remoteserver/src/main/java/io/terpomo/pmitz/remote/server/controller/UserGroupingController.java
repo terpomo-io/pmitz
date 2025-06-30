@@ -47,96 +47,40 @@ public class UserGroupingController {
 		this.productRepository = productRepository;
 	}
 
-	@GetMapping("/users/{userGroupingId}/usage/{productId}/{featureId}")
-	public FeatureUsageInfo verifyUserFeatureUsage(@PathVariable String productId,
+	@GetMapping("/{userGroupingType}/{userGroupingId}/usage/{productId}/{featureId}")
+	public FeatureUsageInfo verifyUserFeatureUsage(@PathVariable String userGroupingType, @PathVariable String productId,
 			@PathVariable String featureId,
 			@PathVariable String userGroupingId) {
 
 		Feature feature = findFeature(productId, featureId);
-		UserGrouping userGrouping = new IndividualUser(userGroupingId);
+
+		UserGrouping userGrouping = resolveUserGrouping(userGroupingType, userGroupingId);
 
 		return featureUsageTracker.getUsageInfo(feature, userGrouping);
 	}
 
-	@GetMapping("/directory-groups/{userGroupingId}/usage/{productId}/{featureId}")
-	public FeatureUsageInfo verifyGroupFeatureUsage(@PathVariable String productId,
-			@PathVariable String featureId,
-			@PathVariable String userGroupingId) {
-
-		Feature feature = findFeature(productId, featureId);
-		UserGrouping userGrouping = new DirectoryGroup(userGroupingId);
-
-		return featureUsageTracker.getUsageInfo(feature, userGrouping);
-	}
-
-	@GetMapping("/subscriptions/{userGroupingId}/usage/{productId}/{featureId}")
-	public FeatureUsageInfo verifySubscriptionFeatureUsage(@PathVariable String productId,
-			@PathVariable String featureId,
-			@PathVariable String userGroupingId) {
-		Feature feature = findFeature(productId, featureId);
-		UserGrouping userGrouping = new Subscription(userGroupingId);
-
-		return featureUsageTracker.getUsageInfo(feature, userGrouping);
-	}
-
-	@PostMapping("/users/{userGroupingId}/usage/{productId}/{featureId}")
-	public ResponseEntity<Void> recordOrReduceUserFeatureUsage(@RequestBody UsageRecordRequest usageRecordRequest,
+	@PostMapping("/{userGroupingType}/{userGroupingId}/usage/{productId}/{featureId}")
+	public ResponseEntity<Void> recordOrReduceUserFeatureUsage(@PathVariable String userGroupingType, @RequestBody UsageRecordRequest usageRecordRequest,
 			@PathVariable String productId,
 			@PathVariable String featureId,
 			@PathVariable String userGroupingId) {
 		Feature feature = findFeature(productId, featureId);
-		UserGrouping userGrouping = new IndividualUser(userGroupingId);
+
+		UserGrouping userGrouping = resolveUserGrouping(userGroupingType, userGroupingId);
 
 		return recordOrReduceFeatureUsage(feature, userGrouping, usageRecordRequest);
 	}
 
-	@PostMapping("/directory-groups/{userGroupingId}/usage/{productId}/{featureId}")
-	public ResponseEntity<Void> recordOrReduceGroupFeatureUsage(@RequestBody UsageRecordRequest usageRecordRequest,
+	@PostMapping("/{userGroupingType}/{userGroupingId}/limits-check/{productId}/{featureId}")
+	public FeatureUsageInfo verifyUserLimits(@PathVariable String userGroupingType, @RequestBody Map<String, Long> additionalUnits,
 			@PathVariable String productId,
 			@PathVariable String featureId,
 			@PathVariable String userGroupingId) {
 		Feature feature = findFeature(productId, featureId);
-		UserGrouping userGrouping = new DirectoryGroup(userGroupingId);
 
-		return recordOrReduceFeatureUsage(feature, userGrouping, usageRecordRequest);
-	}
+		UserGrouping userGrouping = resolveUserGrouping(userGroupingType, userGroupingId);
 
-	@PostMapping("/subscriptions/{userGroupingId}/usage/{productId}/{featureId}")
-	public ResponseEntity<Void> recordOrReduceSubscriptionFeatureUsage(@RequestBody UsageRecordRequest usageRecordRequest,
-			@PathVariable String productId,
-			@PathVariable String featureId,
-			@PathVariable String userGroupingId) {
-		Feature feature = findFeature(productId, featureId);
-		Subscription userGrouping = new Subscription(userGroupingId);
-
-		return recordOrReduceFeatureUsage(feature, userGrouping, usageRecordRequest);
-	}
-
-	@PostMapping("/users/{userGroupingId}/limits-check/{productId}/{featureId}")
-	public FeatureUsageInfo verifyUserLimits(@RequestBody Map<String, Long> additionalUnits,
-			@PathVariable String productId,
-			@PathVariable String featureId,
-			@PathVariable String userGroupingId) {
-		Feature feature = findFeature(productId, featureId);
-		return featureUsageTracker.verifyLimits(feature, new IndividualUser(userGroupingId), additionalUnits);
-	}
-
-	@PostMapping("/directory-groups/{userGroupingId}/limits-check/{productId}/{featureId}")
-	public FeatureUsageInfo verifyGroupLimits(@RequestBody Map<String, Long> additionalUnits,
-			@PathVariable String productId,
-			@PathVariable String featureId,
-			@PathVariable String userGroupingId) {
-		Feature feature = findFeature(productId, featureId);
-		return featureUsageTracker.verifyLimits(feature, new DirectoryGroup(userGroupingId), additionalUnits);
-	}
-
-	@PostMapping("/subscriptions/{userGroupingId}/limits-check/{productId}/{featureId}")
-	public FeatureUsageInfo verifySubscriptionLimits(@RequestBody Map<String, Long> additionalUnits,
-			@PathVariable String productId,
-			@PathVariable String featureId,
-			@PathVariable String userGroupingId) {
-		Feature feature = findFeature(productId, featureId);
-		return featureUsageTracker.verifyLimits(feature, new Subscription(userGroupingId), additionalUnits);
+		return featureUsageTracker.verifyLimits(feature, userGrouping, additionalUnits);
 	}
 
 	private Feature findFeature(String productId, String featureId) {
@@ -164,5 +108,19 @@ public class UserGroupingController {
 			}
 		}
 		return ResponseEntity.ok().build();
+	}
+
+	private UserGrouping resolveUserGrouping(String userGroupingType, String userGroupingId) {
+		UserGrouping userGrouping = switch (userGroupingType) {
+			case "users" -> new IndividualUser(userGroupingId);
+			case "subscriptions" -> new Subscription(userGroupingId);
+			case "directory-groups" -> new DirectoryGroup(userGroupingId);
+			default -> null;
+		};
+		if (userGrouping == null){
+			throw new IllegalArgumentException("Invalid grouping type : Valid values must ne one of users, " +
+					"subscriptions and directory-groups");
+		}
+		return userGrouping;
 	}
 }
