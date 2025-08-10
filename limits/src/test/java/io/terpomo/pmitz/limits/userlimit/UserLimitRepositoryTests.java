@@ -20,7 +20,7 @@ import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
 
-import io.terpomo.pmitz.limits.impl.UsageLimitResolverImpl;
+import io.terpomo.pmitz.limits.impl.LimitRuleResolverImpl;
 import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 
 import static org.assertj.core.api.Assertions.*;
@@ -41,6 +41,6 @@ class UserLimitRepositoryTests {
 	@Test
 	void builderNoOpRepositoryShouldReturnNoOpUserLimitRepository() {
 		var noOpUserLimitRepo = UserLimitRepository.builder().noOpRepository();
-		assertThat(noOpUserLimitRepo).isNotNull().isInstanceOf(UsageLimitResolverImpl.NoOpUserLimitRepository.class);
+		assertThat(noOpUserLimitRepo).isNotNull().isInstanceOf(LimitRuleResolverImpl.NoOpUserLimitRepository.class);
 	}
 }

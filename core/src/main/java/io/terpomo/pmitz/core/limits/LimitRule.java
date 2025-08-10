@@ -14,34 +14,44 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.limits.userlimit.jdbc;
+package io.terpomo.pmitz.core.limits;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
-import io.terpomo.pmitz.core.limits.LimitRule;
+public abstract class LimitRule {
 
-public class UnknownLimit extends LimitRule {
+	private String unit;
+	private String id;
 
-	private final long value;
-
-	public UnknownLimit(String id, long value) {
-		super(id);
-		this.value = value;
+	protected LimitRule(String id) {
+		this.id = id;
 	}
 
-	@Override
-	public long getValue() {
-		return this.value;
+	protected LimitRule(String id, String unit) {
+		this.id = id;
+		this.unit = unit;
 	}
 
-	@Override
-	public Optional<ZonedDateTime> getWindowStart(ZonedDateTime referenceDate) {
-		return Optional.empty();
+	public abstract long getValue();
+
+	public String getUnit() {
+		return unit;
 	}
 
-	@Override
-	public Optional<ZonedDateTime> getWindowEnd(ZonedDateTime referenceDate) {
-		return Optional.empty();
+	public void setUnit(String unit) {
+		this.unit = unit;
 	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public abstract Optional<ZonedDateTime> getWindowStart(ZonedDateTime referenceDate);
+
+	public abstract Optional<ZonedDateTime> getWindowEnd(ZonedDateTime referenceDate);
 }

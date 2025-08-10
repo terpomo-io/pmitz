@@ -35,7 +35,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.RepositoryException;
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
@@ -54,7 +54,7 @@ public class InMemoryProductRepository implements ProductRepository {
 				.enable(SerializationFeature.INDENT_OUTPUT)
 				.addMixIn(Product.class, ProductMixIn.class)
 				.addMixIn(Feature.class, FeatureMixIn.class)
-				.addMixIn(UsageLimit.class, UsageLimitMixIn.class)
+				.addMixIn(LimitRule.class, LimitRuleMixIn.class)
 				.addMixIn(SlidingWindowRateLimit.class, SlidingWindowRateLimitMixIn.class)
 				.addMixIn(CalendarPeriodRateLimit.class, CalendarPeriodRateLimitMixIn.class)
 				.addMixIn(CountLimit.class, CountLimitMixIn.class);
@@ -127,7 +127,7 @@ public class InMemoryProductRepository implements ProductRepository {
 	}
 
 	@Override
-	public Optional<UsageLimit> getGlobalLimit(Feature feature, String usageLimitId) {
+	public Optional<LimitRule> getGlobalLimit(Feature feature, String limitRuleId) {
 
 		validateFeature(feature);
 
@@ -139,7 +139,7 @@ public class InMemoryProductRepository implements ProductRepository {
 						.findFirst())
 				.flatMap(f -> Optional.ofNullable(f.getLimits())
 						.flatMap(ll -> ll.stream()
-								.filter(l -> l.getId().equals(usageLimitId))
+								.filter(l -> l.getId().equals(limitRuleId))
 								.findFirst()));
 	}
 

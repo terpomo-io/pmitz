@@ -21,7 +21,7 @@ import java.util.Optional;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 
 public interface ProductRepository {
 
@@ -37,7 +37,7 @@ public interface ProductRepository {
 
 	Optional<Feature> getFeature(Product product, String featureId);
 
-	Optional<UsageLimit> getGlobalLimit(Feature feature, String usageLimitId);
+	Optional<LimitRule> getGlobalLimit(Feature feature, String limitRuleId);
 
 	void addFeature(Feature feature);
 

@@ -35,7 +35,7 @@ import io.terpomo.pmitz.core.exception.LimitExceededException;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.RateLimit;
-import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
+import io.terpomo.pmitz.limits.LimitVerificationStrategy;
 import io.terpomo.pmitz.limits.UsageRecord;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.UsageRecordRepoMetadata;
@@ -45,9 +45,9 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOf
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class SimpleUsageLimitVerificationStrategyTests {
+class SimpleLimitVerificationStrategyTests {
 	static String limitId = "numer-of-photos";
-	UsageLimitVerificationStrategy verificationStrategy = new SimpleUsageLimitVerificationStrategy();
+	LimitVerificationStrategy verificationStrategy = new SimpleLimitVerificationStrategy();
 	@Captor
 	ArgumentCaptor<List<UsageRecord>> updatedRecordArgCaptor;
 
@@ -65,8 +65,8 @@ class SimpleUsageLimitVerificationStrategyTests {
 
 		LimitTrackingContext context = initContextMock(null, null, existingRecords);
 
-		CountLimit usageLimit = new CountLimit(limitId, 10);
-		verificationStrategy.recordFeatureUsage(context, usageLimit, 5);
+		CountLimit limitRule = new CountLimit(limitId, 10);
+		verificationStrategy.recordFeatureUsage(context, limitRule, 5);
 
 		verify(context).addUpdatedUsageRecords(updatedRecordArgCaptor.capture());
 
@@ -90,9 +90,9 @@ class SimpleUsageLimitVerificationStrategyTests {
 
 		LimitTrackingContext context = initContextMock(windowStart, windowEnd, Collections.singletonList(existingRecord));
 
-		RateLimit usageLimit = initRateLimitMock(windowStart, windowEnd, 10L);
+		RateLimit limitRule = initRateLimitMock(windowStart, windowEnd, 10L);
 
-		verificationStrategy.recordFeatureUsage(context, usageLimit, 5);
+		verificationStrategy.recordFeatureUsage(context, limitRule, 5);
 
 		verify(context).addUpdatedUsageRecords(updatedRecordArgCaptor.capture());
 
@@ -117,9 +117,9 @@ class SimpleUsageLimitVerificationStrategyTests {
 
 		LimitTrackingContext context = initContextMock(windowStart, windowEnd, Collections.emptyList());
 
-		RateLimit usageLimit = initRateLimitMock(windowStart, windowEnd, 15L);
+		RateLimit limitRule = initRateLimitMock(windowStart, windowEnd, 15L);
 
-		verificationStrategy.recordFeatureUsage(context, usageLimit, 10);
+		verificationStrategy.recordFeatureUsage(context, limitRule, 10);
 
 		verify(context).addUpdatedUsageRecords(updatedRecordArgCaptor.capture());
 
@@ -139,9 +139,9 @@ class SimpleUsageLimitVerificationStrategyTests {
 
 		LimitTrackingContext context = initContextMock(null, null, Collections.singletonList(existingRecord));
 
-		CountLimit usageLimit = new CountLimit(limitId, 10);
+		CountLimit limitRule = new CountLimit(limitId, 10);
 
-		assertThatExceptionOfType(LimitExceededException.class).isThrownBy(() -> verificationStrategy.recordFeatureUsage(context, usageLimit, 6));
+		assertThatExceptionOfType(LimitExceededException.class).isThrownBy(() -> verificationStrategy.recordFeatureUsage(context, limitRule, 6));
 	}
 
 	@ParameterizedTest
@@ -149,9 +149,9 @@ class SimpleUsageLimitVerificationStrategyTests {
 	void reduceFeatureUsageShouldSubtractUsageWhenCountLimit(List<UsageRecord> existingRecords, int previouslyConsumedUnits) {
 		LimitTrackingContext context = initContextMock(null, null, existingRecords);
 
-		CountLimit usageLimit = new CountLimit(limitId, 10);
+		CountLimit limitRule = new CountLimit(limitId, 10);
 
-		verificationStrategy.reduceFeatureUsage(context, usageLimit, 5);
+		verificationStrategy.reduceFeatureUsage(context, limitRule, 5);
 
 		verify(context).addUpdatedUsageRecords(updatedRecordArgCaptor.capture());
 
@@ -175,9 +175,9 @@ class SimpleUsageLimitVerificationStrategyTests {
 
 		LimitTrackingContext context = initContextMock(windowStart, windowEnd, Collections.singletonList(existingRecord));
 
-		RateLimit usageLimit = initRateLimitMock(windowStart, windowEnd);
+		RateLimit limitRule = initRateLimitMock(windowStart, windowEnd);
 
-		verificationStrategy.reduceFeatureUsage(context, usageLimit, 4);
+		verificationStrategy.reduceFeatureUsage(context, limitRule, 4);
 
 		verify(context).addUpdatedUsageRecords(updatedRecordArgCaptor.capture());
 
@@ -201,9 +201,9 @@ class SimpleUsageLimitVerificationStrategyTests {
 
 		LimitTrackingContext context = initContextMock(windowStart, windowEnd, Collections.emptyList());
 
-		RateLimit usageLimit = initRateLimitMock(windowStart, windowEnd);
+		RateLimit limitRule = initRateLimitMock(windowStart, windowEnd);
 
-		verificationStrategy.reduceFeatureUsage(context, usageLimit, 5);
+		verificationStrategy.reduceFeatureUsage(context, limitRule, 5);
 
 		verify(context).addUpdatedUsageRecords(updatedRecordArgCaptor.capture());
 
@@ -223,9 +223,9 @@ class SimpleUsageLimitVerificationStrategyTests {
 	void isWithinLimitsShouldReturnTrueIfLimitNotExceeded(List<UsageRecord> existingRecords) {
 		LimitTrackingContext context = initContextMock(null, null, existingRecords);
 
-		CountLimit usageLimit = new CountLimit(limitId, 10);
+		CountLimit limitRule = new CountLimit(limitId, 10);
 
-		assertThat(verificationStrategy.isWithinLimits(context, usageLimit, 5)).isTrue();
+		assertThat(verificationStrategy.isWithinLimits(context, limitRule, 5)).isTrue();
 	}
 
 	@Test
@@ -233,9 +233,9 @@ class SimpleUsageLimitVerificationStrategyTests {
 		UsageRecord existingRecord = new UsageRecord(limitId, null, null, 5L, null);
 		LimitTrackingContext context = initContextMock(null, null, Collections.singletonList(existingRecord));
 
-		CountLimit usageLimit = new CountLimit(limitId, 10);
+		CountLimit limitRule = new CountLimit(limitId, 10);
 
-		assertThat(verificationStrategy.isWithinLimits(context, usageLimit, 6)).isFalse();
+		assertThat(verificationStrategy.isWithinLimits(context, limitRule, 6)).isFalse();
 	}
 
 	@ParameterizedTest
@@ -243,27 +243,27 @@ class SimpleUsageLimitVerificationStrategyTests {
 	void getRemainingUnitsShouldReturnUnusedUnits(List<UsageRecord> existingRecords, int previouslyConsumedUnits) {
 		LimitTrackingContext context = initContextMock(null, null, existingRecords);
 
-		CountLimit usageLimit = new CountLimit(limitId, 10);
+		CountLimit limitRule = new CountLimit(limitId, 10);
 
-		assertThat(verificationStrategy.getRemainingUnits(context, usageLimit)).isEqualTo(10 - previouslyConsumedUnits);
+		assertThat(verificationStrategy.getRemainingUnits(context, limitRule)).isEqualTo(10 - previouslyConsumedUnits);
 	}
 
 	@Test
-	void getWindowStartShouldDelegateToUsageLimit() {
+	void getWindowStartShouldDelegateToLimitRule() {
 		var windowStart = ZonedDateTime.now().minusDays(30);
-		RateLimit usageLimit = mock(CalendarPeriodRateLimit.class);
-		when(usageLimit.getWindowStart(any())).thenReturn(Optional.of(windowStart));
+		RateLimit limitRule = mock(CalendarPeriodRateLimit.class);
+		when(limitRule.getWindowStart(any())).thenReturn(Optional.of(windowStart));
 
-		assertThat(verificationStrategy.getWindowStart(usageLimit, ZonedDateTime.now()).orElse(null)).isEqualTo(windowStart);
+		assertThat(verificationStrategy.getWindowStart(limitRule, ZonedDateTime.now()).orElse(null)).isEqualTo(windowStart);
 	}
 
 	@Test
-	void getWindowEndShouldDelegateToUsageLimit() {
+	void getWindowEndShouldDelegateToLimitRule() {
 		var windowEnd = ZonedDateTime.now();
-		RateLimit usageLimit = mock(CalendarPeriodRateLimit.class);
-		when(usageLimit.getWindowStart(any())).thenReturn(Optional.of(windowEnd));
+		RateLimit limitRule = mock(CalendarPeriodRateLimit.class);
+		when(limitRule.getWindowStart(any())).thenReturn(Optional.of(windowEnd));
 
-		assertThat(verificationStrategy.getWindowStart(usageLimit, ZonedDateTime.now()).orElse(null)).isEqualTo(windowEnd);
+		assertThat(verificationStrategy.getWindowStart(limitRule, ZonedDateTime.now()).orElse(null)).isEqualTo(windowEnd);
 	}
 
 	private LimitTrackingContext initContextMock(ZonedDateTime windowStart, ZonedDateTime windowEnd, List<UsageRecord> existingUsageRecord) {
@@ -274,19 +274,19 @@ class SimpleUsageLimitVerificationStrategyTests {
 	}
 
 	private RateLimit initRateLimitMock(ZonedDateTime windowStart, ZonedDateTime windowEnd, long limit) {
-		RateLimit usageLimit = initRateLimitMock(windowStart, windowEnd);
-		when(usageLimit.getValue()).thenReturn(limit);
+		RateLimit limitRule = initRateLimitMock(windowStart, windowEnd);
+		when(limitRule.getValue()).thenReturn(limit);
 
-		return usageLimit;
+		return limitRule;
 	}
 
 	private RateLimit initRateLimitMock(ZonedDateTime windowStart, ZonedDateTime windowEnd) {
-		RateLimit usageLimit = mock(CalendarPeriodRateLimit.class);
-		when(usageLimit.getWindowEnd(any())).thenReturn(Optional.of(windowEnd));
-		when(usageLimit.getWindowStart(any())).thenReturn(Optional.of(windowStart));
-		when(usageLimit.getId()).thenReturn(limitId);
+		RateLimit limitRule = mock(CalendarPeriodRateLimit.class);
+		when(limitRule.getWindowEnd(any())).thenReturn(Optional.of(windowEnd));
+		when(limitRule.getWindowStart(any())).thenReturn(Optional.of(windowStart));
+		when(limitRule.getId()).thenReturn(limitId);
 
-		return usageLimit;
+		return limitRule;
 	}
 
 	private record RepoId(String uniqueId) implements UsageRecordRepoMetadata {

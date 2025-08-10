@@ -27,9 +27,9 @@ import io.terpomo.pmitz.core.exception.LimitExceededException;
 import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
-import io.terpomo.pmitz.limits.UsageLimitVerifier;
+import io.terpomo.pmitz.limits.LimitVerifier;
 import io.terpomo.pmitz.remote.client.RemoteCallException;
-import io.terpomo.pmitz.remote.client.UsageLimitVerifierRemoteClient;
+import io.terpomo.pmitz.remote.client.LimitVerifierRemoteClient;
 
 public class RemoteClientSample {
 
@@ -43,24 +43,24 @@ public class RemoteClientSample {
 
 		RemoteClientSample remoteClientSample = new RemoteClientSample();
 
-		var usageLimitVerifier = remoteClientSample.initRemoteLimitVerifier(remoteServerUrl, "/product-library.json");
+		var limitVerifier = remoteClientSample.initRemoteLimitVerifier(remoteServerUrl, "/product-library.json");
 
 		var product = new Product("library");
 		var feature = new Feature(product, "reserve");
 		try {
 			UserGrouping user = new IndividualUser("user00" + random.nextInt(10_000));
-			var withinLimits = usageLimitVerifier.isWithinLimits(feature, user, Map.of("maxborrowed", 7L));
+			var withinLimits = limitVerifier.isWithinLimits(feature, user, Map.of("maxborrowed", 7L));
 
 			System.out.println("Can user borrow 7 books? " + withinLimits);
 
-			withinLimits = usageLimitVerifier.isWithinLimits(feature, user, Map.of("maxborrowed", 5L));
+			withinLimits = limitVerifier.isWithinLimits(feature, user, Map.of("maxborrowed", 5L));
 
 			System.out.println("Can user borrow 5 books? " + withinLimits);
 
-			usageLimitVerifier.recordFeatureUsage(feature, user, Map.of("maxborrowed", 5L));
+			limitVerifier.recordFeatureUsage(feature, user, Map.of("maxborrowed", 5L));
 			System.out.println("Books reserved!");
 
-			Map<String, Long> remainingUnits = usageLimitVerifier.getLimitsRemainingUnits(feature, user);
+			Map<String, Long> remainingUnits = limitVerifier.getLimitsRemainingUnits(feature, user);
 			System.out.println("Remaining units " + remainingUnits);
 		}
 		catch (FeatureNotFoundException ex) {
@@ -74,20 +74,20 @@ public class RemoteClientSample {
 		}
 	}
 
-	private UsageLimitVerifier initRemoteLimitVerifier(String remoteServerUrl, String productClasspath) {
-		var usageLimitVerifier = new UsageLimitVerifierRemoteClient(remoteServerUrl);
+	private LimitVerifier initRemoteLimitVerifier(String remoteServerUrl, String productClasspath) {
+		var limitVerifier = new LimitVerifierRemoteClient(remoteServerUrl);
 
 		var inputStream = RemoteClientSample.class.getResourceAsStream(productClasspath);
 
 		try {
-			usageLimitVerifier.uploadProduct(inputStream);
+			limitVerifier.uploadProduct(inputStream);
 			System.out.println("Product uploaded.");
 		}
 		catch (RepositoryException repositoryException) {
 			System.out.println("Error encountered while uploading product and feature info : " + repositoryException.getMessage());
 		}
 
-		return usageLimitVerifier;
+		return limitVerifier;
 	}
 }
 

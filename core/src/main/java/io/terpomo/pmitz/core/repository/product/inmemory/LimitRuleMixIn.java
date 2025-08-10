@@ -33,5 +33,5 @@ import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 		@JsonSubTypes.Type(value = SlidingWindowRateLimit.class, name = "SlidingWindowRateLimit")
 })
 @ExcludeFromJacocoGeneratedReport
-public class UsageLimitMixIn {
+public class LimitRuleMixIn {
 }

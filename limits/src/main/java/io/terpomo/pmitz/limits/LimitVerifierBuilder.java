@@ -20,20 +20,20 @@ import javax.sql.DataSource;
 
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.repository.product.inmemory.InMemoryProductRepository;
-import io.terpomo.pmitz.limits.impl.UsageLimitResolverImpl;
-import io.terpomo.pmitz.limits.impl.UsageLimitVerifierImpl;
-import io.terpomo.pmitz.limits.impl.strategy.UsageLimitVerificationStrategyDefaultResolver;
+import io.terpomo.pmitz.limits.impl.LimitRuleResolverImpl;
+import io.terpomo.pmitz.limits.impl.LimitVerifierImpl;
+import io.terpomo.pmitz.limits.impl.strategy.LimitVerificationStrategyDefaultResolver;
 import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 
-public final class UsageLimitVerifierBuilder {
+public final class LimitVerifierBuilder {
 
-	private UsageLimitVerifierBuilder() {
+	private LimitVerifierBuilder() {
 		// private constructor
 	}
 
-	public static UsageLimitResolverSpec of(ProductRepository productRepository) {
+	public static LimitRuleResolverSpec of(ProductRepository productRepository) {
 		return new Builder(productRepository);
 	}
 
@@ -41,12 +41,12 @@ public final class UsageLimitVerifierBuilder {
 		return new InMemoryProductRepository();
 	}
 
-	public interface UsageLimitResolverSpec {
-		UsageRepositorySpec withCustomUsageLimitResolver(UsageLimitResolver usageLimitResolver);
+	public interface LimitRuleResolverSpec {
+		UsageRepositorySpec withCustomLimitRuleResolver(LimitRuleResolver limitRuleResolver);
 
 		UsageRepositorySpec withUserLimitRepository(UserLimitRepository userLimitRepository);
 
-		UsageRepositorySpec withDefaultUsageLimitResolver();
+		UsageRepositorySpec withDefaultLimitRuleResolver();
 	}
 
 	public interface UsageRepositorySpec {
@@ -56,43 +56,42 @@ public final class UsageLimitVerifierBuilder {
 	}
 
 	public interface LimitVerificationStrategySpec {
-		Creator withUserLimitVerificationStrategy(UsageLimitVerificationStrategy stratey);
+		Creator withUserLimitVerificationStrategy(LimitVerificationStrategy stratey);
 
-		UsageLimitVerifier build();
+		LimitVerifier build();
 	}
 
 	public interface Creator extends LimitVerificationStrategySpec {
-		UsageLimitVerifier build();
+		LimitVerifier build();
 	}
 
-	public static final class Builder implements UsageLimitResolverSpec, UsageRepositorySpec,
+	public static final class Builder implements LimitRuleResolverSpec, UsageRepositorySpec,
 			LimitVerificationStrategySpec, Creator {
 
 		private final ProductRepository productRepository;
-		private UsageLimitResolver usageLimitResolver;
+		private LimitRuleResolver limitRuleResolver;
 		private UsageRepository usageRepository;
 
-		private UsageLimitVerificationStrategyResolver verificationStrategyResolver;
+		private LimitVerificationStrategyResolver verificationStrategyResolver;
 
 		private Builder(ProductRepository productRepository) {
 			this.productRepository = productRepository;
 		}
 
-		@Override
-		public UsageRepositorySpec withCustomUsageLimitResolver(UsageLimitResolver usageLimitResolver) {
-			this.usageLimitResolver = usageLimitResolver;
+		public UsageRepositorySpec withCustomLimitRuleResolver(LimitRuleResolver limitRuleResolver) {
+			this.limitRuleResolver = limitRuleResolver;
 			return this;
 		}
 
 		@Override
 		public UsageRepositorySpec withUserLimitRepository(UserLimitRepository userLimitRepository) {
-			usageLimitResolver = new UsageLimitResolverImpl(productRepository, userLimitRepository);
+			limitRuleResolver = new LimitRuleResolverImpl(productRepository, userLimitRepository);
 			return this;
 		}
 
 		@Override
-		public UsageRepositorySpec withDefaultUsageLimitResolver() {
-			usageLimitResolver = new UsageLimitResolverImpl(productRepository);
+		public UsageRepositorySpec withDefaultLimitRuleResolver() {
+			limitRuleResolver = new LimitRuleResolverImpl(productRepository);
 			return this;
 		}
 
@@ -109,17 +108,17 @@ public final class UsageLimitVerifierBuilder {
 		}
 
 		@Override
-		public Creator withUserLimitVerificationStrategy(UsageLimitVerificationStrategy strategy) {
-			verificationStrategyResolver = new UsageLimitVerificationStrategyDefaultResolver(strategy);
+		public Creator withUserLimitVerificationStrategy(LimitVerificationStrategy strategy) {
+			verificationStrategyResolver = new LimitVerificationStrategyDefaultResolver(strategy);
 			return this;
 		}
 
 		@Override
-		public UsageLimitVerifier build() {
+		public LimitVerifier build() {
 			if (verificationStrategyResolver == null) {
-				verificationStrategyResolver = new UsageLimitVerificationStrategyDefaultResolver();
+				verificationStrategyResolver = new LimitVerificationStrategyDefaultResolver();
 			}
-			return new UsageLimitVerifierImpl(usageLimitResolver, verificationStrategyResolver, usageRepository);
+			return new LimitVerifierImpl(limitRuleResolver, verificationStrategyResolver, usageRepository);
 		}
 	}
 }

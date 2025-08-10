@@ -38,12 +38,12 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class UsageLimitVerifierRemoteClientTests {
+class LimitVerifierRemoteClientTests {
 
 	@Mock
 	PmitzClient pmitzClient;
 
-	UsageLimitVerifierRemoteClient usageLimitVerifierRemoteClient;
+	LimitVerifierRemoteClient limitVerifierRemoteClient;
 
 	Feature feature;
 	UserGrouping userGrouping;
@@ -52,7 +52,7 @@ class UsageLimitVerifierRemoteClientTests {
 	void setUp() {
 		userGrouping = new IndividualUser("user001");
 		feature = new Feature(new Product("productId"), "featureId");
-		usageLimitVerifierRemoteClient = new UsageLimitVerifierRemoteClient(pmitzClient);
+		limitVerifierRemoteClient = new LimitVerifierRemoteClient(pmitzClient);
 	}
 
 	@Test
@@ -61,7 +61,7 @@ class UsageLimitVerifierRemoteClientTests {
 		var featureUsageInfo = new FeatureUsageInfo(FeatureStatus.AVAILABLE, expectedRemainingUnits);
 		when(pmitzClient.getLimitsRemainingUnits(feature, userGrouping)).thenReturn(featureUsageInfo);
 
-		var returnedRemainingUnits = usageLimitVerifierRemoteClient.getLimitsRemainingUnits(feature, userGrouping);
+		var returnedRemainingUnits = limitVerifierRemoteClient.getLimitsRemainingUnits(feature, userGrouping);
 
 		assertThat(returnedRemainingUnits).isSameAs(expectedRemainingUnits);
 		verify(pmitzClient).getLimitsRemainingUnits(feature, userGrouping);
@@ -74,7 +74,7 @@ class UsageLimitVerifierRemoteClientTests {
 		var featureUsageInfo = new FeatureUsageInfo(FeatureStatus.AVAILABLE, expectedRemainingUnits);
 		when(pmitzClient.verifyLimits(feature, userGrouping, additionalUnits)).thenReturn(featureUsageInfo);
 
-		var isWithinLimits = usageLimitVerifierRemoteClient.isWithinLimits(feature, userGrouping, additionalUnits);
+		var isWithinLimits = limitVerifierRemoteClient.isWithinLimits(feature, userGrouping, additionalUnits);
 
 		assertThat(isWithinLimits).isTrue();
 		verify(pmitzClient).verifyLimits(feature, userGrouping, additionalUnits);
@@ -87,7 +87,7 @@ class UsageLimitVerifierRemoteClientTests {
 		var featureUsageInfo = new FeatureUsageInfo(FeatureStatus.AVAILABLE, expectedRemainingUnits);
 		when(pmitzClient.verifyLimits(feature, userGrouping, additionalUnits)).thenReturn(featureUsageInfo);
 
-		var isWithinLimits = usageLimitVerifierRemoteClient.isWithinLimits(feature, userGrouping, additionalUnits);
+		var isWithinLimits = limitVerifierRemoteClient.isWithinLimits(feature, userGrouping, additionalUnits);
 
 		assertThat(isWithinLimits).isFalse();
 		verify(pmitzClient).verifyLimits(feature, userGrouping, additionalUnits);
@@ -97,7 +97,7 @@ class UsageLimitVerifierRemoteClientTests {
 	void recordFeatureUsageShouldNotThrowExceptionWhenLimitNotExceeded() {
 		var additionalUnits = Map.of("limit1", 10L);
 
-		usageLimitVerifierRemoteClient.recordFeatureUsage(feature, userGrouping, additionalUnits);
+		limitVerifierRemoteClient.recordFeatureUsage(feature, userGrouping, additionalUnits);
 
 		verify(pmitzClient).recordOrReduce(feature, userGrouping, additionalUnits, false);
 	}
@@ -108,7 +108,7 @@ class UsageLimitVerifierRemoteClientTests {
 		doThrow(new LimitExceededException("Limit exceeded", feature, userGrouping))
 				.when(pmitzClient).recordOrReduce(feature, userGrouping, additionalUnits, false);
 
-		assertThatThrownBy(() -> usageLimitVerifierRemoteClient.recordFeatureUsage(feature, userGrouping, additionalUnits))
+		assertThatThrownBy(() -> limitVerifierRemoteClient.recordFeatureUsage(feature, userGrouping, additionalUnits))
 				.isInstanceOf(LimitExceededException.class);
 
 		verify(pmitzClient).recordOrReduce(feature, userGrouping, additionalUnits, false);
@@ -118,7 +118,7 @@ class UsageLimitVerifierRemoteClientTests {
 	void reduceFeatureUsageShouldCallPmitzClient() {
 		var additionalUnits = Map.of("limit1", 10L);
 
-		usageLimitVerifierRemoteClient.reduceFeatureUsage(feature, userGrouping, additionalUnits);
+		limitVerifierRemoteClient.reduceFeatureUsage(feature, userGrouping, additionalUnits);
 
 		verify(pmitzClient).recordOrReduce(feature, userGrouping, additionalUnits, true);
 	}
@@ -126,7 +126,7 @@ class UsageLimitVerifierRemoteClientTests {
 	@Test
 	void updateProductShouldCallPmitzClient() {
 		var inputStream = new ByteArrayInputStream("Content of product File".getBytes(StandardCharsets.UTF_8));
-		usageLimitVerifierRemoteClient.uploadProduct(inputStream);
+		limitVerifierRemoteClient.uploadProduct(inputStream);
 
 		verify(pmitzClient).uploadProduct(inputStream);
 	}

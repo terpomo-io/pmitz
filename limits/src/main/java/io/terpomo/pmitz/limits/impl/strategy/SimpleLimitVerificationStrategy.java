@@ -21,76 +21,76 @@ import java.util.Collections;
 import java.util.Optional;
 
 import io.terpomo.pmitz.core.exception.LimitExceededException;
-import io.terpomo.pmitz.core.limits.UsageLimit;
-import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
+import io.terpomo.pmitz.core.limits.LimitRule;
+import io.terpomo.pmitz.limits.LimitVerificationStrategy;
 import io.terpomo.pmitz.limits.UsageRecord;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 
-public class SimpleUsageLimitVerificationStrategy implements UsageLimitVerificationStrategy {
+public class SimpleLimitVerificationStrategy implements LimitVerificationStrategy {
 
 	@Override
-	public void recordFeatureUsage(LimitTrackingContext context, UsageLimit usageLimit, long additionalUnits) {
+	public void recordFeatureUsage(LimitTrackingContext context, LimitRule limitRule, long additionalUnits) {
 		var now = ZonedDateTime.now();
-		var optExistingUsageRecord = findCurrentUsage(context, usageLimit, now);
+		var optExistingUsageRecord = findCurrentUsage(context, limitRule, now);
 		long alreadyUsedUnits = optExistingUsageRecord.isEmpty() ? 0 : optExistingUsageRecord.get().units();
 		long newUnits = alreadyUsedUnits + additionalUnits;
 
-		if (newUnits > usageLimit.getValue()) {
-			throw new LimitExceededException("Limit will be exceeded if additional units are used. " + alreadyUsedUnits + " are currently used, out of " + usageLimit.getValue() + ".",
+		if (newUnits > limitRule.getValue()) {
+			throw new LimitExceededException("Limit will be exceeded if additional units are used. " + alreadyUsedUnits + " are currently used, out of " + limitRule.getValue() + ".",
 					context.getFeature(), context.getUserGrouping());
 		}
 
-		var windowEnd = getWindowEnd(usageLimit, now).orElse(null);
+		var windowEnd = getWindowEnd(limitRule, now).orElse(null);
 		var updatedRecord = optExistingUsageRecord.map(usageRecord -> UsageRecord.updage(usageRecord, newUnits, usageRecord.expirationDate()))
-				.orElseGet(() -> new UsageRecord(usageLimit.getId(), getWindowStart(usageLimit, now).orElse(null), windowEnd, newUnits, calculateExpirationDate(windowEnd)));
+				.orElseGet(() -> new UsageRecord(limitRule.getId(), getWindowStart(limitRule, now).orElse(null), windowEnd, newUnits, calculateExpirationDate(windowEnd)));
 
 		context.addUpdatedUsageRecords(Collections.singletonList(updatedRecord));
 	}
 
 	@Override
-	public void reduceFeatureUsage(LimitTrackingContext context, UsageLimit usageLimit, long reducedUnits) {
+	public void reduceFeatureUsage(LimitTrackingContext context, LimitRule limitRule, long reducedUnits) {
 		var now = ZonedDateTime.now();
-		var optExistingUsageRecord = findCurrentUsage(context, usageLimit, now);
+		var optExistingUsageRecord = findCurrentUsage(context, limitRule, now);
 
 		var alreadyUsedUnits = optExistingUsageRecord.isEmpty() ? 0 : optExistingUsageRecord.get().units();
 
 		var newUnits = (alreadyUsedUnits > reducedUnits) ? alreadyUsedUnits - reducedUnits : 0;
 
-		var windowEnd = getWindowEnd(usageLimit, now).orElse(null);
+		var windowEnd = getWindowEnd(limitRule, now).orElse(null);
 		var updatedRecord = optExistingUsageRecord.map(usageRecord -> UsageRecord.updage(usageRecord, newUnits, usageRecord.expirationDate()))
-				.orElseGet(() -> new UsageRecord(usageLimit.getId(), getWindowStart(usageLimit, now).orElse(null), windowEnd, newUnits, calculateExpirationDate(windowEnd)));
+				.orElseGet(() -> new UsageRecord(limitRule.getId(), getWindowStart(limitRule, now).orElse(null), windowEnd, newUnits, calculateExpirationDate(windowEnd)));
 		context.addUpdatedUsageRecords(Collections.singletonList(updatedRecord));
 	}
 
 	@Override
-	public boolean isWithinLimits(LimitTrackingContext context, UsageLimit usageLimit, long additionalUnits) {
-		return getRemainingUnits(context, usageLimit) >= additionalUnits;
+	public boolean isWithinLimits(LimitTrackingContext context, LimitRule limitRule, long additionalUnits) {
+		return getRemainingUnits(context, limitRule) >= additionalUnits;
 	}
 
 	@Override
-	public long getRemainingUnits(LimitTrackingContext context, UsageLimit usageLimit) {
+	public long getRemainingUnits(LimitTrackingContext context, LimitRule limitRule) {
 		var now = ZonedDateTime.now();
-		var optUsageRecord = findCurrentUsage(context, usageLimit, now);
+		var optUsageRecord = findCurrentUsage(context, limitRule, now);
 		long currentUsage = optUsageRecord.isEmpty() ? 0 : optUsageRecord.get().units();
-		return usageLimit.getValue() - currentUsage;
+		return limitRule.getValue() - currentUsage;
 	}
 
 	@Override
-	public Optional<ZonedDateTime> getWindowStart(UsageLimit usageLimit, ZonedDateTime referenceDate) {
-		return usageLimit.getWindowStart(referenceDate);
+	public Optional<ZonedDateTime> getWindowStart(LimitRule limitRule, ZonedDateTime referenceDate) {
+		return limitRule.getWindowStart(referenceDate);
 	}
 
 	@Override
-	public Optional<ZonedDateTime> getWindowEnd(UsageLimit usageLimit, ZonedDateTime referenceDate) {
-		return usageLimit.getWindowEnd(referenceDate);
+	public Optional<ZonedDateTime> getWindowEnd(LimitRule limitRule, ZonedDateTime referenceDate) {
+		return limitRule.getWindowEnd(referenceDate);
 	}
 
 	private ZonedDateTime calculateExpirationDate(ZonedDateTime windowEnd) {
 		return (windowEnd != null) ? windowEnd.plusMonths(3) : null;
 	}
 
-	private Optional<UsageRecord> findCurrentUsage(LimitTrackingContext context, UsageLimit usageLimit, ZonedDateTime referenceDate) {
-		var usageRecordList = context.findUsageRecords(usageLimit.getId(), getWindowStart(usageLimit, referenceDate).orElse(null), getWindowEnd(usageLimit, referenceDate).orElse(null));
+	private Optional<UsageRecord> findCurrentUsage(LimitTrackingContext context, LimitRule limitRule, ZonedDateTime referenceDate) {
+		var usageRecordList = context.findUsageRecords(limitRule.getId(), getWindowStart(limitRule, referenceDate).orElse(null), getWindowEnd(limitRule, referenceDate).orElse(null));
 
 		if (usageRecordList.size() > 1) {
 			throw new IllegalStateException("Inconsistent data found in usage repository. Should find 1 record atmost for this type of limit");

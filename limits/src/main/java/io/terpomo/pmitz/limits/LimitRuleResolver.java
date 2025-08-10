@@ -16,8 +16,13 @@
 
 package io.terpomo.pmitz.limits;
 
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import java.util.Optional;
 
-public interface UsageLimitVerificationStrategyResolver {
-	UsageLimitVerificationStrategy resolveLimitVerificationStrategy(UsageLimit usageLimit);
+import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.limits.LimitRule;
+import io.terpomo.pmitz.core.subjects.UserGrouping;
+
+public interface LimitRuleResolver {
+
+	Optional<LimitRule> resolveLimitRule(Feature feature, String limitRuleId, UserGrouping userGrouping);
 }
