@@ -28,8 +28,8 @@ import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.LimitVerifier;
-import io.terpomo.pmitz.remote.client.RemoteCallException;
 import io.terpomo.pmitz.remote.client.LimitVerifierRemoteClient;
+import io.terpomo.pmitz.remote.client.RemoteCallException;
 
 public class RemoteClientSample {
 
