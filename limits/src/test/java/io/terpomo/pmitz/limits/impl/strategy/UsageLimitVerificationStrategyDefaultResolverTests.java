@@ -16,13 +16,10 @@
 
 package io.terpomo.pmitz.limits.impl.strategy;
 
-import java.time.temporal.ChronoUnit;
-
 import org.junit.jupiter.api.Test;
 
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
-import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
 import io.terpomo.pmitz.limits.UsageLimitVerificationStrategyResolver;
 
@@ -43,13 +40,6 @@ class UsageLimitVerificationStrategyDefaultResolverTests {
 	@Test
 	void resolveLimitVerificationStrategyShouldReturnSimpleStrategyWhenCalendarPeriodRateLimit() {
 		CalendarPeriodRateLimit rateLimit = new CalendarPeriodRateLimit(limitId, 10, CalendarPeriodRateLimit.Periodicity.WEEK);
-		UsageLimitVerificationStrategy verifStrategy = strategyResolver.resolveLimitVerificationStrategy(rateLimit);
-		assertThat(verifStrategy).isNotNull();
-	}
-
-	@Test
-	void resolveLimitVerificationStrategyShouldReturnSimpleStrategyWhenSlidingWindowRateLimit() {
-		SlidingWindowRateLimit rateLimit = new SlidingWindowRateLimit(limitId, 10, ChronoUnit.MONTHS, 1);
 		UsageLimitVerificationStrategy verifStrategy = strategyResolver.resolveLimitVerificationStrategy(rateLimit);
 		assertThat(verifStrategy).isNotNull();
 	}

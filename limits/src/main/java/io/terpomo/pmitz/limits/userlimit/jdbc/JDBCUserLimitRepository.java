@@ -20,7 +20,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import javax.sql.DataSource;
@@ -30,7 +29,6 @@ import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
-import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 
@@ -109,11 +107,7 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 				stmt.setLong(5, usageLimit.getValue());
 				stmt.setString(6, usageLimit.getUnit());
 
-				if (usageLimit instanceof SlidingWindowRateLimit slidingWindowRateLimit) {
-					stmt.setString(7, slidingWindowRateLimit.getInterval().name());
-					stmt.setInt(8, slidingWindowRateLimit.getDuration());
-				}
-				else if (usageLimit instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
+				if (usageLimit instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
 					stmt.setString(7, calendarPeriodRateLimit.getPeriodicity().name());
 					stmt.setInt(8, calendarPeriodRateLimit.getDuration());
 				}
@@ -164,11 +158,7 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 				stmt.setLong(idx++, usageLimit.getValue());
 				stmt.setString(idx++, usageLimit.getUnit());
 
-				if (usageLimit instanceof SlidingWindowRateLimit slidingWindowRateLimit) {
-					stmt.setString(idx++, slidingWindowRateLimit.getInterval().name());
-					stmt.setInt(idx++, slidingWindowRateLimit.getDuration());
-				}
-				else if (usageLimit instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
+				if (usageLimit instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
 					stmt.setString(idx++, calendarPeriodRateLimit.getPeriodicity().name());
 					stmt.setInt(idx++, calendarPeriodRateLimit.getDuration());
 				}
@@ -242,14 +232,6 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 				CountLimit countLimit = new CountLimit(limitId, limitValue);
 				countLimit.setUnit(limitUnit);
 				usageLimit = countLimit;
-				break;
-
-			case "SlidingWindowRateLimit":
-				ChronoUnit interval = ChronoUnit.valueOf(resultSet.getString("limit_interval"));
-				int duration = resultSet.getInt("limit_duration");
-				SlidingWindowRateLimit slidingWindowRateLimit = new SlidingWindowRateLimit(limitId, limitValue, interval, duration);
-				slidingWindowRateLimit.setUnit(limitUnit);
-				usageLimit = slidingWindowRateLimit;
 				break;
 
 			default:

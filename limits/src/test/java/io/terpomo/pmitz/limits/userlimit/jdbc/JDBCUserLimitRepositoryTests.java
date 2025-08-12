@@ -20,7 +20,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -40,7 +39,6 @@ import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.limits.UsageLimit;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
-import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
@@ -193,21 +191,6 @@ class JDBCUserLimitRepositoryTests {
 	}
 
 	@Test
-	void findUsageLimit_SlidingWindowRateLimitExist() {
-
-		Optional<UsageLimit> usageLimit = this.repository.findUsageLimit(this.feature,
-				"Maximum number of picture uploaded by day", this.user);
-
-		assertThat(usageLimit).isPresent();
-		assertThat(usageLimit.get()).isInstanceOf(SlidingWindowRateLimit.class);
-		SlidingWindowRateLimit slidingWindowRateLimit = (SlidingWindowRateLimit) usageLimit.get();
-		assertThat(slidingWindowRateLimit.getId()).isEqualTo("Maximum number of picture uploaded by day");
-		assertThat(slidingWindowRateLimit.getValue()).isEqualTo(15L);
-		assertThat(slidingWindowRateLimit.getInterval()).isEqualTo(ChronoUnit.DAYS);
-		assertThat(slidingWindowRateLimit.getDuration()).isEqualTo(1);
-	}
-
-	@Test
 	void findUsageLimit_usageLimitNotExist() {
 
 		Optional<UsageLimit> usageLimit = this.repository.findUsageLimit(this.feature,
@@ -300,35 +283,6 @@ class JDBCUserLimitRepositoryTests {
 	}
 
 	@Test
-	void updateUsageLimit_SlidingWindowRateLimitAdded() {
-
-		String limitId = "Maximum number of picture uploaded by year";
-		long limitQuota = 1500;
-		ChronoUnit limitInterval = ChronoUnit.YEARS;
-		String limitUnit = "picture";
-		int limitDuration = 1;
-
-		SlidingWindowRateLimit slidingWindowRateLimit =
-				new SlidingWindowRateLimit(limitId, limitQuota, limitInterval, limitDuration);
-		slidingWindowRateLimit.setUnit(limitUnit);
-
-		this.repository.updateUsageLimit(this.feature, slidingWindowRateLimit, this.user);
-
-		Optional<UsageLimit> userLimit =
-				this.repository.findUsageLimit(this.feature,
-						"Maximum number of picture uploaded by year", this.user);
-
-		assertThat(userLimit).isPresent();
-		assertThat(userLimit.get()).isInstanceOf(SlidingWindowRateLimit.class);
-		SlidingWindowRateLimit slidingWindowRateLimitDb = (SlidingWindowRateLimit) userLimit.get();
-		assertThat(slidingWindowRateLimitDb.getId()).isEqualTo(limitId);
-		assertThat(slidingWindowRateLimitDb.getValue()).isEqualTo(limitQuota);
-		assertThat(slidingWindowRateLimitDb.getInterval()).isEqualTo(limitInterval);
-		assertThat(slidingWindowRateLimitDb.getUnit()).isEqualTo(limitUnit);
-		assertThat(slidingWindowRateLimitDb.getDuration()).isEqualTo(limitDuration);
-	}
-
-	@Test
 	void updateUsageLimit_CountLimitModified() {
 		CountLimit countLimitToModified = new CountLimit("Maximum number of picture", 15);
 
@@ -360,25 +314,6 @@ class JDBCUserLimitRepositoryTests {
 		CalendarPeriodRateLimit calendarPeriodRateLimitDb = (CalendarPeriodRateLimit) userLimit.get();
 		assertThat(calendarPeriodRateLimitDb.getId()).isEqualTo("Maximum number of picture uploaded in calendar month");
 		assertThat(calendarPeriodRateLimitDb.getValue()).isEqualTo(1500);
-	}
-
-	@Test
-	void updateUsageLimit_SlidingWindowRateLimitModified() {
-		SlidingWindowRateLimit slidingWindowRateLimitModified =
-				new SlidingWindowRateLimit("Maximum number of picture uploaded by day",
-						5, ChronoUnit.DAYS, 1);
-
-		this.repository.updateUsageLimit(this.feature, slidingWindowRateLimitModified, this.user);
-
-		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
-				"Maximum number of picture uploaded by day", this.user);
-
-		assertThat(userLimit).isPresent();
-		assertThat(userLimit.get()).isInstanceOf(SlidingWindowRateLimit.class);
-		SlidingWindowRateLimit slidingWindowRateLimitDb = (SlidingWindowRateLimit) userLimit.get();
-		assertThat(slidingWindowRateLimitDb.getId()).isEqualTo("Maximum number of picture uploaded by day");
-		assertThat(slidingWindowRateLimitDb.getValue()).isEqualTo(5);
-		assertThat(slidingWindowRateLimitDb.getDuration()).isEqualTo(1);
 	}
 
 	@Test
@@ -485,11 +420,6 @@ class JDBCUserLimitRepositoryTests {
 				"Maximum number of picture uploaded in calendar month", 1000, CalendarPeriodRateLimit.Periodicity.MONTH
 		);
 		insertUserUsageLimitRecord(dataSource, this.feature, this.user, calendarPeriodRateLimit);
-
-		SlidingWindowRateLimit slidingWindowRateLimit = new SlidingWindowRateLimit(
-				"Maximum number of picture uploaded by day", 15, ChronoUnit.DAYS, 1
-		);
-		insertUserUsageLimitRecord(dataSource, this.feature, this.user, slidingWindowRateLimit);
 	}
 
 	private void insertUserUsageLimitRecord(DataSource dataSource, Feature feature, UserGrouping userGroup,
@@ -512,10 +442,6 @@ class JDBCUserLimitRepositoryTests {
 			if (usageLimit instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
 				limitInterval = calendarPeriodRateLimit.getPeriodicity().name();
 				limitDuration = calendarPeriodRateLimit.getDuration();
-			}
-			else if (usageLimit instanceof SlidingWindowRateLimit slidingWindowRateLimit) {
-				limitInterval = slidingWindowRateLimit.getInterval().name();
-				limitDuration = slidingWindowRateLimit.getDuration();
 			}
 			stmt.setString(1, usageLimit.getId());
 			stmt.setString(2, feature.getFeatureId());
