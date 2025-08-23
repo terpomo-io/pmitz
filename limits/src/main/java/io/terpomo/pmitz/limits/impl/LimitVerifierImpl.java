@@ -24,26 +24,26 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
-import io.terpomo.pmitz.limits.UsageLimitResolver;
-import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
-import io.terpomo.pmitz.limits.UsageLimitVerificationStrategyResolver;
-import io.terpomo.pmitz.limits.UsageLimitVerifier;
+import io.terpomo.pmitz.limits.LimitRuleResolver;
+import io.terpomo.pmitz.limits.LimitVerificationStrategy;
+import io.terpomo.pmitz.limits.LimitVerificationStrategyResolver;
+import io.terpomo.pmitz.limits.LimitVerifier;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
 import io.terpomo.pmitz.limits.usage.repository.UsageRepository;
 
-public class UsageLimitVerifierImpl implements UsageLimitVerifier {
-	private final UsageLimitResolver usageLimitResolver;
+public class LimitVerifierImpl implements LimitVerifier {
+	private final LimitRuleResolver limitRuleResolver;
 
-	private final UsageLimitVerificationStrategyResolver limitVerifierStrategyResolver;
+	private final LimitVerificationStrategyResolver limitVerifierStrategyResolver;
 	private final UsageRepository usageRepository;
 
-	public UsageLimitVerifierImpl(UsageLimitResolver usageLimitResolver,
-			UsageLimitVerificationStrategyResolver limitVerifierStrategyResolver,
+	public LimitVerifierImpl(LimitRuleResolver limitRuleResolver,
+			LimitVerificationStrategyResolver limitVerifierStrategyResolver,
 			UsageRepository usageRepository) {
-		this.usageLimitResolver = usageLimitResolver;
+		this.limitRuleResolver = limitRuleResolver;
 		this.usageRepository = usageRepository;
 		this.limitVerifierStrategyResolver = limitVerifierStrategyResolver;
 	}
@@ -105,31 +105,31 @@ public class UsageLimitVerifierImpl implements UsageLimitVerifier {
 
 		if (isRecord) {
 			limitVerificationStrategiesMap
-					.forEach((usageLimit, verifStrategy) -> verifStrategy.recordFeatureUsage(context, usageLimit, units.get(usageLimit.getId())));
+					.forEach((limitRule, verifStrategy) -> verifStrategy.recordFeatureUsage(context, limitRule, units.get(limitRule.getId())));
 		}
 		else {
 			limitVerificationStrategiesMap
-					.forEach((usageLimit, verifStrategy) -> verifStrategy.reduceFeatureUsage(context, usageLimit, units.get(usageLimit.getId())));
+					.forEach((limitRule, verifStrategy) -> verifStrategy.reduceFeatureUsage(context, limitRule, units.get(limitRule.getId())));
 		}
 
 		usageRepository.updateUsageRecords(context);
 	}
 
-	private List<RecordSearchCriteria> gatherSearchCriteria(Map<UsageLimit, UsageLimitVerificationStrategy> verificationStrategyMap) {
+	private List<RecordSearchCriteria> gatherSearchCriteria(Map<LimitRule, LimitVerificationStrategy> verificationStrategyMap) {
 		return verificationStrategyMap.entrySet().stream()
 				.map(entry -> getLimitSearchCriteria(entry.getValue(), entry.getKey()))
 				.toList();
 	}
 
-	private Map<UsageLimit, UsageLimitVerificationStrategy> findVerificationStrategiesByLimit(Feature feature, UserGrouping userGrouping) {
+	private Map<LimitRule, LimitVerificationStrategy> findVerificationStrategiesByLimit(Feature feature, UserGrouping userGrouping) {
 		return feature.getLimitsIds().stream()
-				.map(limitId -> usageLimitResolver.resolveUsageLimit(feature, limitId, userGrouping))
+				.map(limitId -> limitRuleResolver.resolveLimitRule(feature, limitId, userGrouping))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.collect(Collectors.toMap(Function.identity(), limitVerifierStrategyResolver::resolveLimitVerificationStrategy));
 	}
 
-	private RecordSearchCriteria getLimitSearchCriteria(UsageLimitVerificationStrategy strategy, UsageLimit limit) {
+	private RecordSearchCriteria getLimitSearchCriteria(LimitVerificationStrategy strategy, LimitRule limit) {
 		Optional<ZonedDateTime> windowStart = strategy.getWindowStart(limit, ZonedDateTime.now());
 		Optional<ZonedDateTime> windowEnd = strategy.getWindowEnd(limit, ZonedDateTime.now());
 		return new RecordSearchCriteria(limit.getId(), windowStart.orElse(null),

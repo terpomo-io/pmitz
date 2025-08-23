@@ -22,7 +22,7 @@ import io.terpomo.pmitz.all.usage.tracker.impl.FeatureUsageTrackerImpl;
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
-import io.terpomo.pmitz.limits.UsageLimitVerifier;
+import io.terpomo.pmitz.limits.LimitVerifier;
 
 public interface FeatureUsageTracker {
 
@@ -38,8 +38,8 @@ public interface FeatureUsageTracker {
 		private Builder() {
 			// disable instantiation of class
 		}
-		public static FeatureUsageTracker build(UsageLimitVerifier usageLimitVerifier) {
-			return new FeatureUsageTrackerImpl(usageLimitVerifier, null);
+		public static FeatureUsageTracker build(LimitVerifier limitVerifier) {
+			return new FeatureUsageTrackerImpl(limitVerifier, null);
 		}
 	}
 

@@ -28,7 +28,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 
 import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
@@ -77,24 +77,24 @@ public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJ
 
 		CountLimit countLimit = new CountLimit("Maximum picture size", 10);
 		countLimit.setUnit("Go");
-		insertUserUsageLimitRecord(this.feature, this.user, countLimit);
+		insertLimitRuleRecord(this.feature, this.user, countLimit);
 
 		countLimit = new CountLimit("Maximum number of picture", 50);
-		insertUserUsageLimitRecord(this.feature, this.user, countLimit);
+		insertLimitRuleRecord(this.feature, this.user, countLimit);
 
 		CalendarPeriodRateLimit calendarPeriodRateLimit = new CalendarPeriodRateLimit(
 				"Maximum number of picture uploaded in calendar month", 1000, CalendarPeriodRateLimit.Periodicity.MONTH
 		);
-		insertUserUsageLimitRecord(this.feature, this.user, calendarPeriodRateLimit);
+		insertLimitRuleRecord(this.feature, this.user, calendarPeriodRateLimit);
 
 		SlidingWindowRateLimit slidingWindowRateLimit = new SlidingWindowRateLimit(
 				"Maximum number of picture uploaded by day", 15, ChronoUnit.DAYS, 1
 		);
-		insertUserUsageLimitRecord(this.feature, this.user, slidingWindowRateLimit);
+		insertLimitRuleRecord(this.feature, this.user, slidingWindowRateLimit);
 	}
 
-	private void insertUserUsageLimitRecord(Feature feature, UserGrouping userGroup,
-			UsageLimit usageLimit) throws SQLException {
+	private void insertLimitRuleRecord(Feature feature, UserGrouping userGroup,
+			LimitRule limitRule) throws SQLException {
 
 		String query = String.format(
 				"""
@@ -110,20 +110,20 @@ public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJ
 
 			String limitInterval = null;
 			int limitDuration = -1;
-			if (usageLimit instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
+			if (limitRule instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
 				limitInterval = calendarPeriodRateLimit.getPeriodicity().name();
 				limitDuration = calendarPeriodRateLimit.getDuration();
 			}
-			else if (usageLimit instanceof SlidingWindowRateLimit slidingWindowRateLimit) {
+			else if (limitRule instanceof SlidingWindowRateLimit slidingWindowRateLimit) {
 				limitInterval = slidingWindowRateLimit.getInterval().name();
 				limitDuration = slidingWindowRateLimit.getDuration();
 			}
-			stmt.setString(1, usageLimit.getId());
+			stmt.setString(1, limitRule.getId());
 			stmt.setString(2, feature.getFeatureId());
 			stmt.setString(3, userGroup.getId());
-			stmt.setString(4, usageLimit.getClass().getSimpleName());
-			stmt.setLong(5, usageLimit.getValue());
-			stmt.setString(6, usageLimit.getUnit());
+			stmt.setString(4, limitRule.getClass().getSimpleName());
+			stmt.setLong(5, limitRule.getValue());
+			stmt.setString(6, limitRule.getUnit());
 			stmt.setString(7, limitInterval);
 			stmt.setInt(8, limitDuration);
 			stmt.executeUpdate();

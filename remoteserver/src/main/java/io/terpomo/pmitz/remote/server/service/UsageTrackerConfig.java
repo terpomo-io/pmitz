@@ -31,8 +31,8 @@ import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.repository.product.inmemory.InMemoryProductRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
-import io.terpomo.pmitz.limits.UsageLimitVerifier;
-import io.terpomo.pmitz.limits.UsageLimitVerifierBuilder;
+import io.terpomo.pmitz.limits.LimitVerifier;
+import io.terpomo.pmitz.limits.LimitVerifierBuilder;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 
 @Configuration
@@ -49,16 +49,16 @@ public class UsageTrackerConfig {
 	}
 
 	@Bean
-	UsageLimitVerifier usageLimitVerifier(ProductRepository productRepo, DataSource dataSource) {
+	LimitVerifier limitVerifier(ProductRepository productRepo, DataSource dataSource) {
 		var userLimitRepository = UserLimitRepository.builder().jdbcRepository(dataSource, DB_SCHEMA_NAME, DB_USER_LIMIT_TABLE_NAME);
-		return UsageLimitVerifierBuilder.of(productRepo)
+		return LimitVerifierBuilder.of(productRepo)
 				.withUserLimitRepository(userLimitRepository)
 				.withJdbcUsageRepository(dataSource, DB_SCHEMA_NAME, DB_USER_USAGE_TABLE_NAME)
 				.build();
 	}
 
 	@Bean
-	FeatureUsageTracker featureUsageTracker(UsageLimitVerifier usageLimitVerifier) {
+	FeatureUsageTracker featureUsageTracker(LimitVerifier limitVerifier) {
 		var subscriptionVerifier = new SubscriptionVerifier() {
 
 			@Override
@@ -71,6 +71,6 @@ public class UsageTrackerConfig {
 				return Optional.empty();
 			}
 		};
-		return new FeatureUsageTrackerImpl(usageLimitVerifier, subscriptionVerifier);
+		return new FeatureUsageTrackerImpl(limitVerifier, subscriptionVerifier);
 	}
 }

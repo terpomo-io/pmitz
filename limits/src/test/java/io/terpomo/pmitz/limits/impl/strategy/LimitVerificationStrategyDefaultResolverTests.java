@@ -23,34 +23,34 @@ import org.junit.jupiter.api.Test;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
-import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
-import io.terpomo.pmitz.limits.UsageLimitVerificationStrategyResolver;
+import io.terpomo.pmitz.limits.LimitVerificationStrategy;
+import io.terpomo.pmitz.limits.LimitVerificationStrategyResolver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class UsageLimitVerificationStrategyDefaultResolverTests {
+class LimitVerificationStrategyDefaultResolverTests {
 
-	UsageLimitVerificationStrategyResolver strategyResolver = new UsageLimitVerificationStrategyDefaultResolver();
+	LimitVerificationStrategyResolver strategyResolver = new LimitVerificationStrategyDefaultResolver();
 	private String limitId = "max-number-of-photos";
 
 	@Test
 	void resolveLimitVerificationStrategyShouldReturnSimpleStrategyWhenCountLimit() {
 		CountLimit countLimit = new CountLimit(limitId, 10);
-		UsageLimitVerificationStrategy countLimitVerifStrategy = strategyResolver.resolveLimitVerificationStrategy(countLimit);
+		LimitVerificationStrategy countLimitVerifStrategy = strategyResolver.resolveLimitVerificationStrategy(countLimit);
 		assertThat(countLimitVerifStrategy).isNotNull();
 	}
 
 	@Test
 	void resolveLimitVerificationStrategyShouldReturnSimpleStrategyWhenCalendarPeriodRateLimit() {
 		CalendarPeriodRateLimit rateLimit = new CalendarPeriodRateLimit(limitId, 10, CalendarPeriodRateLimit.Periodicity.WEEK);
-		UsageLimitVerificationStrategy verifStrategy = strategyResolver.resolveLimitVerificationStrategy(rateLimit);
+		LimitVerificationStrategy verifStrategy = strategyResolver.resolveLimitVerificationStrategy(rateLimit);
 		assertThat(verifStrategy).isNotNull();
 	}
 
 	@Test
 	void resolveLimitVerificationStrategyShouldReturnSimpleStrategyWhenSlidingWindowRateLimit() {
 		SlidingWindowRateLimit rateLimit = new SlidingWindowRateLimit(limitId, 10, ChronoUnit.MONTHS, 1);
-		UsageLimitVerificationStrategy verifStrategy = strategyResolver.resolveLimitVerificationStrategy(rateLimit);
+		LimitVerificationStrategy verifStrategy = strategyResolver.resolveLimitVerificationStrategy(rateLimit);
 		assertThat(verifStrategy).isNotNull();
 	}
 

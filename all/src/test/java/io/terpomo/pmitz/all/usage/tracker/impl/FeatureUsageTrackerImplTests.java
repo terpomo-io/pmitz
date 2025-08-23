@@ -31,7 +31,7 @@ import io.terpomo.pmitz.core.exception.FeatureNotAllowedException;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
-import io.terpomo.pmitz.limits.UsageLimitVerifier;
+import io.terpomo.pmitz.limits.LimitVerifier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
@@ -41,7 +41,7 @@ import static org.mockito.Mockito.*;
 class FeatureUsageTrackerImplTests {
 
 	@Mock
-	UsageLimitVerifier limitVerifier;
+	LimitVerifier limitVerifier;
 	@Mock
 	SubscriptionVerifier subscriptionVerifier;
 

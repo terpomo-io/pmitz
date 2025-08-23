@@ -19,9 +19,9 @@ package io.terpomo.pmitz.core.limits.types;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 
-public class CountLimit extends UsageLimit {
+public class CountLimit extends LimitRule {
 
 	private long count;
 

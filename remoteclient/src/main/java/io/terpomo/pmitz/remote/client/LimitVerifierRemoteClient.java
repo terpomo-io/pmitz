@@ -22,19 +22,19 @@ import java.util.Map;
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
-import io.terpomo.pmitz.limits.UsageLimitVerifier;
+import io.terpomo.pmitz.limits.LimitVerifier;
 import io.terpomo.pmitz.remote.client.http.PmitzApiKeyAuthenticationProvider;
 import io.terpomo.pmitz.remote.client.http.PmitzHttpClient;
 
-public class UsageLimitVerifierRemoteClient implements UsageLimitVerifier {
+public class LimitVerifierRemoteClient implements LimitVerifier {
 
 	private final PmitzClient pmitzClient;
 
-	public UsageLimitVerifierRemoteClient(String url) {
+	public LimitVerifierRemoteClient(String url) {
 		this(new PmitzHttpClient(url, new PmitzApiKeyAuthenticationProvider()));
 	}
 
-	public UsageLimitVerifierRemoteClient(PmitzClient pmitzClient) {
+	public LimitVerifierRemoteClient(PmitzClient pmitzClient) {
 		this.pmitzClient = pmitzClient;
 	}
 

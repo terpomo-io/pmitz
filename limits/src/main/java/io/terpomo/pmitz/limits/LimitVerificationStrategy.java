@@ -19,20 +19,20 @@ package io.terpomo.pmitz.limits;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 
-public interface UsageLimitVerificationStrategy {
+public interface LimitVerificationStrategy {
 
-	void recordFeatureUsage(LimitTrackingContext context, UsageLimit usageLimit, long additionalUnits);
+	void recordFeatureUsage(LimitTrackingContext context, LimitRule limitRule, long additionalUnits);
 
-	void reduceFeatureUsage(LimitTrackingContext context, UsageLimit usageLimit, long reducedUnits);
+	void reduceFeatureUsage(LimitTrackingContext context, LimitRule limitRule, long reducedUnits);
 
-	boolean isWithinLimits(LimitTrackingContext context, UsageLimit usageLimit, long additionalUnits);
+	boolean isWithinLimits(LimitTrackingContext context, LimitRule limitRule, long additionalUnits);
 
-	long getRemainingUnits(LimitTrackingContext context, UsageLimit usageLimit);
+	long getRemainingUnits(LimitTrackingContext context, LimitRule limitRule);
 
-	Optional<ZonedDateTime> getWindowStart(UsageLimit usageLimit, ZonedDateTime referenceDate);
+	Optional<ZonedDateTime> getWindowStart(LimitRule limitRule, ZonedDateTime referenceDate);
 
-	Optional<ZonedDateTime> getWindowEnd(UsageLimit usageLimit, ZonedDateTime referenceDate);
+	Optional<ZonedDateTime> getWindowEnd(LimitRule limitRule, ZonedDateTime referenceDate);
 }

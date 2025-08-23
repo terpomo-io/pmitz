@@ -16,24 +16,24 @@
 
 package io.terpomo.pmitz.limits.impl.strategy;
 
-import io.terpomo.pmitz.core.limits.UsageLimit;
-import io.terpomo.pmitz.limits.UsageLimitVerificationStrategy;
-import io.terpomo.pmitz.limits.UsageLimitVerificationStrategyResolver;
+import io.terpomo.pmitz.core.limits.LimitRule;
+import io.terpomo.pmitz.limits.LimitVerificationStrategy;
+import io.terpomo.pmitz.limits.LimitVerificationStrategyResolver;
 
-public class UsageLimitVerificationStrategyDefaultResolver implements UsageLimitVerificationStrategyResolver {
+public class LimitVerificationStrategyDefaultResolver implements LimitVerificationStrategyResolver {
 
-	private final UsageLimitVerificationStrategy defaultVerificationStrategy;
+	private final LimitVerificationStrategy defaultVerificationStrategy;
 
-	public UsageLimitVerificationStrategyDefaultResolver() {
-		defaultVerificationStrategy = new SimpleUsageLimitVerificationStrategy();
+	public LimitVerificationStrategyDefaultResolver() {
+		defaultVerificationStrategy = new SimpleLimitVerificationStrategy();
 	}
 
-	public UsageLimitVerificationStrategyDefaultResolver(UsageLimitVerificationStrategy defaultVerificationStrategy) {
+	public LimitVerificationStrategyDefaultResolver(LimitVerificationStrategy defaultVerificationStrategy) {
 		this.defaultVerificationStrategy = defaultVerificationStrategy;
 	}
 
 	@Override
-	public UsageLimitVerificationStrategy resolveLimitVerificationStrategy(UsageLimit usageLimit) {
+	public LimitVerificationStrategy resolveLimitVerificationStrategy(LimitRule limitRule) {
 		return defaultVerificationStrategy;
 	}
 }

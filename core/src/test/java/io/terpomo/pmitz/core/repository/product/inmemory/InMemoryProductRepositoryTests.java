@@ -34,7 +34,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.RepositoryException;
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
@@ -460,7 +460,7 @@ class InMemoryProductRepositoryTests {
 		Feature f1 = new Feature(p1, "f1");
 		this.repository.addFeature(f1);
 
-		Optional<UsageLimit> limit = this.repository.getGlobalLimit(f1, "l1");
+		Optional<LimitRule> limit = this.repository.getGlobalLimit(f1, "l1");
 
 		assertThat(limit).isNotPresent();
 	}
@@ -475,7 +475,7 @@ class InMemoryProductRepositoryTests {
 		f1.getLimits().add(l1);
 		this.repository.addFeature(f1);
 
-		Optional<UsageLimit> limit = this.repository.getGlobalLimit(f1, "l2");
+		Optional<LimitRule> limit = this.repository.getGlobalLimit(f1, "l2");
 
 		assertThat(limit).isEmpty();
 	}
@@ -490,7 +490,7 @@ class InMemoryProductRepositoryTests {
 		f1.getLimits().add(l1);
 		this.repository.addFeature(f1);
 
-		Optional<UsageLimit> limit = this.repository.getGlobalLimit(f1, "l1");
+		Optional<LimitRule> limit = this.repository.getGlobalLimit(f1, "l1");
 
 		assertThat(limit).isPresent();
 		assertThat(limit.get().getId()).isEqualTo("l1");
