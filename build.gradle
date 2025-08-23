@@ -13,13 +13,12 @@ buildscript {
     }
 }
 
-// Configuration des sous-projets
 subprojects {
     apply plugin: 'checkstyle'
     apply plugin: 'com.github.ben-manes.versions'
 
     checkstyle {
-        toolVersion = "10.15.0"
+        toolVersion = "11.0.0"
         ignoreFailures = false
         showViolations = true
         configFile = rootProject.file('./checkstyle/config/pmitz-checkstyle.xml')
