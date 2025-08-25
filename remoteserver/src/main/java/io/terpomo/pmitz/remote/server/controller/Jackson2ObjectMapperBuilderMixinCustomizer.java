@@ -22,14 +22,14 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.repository.product.inmemory.CalendarPeriodRateLimitMixIn;
 import io.terpomo.pmitz.core.repository.product.inmemory.CountLimitMixIn;
 import io.terpomo.pmitz.core.repository.product.inmemory.FeatureMixIn;
+import io.terpomo.pmitz.core.repository.product.inmemory.LimitRuleMixIn;
 import io.terpomo.pmitz.core.repository.product.inmemory.ProductMixIn;
-import io.terpomo.pmitz.core.repository.product.inmemory.UsageLimitMixIn;
 
 @Configuration
 public class Jackson2ObjectMapperBuilderMixinCustomizer implements Jackson2ObjectMapperBuilderCustomizer {
@@ -38,7 +38,7 @@ public class Jackson2ObjectMapperBuilderMixinCustomizer implements Jackson2Objec
 		jacksonObjectMapperBuilder
 				.mixIn(Product.class, ProductMixIn.class)
 				.mixIn(Feature.class, FeatureMixIn.class)
-				.mixIn(UsageLimit.class, UsageLimitMixIn.class)
+				.mixIn(LimitRule.class, LimitRuleMixIn.class)
 				.mixIn(CalendarPeriodRateLimit.class, CalendarPeriodRateLimitMixIn.class)
 				.mixIn(CountLimit.class, CountLimitMixIn.class);
 	}

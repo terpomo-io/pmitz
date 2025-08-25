@@ -18,7 +18,7 @@ package io.terpomo.pmitz.limits.userlimit;
 
 import javax.sql.DataSource;
 
-import io.terpomo.pmitz.limits.impl.UsageLimitResolverImpl;
+import io.terpomo.pmitz.limits.impl.LimitRuleResolverImpl;
 import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 
 public class DefaultUserLimitRepositoryBuilder implements UserLimitRepository.Builder {
@@ -29,6 +29,6 @@ public class DefaultUserLimitRepositoryBuilder implements UserLimitRepository.Bu
 
 	@Override
 	public UserLimitRepository noOpRepository() {
-		return new UsageLimitResolverImpl.NoOpUserLimitRepository();
+		return new LimitRuleResolverImpl.NoOpUserLimitRepository();
 	}
 }

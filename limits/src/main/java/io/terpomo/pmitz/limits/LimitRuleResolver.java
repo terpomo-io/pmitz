@@ -14,22 +14,15 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.repository.product.inmemory;
+package io.terpomo.pmitz.limits;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.Optional;
 
-import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
-import io.terpomo.pmitz.core.limits.types.CountLimit;
+import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.limits.LimitRule;
+import io.terpomo.pmitz.core.subjects.UserGrouping;
 
-@JsonTypeInfo(
-		use = JsonTypeInfo.Id.NAME,
-		property = "type"
-)
-@JsonSubTypes({
-		@JsonSubTypes.Type(value = CalendarPeriodRateLimit.class, name = "CalendarPeriodRateLimit"),
-		@JsonSubTypes.Type(value = CountLimit.class, name = "CountLimit")
-})
-@ExcludeFromJacocoGeneratedReport
-public class UsageLimitMixIn {
+public interface LimitRuleResolver {
+
+	Optional<LimitRule> resolveLimitRule(Feature feature, String limitRuleId, UserGrouping userGrouping);
 }

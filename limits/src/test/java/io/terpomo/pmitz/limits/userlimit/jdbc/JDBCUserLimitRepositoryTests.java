@@ -36,7 +36,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.RepositoryException;
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
@@ -58,7 +58,7 @@ class JDBCUserLimitRepositoryTests {
 	private UserLimitRepository repository;
 	private JdbcDataSource dataSource;
 
-	static Stream<Arguments> findUsageLimit_invalidParameter() {
+	static Stream<Arguments> findLimitRule_invalidParameter() {
 		return Stream.of(
 				Arguments.of(null,
 						"Maximum picture resolution", new IndividualUser("user1"),
@@ -84,7 +84,7 @@ class JDBCUserLimitRepositoryTests {
 		);
 	}
 
-	static Stream<Arguments> updateUsageLimit_invalidParameter() {
+	static Stream<Arguments> updateLimitRule_invalidParameter() {
 		return Stream.of(
 				Arguments.of(null,
 						new CountLimit("c1", 10), new IndividualUser("user1"),
@@ -113,7 +113,7 @@ class JDBCUserLimitRepositoryTests {
 		);
 	}
 
-	static Stream<Arguments> deleteUsageLimit_invalidParameter() {
+	static Stream<Arguments> deleteLimitRule_invalidParameter() {
 		return Stream.of(
 				Arguments.of(null,
 						"Maximum picture resolution", new IndividualUser("user1"),
@@ -163,77 +163,77 @@ class JDBCUserLimitRepositoryTests {
 	}
 
 	@Test
-	void findUsageLimit_CountLimitExist() {
+	void findLimitRule_CountLimitRuleExist() {
 
-		Optional<UsageLimit> usageLimit = this.repository.findUsageLimit(this.feature,
+		Optional<LimitRule> limitRule = this.repository.findLimitRule(this.feature,
 				"Maximum picture size", this.user);
 
-		assertThat(usageLimit).isPresent();
-		assertThat(usageLimit.get()).isInstanceOf(CountLimit.class);
-		CountLimit countLimit = (CountLimit) usageLimit.get();
+		assertThat(limitRule).isPresent();
+		assertThat(limitRule.get()).isInstanceOf(CountLimit.class);
+		CountLimit countLimit = (CountLimit) limitRule.get();
 		assertThat(countLimit.getId()).isEqualTo("Maximum picture size");
 		assertThat(countLimit.getValue()).isEqualTo(10L);
 		assertThat(countLimit.getUnit()).isEqualTo("Go");
 	}
 
 	@Test
-	void findUsageLimit_CalendarPeriodRateLimitExist() {
+	void findLimitRule_CalendarPeriodRateLimitRuleExist() {
 
-		Optional<UsageLimit> usageLimit = this.repository.findUsageLimit(this.feature,
+		Optional<LimitRule> limitRule = this.repository.findLimitRule(this.feature,
 				"Maximum number of picture uploaded in calendar month", this.user);
 
-		assertThat(usageLimit).isPresent();
-		assertThat(usageLimit.get()).isInstanceOf(CalendarPeriodRateLimit.class);
-		CalendarPeriodRateLimit calendarPeriodRateLimit = (CalendarPeriodRateLimit) usageLimit.get();
+		assertThat(limitRule).isPresent();
+		assertThat(limitRule.get()).isInstanceOf(CalendarPeriodRateLimit.class);
+		CalendarPeriodRateLimit calendarPeriodRateLimit = (CalendarPeriodRateLimit) limitRule.get();
 		assertThat(calendarPeriodRateLimit.getId()).isEqualTo("Maximum number of picture uploaded in calendar month");
 		assertThat(calendarPeriodRateLimit.getValue()).isEqualTo(1000L);
 		assertThat(calendarPeriodRateLimit.getPeriodicity()).isEqualTo(CalendarPeriodRateLimit.Periodicity.MONTH);
 	}
 
 	@Test
-	void findUsageLimit_usageLimitNotExist() {
+	void findLimitRule_LimitRuleNotExist() {
 
-		Optional<UsageLimit> usageLimit = this.repository.findUsageLimit(this.feature,
+		Optional<LimitRule> limitRule = this.repository.findLimitRule(this.feature,
 				"Maximum picture resolution", this.user);
 
-		assertThat(usageLimit).isNotPresent();
+		assertThat(limitRule).isNotPresent();
 	}
 
 	@Test
-	void findUsageLimit_SQLException() {
+	void findLimitRule_SQLException() {
 
 		UserLimitRepository repositoryTest = new JDBCUserLimitRepository(new JdbcDataSource(), SCHEMA_NAME, "abc");
 
 		assertThatExceptionOfType(RepositoryException.class).as("The search should return an error").isThrownBy(
-				() -> repositoryTest.findUsageLimit(this.feature, "Maximum picture resolution", this.user))
+				() -> repositoryTest.findLimitRule(this.feature, "Maximum picture resolution", this.user))
 				.withMessage("Error finding limit")
 				.withCauseInstanceOf(SQLException.class);
 	}
 
 	@Test
-	void findUsageLimit_UnknownLimit() {
+	void findLimitRule_UnknownLimitRule() {
 
 		UnknownLimit unknownLimit = new UnknownLimit("Unknown limit", 10L);
 
-		this.repository.updateUsageLimit(this.feature, unknownLimit, this.user);
+		this.repository.updateLimitRule(this.feature, unknownLimit, this.user);
 
 		assertThatExceptionOfType(RepositoryException.class).isThrownBy(
-				() -> this.repository.findUsageLimit(this.feature, "Unknown limit", this.user))
+				() -> this.repository.findLimitRule(this.feature, "Unknown limit", this.user))
 				.havingRootCause()
 				.withMessage("Unknown limit type: UnknownLimit");
 	}
 
 	@ParameterizedTest
 	@MethodSource
-	void findUsageLimit_invalidParameter(Feature feature, String limitId, UserGrouping userGrouping, String message) {
+	void findLimitRule_invalidParameter(Feature feature, String limitId, UserGrouping userGrouping, String message) {
 
 		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(
-				() -> this.repository.findUsageLimit(feature, limitId, userGrouping))
+				() -> this.repository.findLimitRule(feature, limitId, userGrouping))
 				.withMessage(message);
 	}
 
 	@Test
-	void updateUsageLimit_CountLimitAdded() {
+	void updateLimitRule_CountLimitRuleAdded() {
 
 		String limitId = "Maximum picture resolution";
 		long limitCount = 400;
@@ -242,9 +242,9 @@ class JDBCUserLimitRepositoryTests {
 		CountLimit countLimit = new CountLimit(limitId, limitCount);
 		countLimit.setUnit(limitUnit);
 
-		this.repository.updateUsageLimit(this.feature, countLimit, this.user);
+		this.repository.updateLimitRule(this.feature, countLimit, this.user);
 
-		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
+		Optional<LimitRule> userLimit = this.repository.findLimitRule(this.feature,
 				"Maximum picture resolution", this.user);
 
 		assertThat(userLimit).isPresent();
@@ -256,7 +256,7 @@ class JDBCUserLimitRepositoryTests {
 	}
 
 	@Test
-	void updateUsageLimit_CalendarPeriodRateLimitAdded() {
+	void updateLimitRule_CalendarPeriodRateLimitRuleAdded() {
 
 		String limitId = "Maximum number of picture uploaded in calendar week";
 		long limitQuota = 40;
@@ -267,10 +267,10 @@ class JDBCUserLimitRepositoryTests {
 				new CalendarPeriodRateLimit(limitId, limitQuota, limitPeriodicity);
 		calendarPeriodRateLimit.setUnit(limitUnit);
 
-		this.repository.updateUsageLimit(this.feature, calendarPeriodRateLimit, this.user);
+		this.repository.updateLimitRule(this.feature, calendarPeriodRateLimit, this.user);
 
-		Optional<UsageLimit> userLimit =
-				this.repository.findUsageLimit(this.feature,
+		Optional<LimitRule> userLimit =
+				this.repository.findLimitRule(this.feature,
 						"Maximum number of picture uploaded in calendar week", this.user);
 
 		assertThat(userLimit).isPresent();
@@ -283,12 +283,12 @@ class JDBCUserLimitRepositoryTests {
 	}
 
 	@Test
-	void updateUsageLimit_CountLimitModified() {
+	void updateLimitRule_CountLimitRuleModified() {
 		CountLimit countLimitToModified = new CountLimit("Maximum number of picture", 15);
 
-		this.repository.updateUsageLimit(this.feature, countLimitToModified, this.user);
+		this.repository.updateLimitRule(this.feature, countLimitToModified, this.user);
 
-		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
+		Optional<LimitRule> userLimit = this.repository.findLimitRule(this.feature,
 				"Maximum number of picture", this.user);
 
 		assertThat(userLimit).isPresent();
@@ -299,14 +299,14 @@ class JDBCUserLimitRepositoryTests {
 	}
 
 	@Test
-	void updateUsageLimit_CalendarPeriodLimitModified() {
+	void updateLimitRule_CalendarPeriodLimitRuleModified() {
 		CalendarPeriodRateLimit calendarPeriodRateLimitModified =
 				new CalendarPeriodRateLimit("Maximum number of picture uploaded in calendar month",
 						1500, CalendarPeriodRateLimit.Periodicity.MONTH);
 
-		this.repository.updateUsageLimit(this.feature, calendarPeriodRateLimitModified, this.user);
+		this.repository.updateLimitRule(this.feature, calendarPeriodRateLimitModified, this.user);
 
-		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
+		Optional<LimitRule> userLimit = this.repository.findLimitRule(this.feature,
 				"Maximum number of picture uploaded in calendar month", this.user);
 
 		assertThat(userLimit).isPresent();
@@ -317,7 +317,7 @@ class JDBCUserLimitRepositoryTests {
 	}
 
 	@Test
-	void updateUsageLimit_SQLException() {
+	void updateLimitRule_SQLException() {
 
 		UserLimitRepository repositoryTest = new JDBCUserLimitRepository(new JdbcDataSource(), SCHEMA_NAME, "abc");
 
@@ -325,52 +325,52 @@ class JDBCUserLimitRepositoryTests {
 		countLimit.setUnit("dpi");
 
 		assertThatExceptionOfType(RepositoryException.class).as("The search should return an error").isThrownBy(
-				() -> repositoryTest.updateUsageLimit(this.feature, countLimit, this.user))
+				() -> repositoryTest.updateLimitRule(this.feature, countLimit, this.user))
 				.withMessage("Error finding limit")
 				.withCauseInstanceOf(SQLException.class);
 	}
 
 	@ParameterizedTest
 	@MethodSource
-	void updateUsageLimit_invalidParameter(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping, String message) {
+	void updateLimitRule_invalidParameter(Feature feature, LimitRule limitRule, UserGrouping userGrouping, String message) {
 
 		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(
-				() -> this.repository.updateUsageLimit(feature, usageLimit, userGrouping))
+				() -> this.repository.updateLimitRule(feature, limitRule, userGrouping))
 				.withMessage(message);
 	}
 
 	@Test
-	void deleteUsageLimit_CountLimitDeleted() {
+	void deleteLimitRule_CountLimitRuleDeleted() {
 		IndividualUser user1 = new IndividualUser("User2");
 
 		CountLimit countLimit = new CountLimit("Maximum number of picture", 10);
 
-		this.repository.updateUsageLimit(feature, countLimit, user1);
+		this.repository.updateLimitRule(feature, countLimit, user1);
 
-		this.repository.deleteUsageLimit(feature, "Maximum number of picture", user1);
+		this.repository.deleteLimitRule(feature, "Maximum number of picture", user1);
 
-		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(feature, "Maximum number of picture", user1);
+		Optional<LimitRule> userLimit = this.repository.findLimitRule(feature, "Maximum number of picture", user1);
 
 		assertThat(userLimit).isEmpty();
 	}
 
 	@Test
-	void deleteUsageLimit_SQLException() {
+	void deleteLimitRule_SQLException() {
 
 		UserLimitRepository repositoryTest = new JDBCUserLimitRepository(new JdbcDataSource(), SCHEMA_NAME, "abc");
 
 		assertThatExceptionOfType(RepositoryException.class).as("The search should return an error").isThrownBy(
-				() -> repositoryTest.deleteUsageLimit(this.feature, "Maximum picture resolution", this.user))
+				() -> repositoryTest.deleteLimitRule(this.feature, "Maximum picture resolution", this.user))
 				.withMessage("Error deleting limit")
 				.withCauseInstanceOf(SQLException.class);
 	}
 
 	@ParameterizedTest
 	@MethodSource
-	void deleteUsageLimit_invalidParameter(Feature feature, String limitId, UserGrouping userGrouping, String message) {
+	void deleteLimitRule_invalidParameter(Feature feature, String limitId, UserGrouping userGrouping, String message) {
 
 		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(
-				() -> this.repository.deleteUsageLimit(feature, limitId, userGrouping))
+				() -> this.repository.deleteLimitRule(feature, limitId, userGrouping))
 				.withMessage(message);
 	}
 
@@ -411,19 +411,19 @@ class JDBCUserLimitRepositoryTests {
 
 		CountLimit countLimit = new CountLimit("Maximum picture size", 10);
 		countLimit.setUnit("Go");
-		insertUserUsageLimitRecord(dataSource, this.feature, this.user, countLimit);
+		insertLimitRuleRecord(dataSource, this.feature, this.user, countLimit);
 
 		countLimit = new CountLimit("Maximum number of picture", 50);
-		insertUserUsageLimitRecord(dataSource, this.feature, this.user, countLimit);
+		insertLimitRuleRecord(dataSource, this.feature, this.user, countLimit);
 
 		CalendarPeriodRateLimit calendarPeriodRateLimit = new CalendarPeriodRateLimit(
 				"Maximum number of picture uploaded in calendar month", 1000, CalendarPeriodRateLimit.Periodicity.MONTH
 		);
-		insertUserUsageLimitRecord(dataSource, this.feature, this.user, calendarPeriodRateLimit);
+		insertLimitRuleRecord(dataSource, this.feature, this.user, calendarPeriodRateLimit);
 	}
 
-	private void insertUserUsageLimitRecord(DataSource dataSource, Feature feature, UserGrouping userGroup,
-			UsageLimit usageLimit) throws SQLException {
+	private void insertLimitRuleRecord(DataSource dataSource, Feature feature, UserGrouping userGroup,
+			LimitRule limitRule) throws SQLException {
 
 		String query = String.format(
 				"""
@@ -439,16 +439,16 @@ class JDBCUserLimitRepositoryTests {
 
 			String limitInterval = null;
 			int limitDuration = -1;
-			if (usageLimit instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
+			if (limitRule instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
 				limitInterval = calendarPeriodRateLimit.getPeriodicity().name();
 				limitDuration = calendarPeriodRateLimit.getDuration();
 			}
 			stmt.setString(1, usageLimit.getId());
 			stmt.setString(2, feature.getFeatureId());
 			stmt.setString(3, userGroup.getId());
-			stmt.setString(4, usageLimit.getClass().getSimpleName());
-			stmt.setLong(5, usageLimit.getValue());
-			stmt.setString(6, usageLimit.getUnit());
+			stmt.setString(4, limitRule.getClass().getSimpleName());
+			stmt.setLong(5, limitRule.getValue());
+			stmt.setString(6, limitRule.getUnit());
 			stmt.setString(7, limitInterval);
 			stmt.setInt(8, limitDuration);
 			stmt.executeUpdate();

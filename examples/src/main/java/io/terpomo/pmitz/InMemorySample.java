@@ -36,8 +36,8 @@ import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.repository.product.inmemory.InMemoryProductRepository;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
-import io.terpomo.pmitz.limits.UsageLimitVerifier;
-import io.terpomo.pmitz.limits.UsageLimitVerifierBuilder;
+import io.terpomo.pmitz.limits.LimitVerifier;
+import io.terpomo.pmitz.limits.LimitVerifierBuilder;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 
 public class InMemorySample {
@@ -53,7 +53,7 @@ public class InMemorySample {
 	private static final String FEATURE_ID = "Reserving books";
 	private static final String LIMIT_ID = "Maximum books reserved";
 
-	private UsageLimitVerifier usageLimitVerifier;
+	private LimitVerifier limitVerifier;
 	private UserLimitRepository userLimitRepository;
 	private Product product;
 
@@ -75,7 +75,7 @@ public class InMemorySample {
 		sampleApp.reserveBooks(user1, 6);
 
 		// Added a limit to the user user1 to allow him to reserve 6 books
-		sampleApp.addUsageLimitForUser(user1, 6);
+		sampleApp.addLimitForUser(user1, 6);
 
 		// Second call : Within the limit
 		sampleApp.reserveBooks(user1, 6);
@@ -99,7 +99,7 @@ public class InMemorySample {
 		try {
 			System.out.printf("The user %s wants to reserve %d books%n", user.getId(), numberOfBooks);
 
-			usageLimitVerifier.recordFeatureUsage(feature, user, Collections.singletonMap(LIMIT_ID, (long) numberOfBooks));
+			limitVerifier.recordFeatureUsage(feature, user, Collections.singletonMap(LIMIT_ID, (long) numberOfBooks));
 
 			// Your business logic here
 			System.out.println("Books reserved!");
@@ -108,17 +108,17 @@ public class InMemorySample {
 			System.out.printf("Oops ! It appears that user '%s' has exceeded their reservation limit.%n",
 					user.getId());
 
-			Map<String, Long> limitsRemain =  usageLimitVerifier.getLimitsRemainingUnits(feature, user);
+			Map<String, Long> limitsRemain =  limitVerifier.getLimitsRemainingUnits(feature, user);
 
 			System.out.printf("The reservation limit for user %s is %d books.%n",
 					user.getId(), limitsRemain.get(LIMIT_ID));
 		}
 	}
 
-	private void addUsageLimitForUser(UserGrouping user, long numberOfBooks) {
+	private void addLimitForUser(UserGrouping user, long numberOfBooks) {
 		Feature feature = getFeature();
 
-		userLimitRepository.updateUsageLimit(feature, new CountLimit(LIMIT_ID, numberOfBooks), user);
+		userLimitRepository.updateLimitRule(feature, new CountLimit(LIMIT_ID, numberOfBooks), user);
 
 		System.out.printf("The reservation limit for user '%s' has been increased to a %d books.%n",
 				user.getId(), numberOfBooks);
@@ -139,7 +139,7 @@ public class InMemorySample {
 
 		userLimitRepository = UserLimitRepository.builder().jdbcRepository(usageRepoDataSource, DB_SCHEMA_NAME, DB_USER_LIMIT_TABLE_NAME);
 
-		usageLimitVerifier = UsageLimitVerifierBuilder.of(productRepo)
+		limitVerifier = LimitVerifierBuilder.of(productRepo)
 				.withUserLimitRepository(userLimitRepository)
 				.withJdbcUsageRepository(usageRepoDataSource, DB_SCHEMA_NAME, DB_USER_USAGE_TABLE_NAME)
 				.build();
@@ -151,6 +151,7 @@ public class InMemorySample {
 		dataSource = new JdbcDataSource();
 		dataSource.setURL("jdbc:h2:mem:dbo;DB_CLOSE_DELAY=-1;");
 		dataSource.setUser("sa");
+		dataSource.setPassword("");
 		dataSource.setPassword("");
 
 		return dataSource;

@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
@@ -67,19 +67,19 @@ public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
 	}
 
 	@Test
-	public void testUpdateUserLimit() {
+	public void testUpdateLimitRule() {
 
 		CountLimit countLimitToModified = new CountLimit("Maximum number of picture", 15);
 
-		this.repository.updateUsageLimit(this.feature, countLimitToModified, this.user);
+		this.repository.updateLimitRule(this.feature, countLimitToModified, this.user);
 
-		Optional<UsageLimit> userLimit = this.repository.findUsageLimit(this.feature,
+		Optional<LimitRule> limitRule = this.repository.findLimitRule(this.feature,
 				"Maximum number of picture", this.user);
 
-		assertThat(userLimit).isPresent();
-		assertThat(userLimit.get()).isInstanceOf(CountLimit.class)
-				.extracting(UsageLimit::getId).isEqualTo("Maximum number of picture");
-		assertThat(userLimit.get()).isInstanceOf(CountLimit.class)
-				.extracting(UsageLimit::getValue).isEqualTo(15L);
+		assertThat(limitRule).isPresent();
+		assertThat(limitRule.get()).isInstanceOf(CountLimit.class)
+				.extracting(LimitRule::getId).isEqualTo("Maximum number of picture");
+		assertThat(limitRule.get()).isInstanceOf(CountLimit.class)
+				.extracting(LimitRule::getValue).isEqualTo(15L);
 	}
 }

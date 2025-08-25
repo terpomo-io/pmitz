@@ -21,16 +21,16 @@ import java.util.Optional;
 import javax.sql.DataSource;
 
 import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 
 public interface UserLimitRepository {
 
-	Optional<UsageLimit> findUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping);
+	Optional<LimitRule> findLimitRule(Feature feature, String limitRuleId, UserGrouping userGrouping);
 
-	void updateUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping);
+	void updateLimitRule(Feature feature, LimitRule limitRule, UserGrouping userGrouping);
 
-	void deleteUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping);
+	void deleteLimitRule(Feature feature, String limitRuleId, UserGrouping userGrouping);
 
 	static UserLimitRepository.Builder builder() {
 		return new DefaultUserLimitRepositoryBuilder();

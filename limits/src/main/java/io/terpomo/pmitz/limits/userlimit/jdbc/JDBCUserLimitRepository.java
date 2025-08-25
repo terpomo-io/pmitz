@@ -26,7 +26,7 @@ import javax.sql.DataSource;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.exception.RepositoryException;
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
@@ -46,13 +46,13 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 	}
 
 	@Override
-	public Optional<UsageLimit> findUsageLimit(Feature feature, String usageLimitId, UserGrouping userGroup) {
+	public Optional<LimitRule> findLimitRule(Feature feature, String limitRuleId, UserGrouping userGroup) {
 
 		this.validateFeature(feature);
-		this.validateNotNull(usageLimitId, "limitId");
+		this.validateNotNull(limitRuleId, "limitId");
 		this.validateUserGrouping(userGroup);
 
-		UsageLimit usageLimit = null;
+		LimitRule limitRule = null;
 
 		String query = String.format(
 				"""
@@ -64,13 +64,13 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 		try (Connection connection = this.dataSource.getConnection();
 				PreparedStatement statement = connection.prepareStatement(query)) {
 
-			statement.setString(1, usageLimitId);
+			statement.setString(1, limitRuleId);
 			statement.setString(2, feature.getFeatureId());
 			statement.setString(3, userGroup.getId());
 
 			try (ResultSet resultSet = statement.executeQuery()) {
 				if (resultSet.next()) {
-					usageLimit = mapResultSetToUsageLimit(resultSet);
+					limitRule = mapResultSetToLimitRule(resultSet);
 				}
 			}
 		}
@@ -78,13 +78,13 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 			throw new RepositoryException("Error finding limit", ex);
 		}
 
-		return Optional.ofNullable(usageLimit);
+		return Optional.ofNullable(limitRule);
 	}
 
-	public void addUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGroup) {
+	public void addLimitRule(Feature feature, LimitRule limitRule, UserGrouping userGroup) {
 
 		this.validateFeature(feature);
-		this.validateUsageLimit(usageLimit);
+		this.validateLimitRule(limitRule);
 		this.validateUserGrouping(userGroup);
 
 		try {
@@ -100,14 +100,14 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 			try (Connection conn = this.dataSource.getConnection();
 					PreparedStatement stmt = conn.prepareStatement(query)) {
 
-				stmt.setString(1, usageLimit.getId());
+				stmt.setString(1, limitRule.getId());
 				stmt.setString(2, feature.getFeatureId());
 				stmt.setString(3, userGroup.getId());
-				stmt.setString(4, usageLimit.getClass().getSimpleName());
-				stmt.setLong(5, usageLimit.getValue());
-				stmt.setString(6, usageLimit.getUnit());
+				stmt.setString(4, limitRule.getClass().getSimpleName());
+				stmt.setLong(5, limitRule.getValue());
+				stmt.setString(6, limitRule.getUnit());
 
-				if (usageLimit instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
+				if (limitRule instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
 					stmt.setString(7, calendarPeriodRateLimit.getPeriodicity().name());
 					stmt.setInt(8, calendarPeriodRateLimit.getDuration());
 				}
@@ -124,23 +124,23 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 		}
 	}
 
-	public void updateUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGroup) {
+	public void updateLimitRule(Feature feature, LimitRule limitRule, UserGrouping userGroup) {
 
-		this.validateUsageLimit(usageLimit);
+		this.validateLimitRule(limitRule);
 
-		Optional<UsageLimit> existingLimit = findUsageLimit(feature, usageLimit.getId(), userGroup);
+		Optional<LimitRule> existingLimit = findLimitRule(feature, limitRule.getId(), userGroup);
 
 		if (existingLimit.isPresent()) {
 			// Update existing limit
-			updateUsageLimitInternal(feature, usageLimit, userGroup);
+			updateLimitRuleInternal(feature, limitRule, userGroup);
 		}
 		else {
 			// Add new limit
-			addUsageLimit(feature, usageLimit, userGroup);
+			addLimitRule(feature, limitRule, userGroup);
 		}
 	}
 
-	private void updateUsageLimitInternal(Feature feature, UsageLimit usageLimit, UserGrouping userGroup) {
+	private void updateLimitRuleInternal(Feature feature, LimitRule limitRule, UserGrouping userGroup) {
 
 		try {
 			String query = String.format(
@@ -155,10 +155,10 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 
 				PreparedStatement stmt = conn.prepareStatement(query)) {
 				int idx = 1;
-				stmt.setLong(idx++, usageLimit.getValue());
-				stmt.setString(idx++, usageLimit.getUnit());
+				stmt.setLong(idx++, limitRule.getValue());
+				stmt.setString(idx++, limitRule.getUnit());
 
-				if (usageLimit instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
+				if (limitRule instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
 					stmt.setString(idx++, calendarPeriodRateLimit.getPeriodicity().name());
 					stmt.setInt(idx++, calendarPeriodRateLimit.getDuration());
 				}
@@ -167,7 +167,7 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 					stmt.setInt(idx++, 0);
 				}
 
-				stmt.setString(idx++, usageLimit.getId());
+				stmt.setString(idx++, limitRule.getId());
 				stmt.setString(idx++, feature.getFeatureId());
 				stmt.setString(idx, userGroup.getId());
 
@@ -180,10 +180,10 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 
 	}
 
-	public void deleteUsageLimit(Feature feature, String usageLimitId, UserGrouping userGroup) {
+	public void deleteLimitRule(Feature feature, String limitRuleId, UserGrouping userGroup) {
 
 		this.validateFeature(feature);
-		this.validateNotNull(usageLimitId, "limitId");
+		this.validateNotNull(limitRuleId, "limitId");
 		this.validateUserGrouping(userGroup);
 
 		try {
@@ -197,7 +197,7 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 			try (Connection conn = this.dataSource.getConnection();
 					PreparedStatement stmt = conn.prepareStatement(query)) {
 
-				stmt.setString(1, usageLimitId);
+				stmt.setString(1, limitRuleId);
 				stmt.setString(2, feature.getFeatureId());
 				stmt.setString(3, userGroup.getId());
 
@@ -210,9 +210,9 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 	}
 
 
-	private UsageLimit mapResultSetToUsageLimit(ResultSet resultSet) throws SQLException {
+	private LimitRule mapResultSetToLimitRule(ResultSet resultSet) throws SQLException {
 
-		UsageLimit usageLimit;
+		LimitRule limitRule;
 
 		String limitId = resultSet.getString("limit_id");
 		String limitUnit = resultSet.getString("limit_unit");
@@ -225,20 +225,20 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 				CalendarPeriodRateLimit.Periodicity periodicity = CalendarPeriodRateLimit.Periodicity.valueOf(intervalName);
 				CalendarPeriodRateLimit calendarPeriodRateLimit = new CalendarPeriodRateLimit(limitId, limitValue, periodicity);
 				calendarPeriodRateLimit.setUnit(limitUnit);
-				usageLimit = calendarPeriodRateLimit;
+				limitRule = calendarPeriodRateLimit;
 				break;
 
 			case "CountLimit":
 				CountLimit countLimit = new CountLimit(limitId, limitValue);
 				countLimit.setUnit(limitUnit);
-				usageLimit = countLimit;
+				limitRule = countLimit;
 				break;
 
 			default:
 				throw new IllegalArgumentException("Unknown limit type: " + limitType);
 		}
 
-		return usageLimit;
+		return limitRule;
 	}
 
 	private void validateFeature(Feature feature) {
@@ -254,12 +254,12 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 		}
 	}
 
-	private void validateUsageLimit(UsageLimit usageLimit) {
+	private void validateLimitRule(LimitRule limitRule) {
 
-		if (usageLimit == null) {
+		if (limitRule == null) {
 			throw new IllegalArgumentException(("The limit parameter cannot be null"));
 		}
-		if (usageLimit.getId() == null) {
+		if (limitRule.getId() == null) {
 			throw new IllegalArgumentException("A limit must have a identifier");
 		}
 	}

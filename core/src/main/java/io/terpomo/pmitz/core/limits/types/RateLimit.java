@@ -18,9 +18,9 @@ package io.terpomo.pmitz.core.limits.types;
 
 import java.time.temporal.ChronoUnit;
 
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 
-public abstract class RateLimit extends UsageLimit {
+public abstract class RateLimit extends LimitRule {
 
 	private final long quota;
 

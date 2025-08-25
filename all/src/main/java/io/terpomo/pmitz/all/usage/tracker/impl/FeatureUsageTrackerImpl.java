@@ -28,18 +28,18 @@ import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.exception.FeatureNotAllowedException;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
-import io.terpomo.pmitz.limits.UsageLimitVerifier;
+import io.terpomo.pmitz.limits.LimitVerifier;
 
 public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 
 	private static final Long DEFAULT_ADDITIONAL_UNIT = 1L;
 
-	private final UsageLimitVerifier usageLimitVerifier;
+	private final LimitVerifier limitVerifier;
 
 	private final SubscriptionVerifier subscriptionVerifier;
 
-	public FeatureUsageTrackerImpl(UsageLimitVerifier usageLimitVerifier, SubscriptionVerifier subscriptionVerifier) {
-		this.usageLimitVerifier = usageLimitVerifier;
+	public FeatureUsageTrackerImpl(LimitVerifier limitVerifier, SubscriptionVerifier subscriptionVerifier) {
+		this.limitVerifier = limitVerifier;
 		this.subscriptionVerifier = subscriptionVerifier;
 	}
 
@@ -48,12 +48,12 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 		if (!subscriptionVerifier.isFeatureAllowed(feature, userGrouping)) {
 			throw new FeatureNotAllowedException("Feature not allowed for userGrouping", feature, userGrouping);
 		}
-		usageLimitVerifier.recordFeatureUsage(feature, userGrouping, requestedUnits);
+		limitVerifier.recordFeatureUsage(feature, userGrouping, requestedUnits);
 	}
 
 	@Override
 	public void reduceFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> reducedUnits) {
-		usageLimitVerifier.reduceFeatureUsage(feature, userGrouping, reducedUnits);
+		limitVerifier.reduceFeatureUsage(feature, userGrouping, reducedUnits);
 	}
 
 	@Override
@@ -62,7 +62,7 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 			return new FeatureUsageInfo(FeatureStatus.NOT_ALLOWED, Collections.emptyMap());
 		}
 
-		var remainingUnits = usageLimitVerifier.getLimitsRemainingUnits(feature, userGrouping);
+		var remainingUnits = limitVerifier.getLimitsRemainingUnits(feature, userGrouping);
 
 		BiFunction<String, Long, Long> remainingUnitsCalculator = (key, value) -> value - additionalUnits.getOrDefault(key, DEFAULT_ADDITIONAL_UNIT);
 
@@ -80,7 +80,7 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 			return new FeatureUsageInfo(FeatureStatus.NOT_ALLOWED, Collections.emptyMap());
 		}
 
-		var remainingUnits = usageLimitVerifier.getLimitsRemainingUnits(feature, userGrouping);
+		var remainingUnits = limitVerifier.getLimitsRemainingUnits(feature, userGrouping);
 
 		var anyLimitExceeded = remainingUnits.entrySet().stream().anyMatch(mapEntry -> mapEntry.getValue() < 0);
 

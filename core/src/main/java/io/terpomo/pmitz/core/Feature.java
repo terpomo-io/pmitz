@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 
 public class Feature implements Serializable {
 
@@ -29,7 +29,7 @@ public class Feature implements Serializable {
 
 	private final Product product;
 
-	private final List<UsageLimit> limits = new ArrayList<>();
+	private final List<LimitRule> limits = new ArrayList<>();
 
 	public Feature(Product product, String featureId) {
 
@@ -45,12 +45,12 @@ public class Feature implements Serializable {
 		return product;
 	}
 
-	public List<UsageLimit> getLimits() {
+	public List<LimitRule> getLimits() {
 		return limits;
 	}
 
 	public List<String> getLimitsIds() {
-		return limits.stream().map(UsageLimit::getId).toList();
+		return limits.stream().map(LimitRule::getId).toList();
 	}
 
 	@Override

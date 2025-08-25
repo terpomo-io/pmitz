@@ -19,52 +19,52 @@ package io.terpomo.pmitz.limits.impl;
 import java.util.Optional;
 
 import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.limits.UsageLimit;
+import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
-import io.terpomo.pmitz.limits.UsageLimitResolver;
+import io.terpomo.pmitz.limits.LimitRuleResolver;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 
-public class UsageLimitResolverImpl implements UsageLimitResolver {
+public class LimitRuleResolverImpl implements LimitRuleResolver {
 
 	private ProductRepository productRepository;
 	private UserLimitRepository userLimitRepository;
 
-	public UsageLimitResolverImpl(ProductRepository productRepository) {
+	public LimitRuleResolverImpl(ProductRepository productRepository) {
 		this(productRepository, new NoOpUserLimitRepository());
 	}
 
-	public UsageLimitResolverImpl(ProductRepository productRepository, UserLimitRepository userLimitRepository) {
+	public LimitRuleResolverImpl(ProductRepository productRepository, UserLimitRepository userLimitRepository) {
 		this.productRepository = productRepository;
 		this.userLimitRepository = userLimitRepository;
 	}
 
 	@Override
-	public Optional<UsageLimit> resolveUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping) {
+	public Optional<LimitRule> resolveLimitRule(Feature feature, String limitRuleId, UserGrouping userGrouping) {
 		//TODO verify interfaces' specs
 		// 1- find limit specific to userGrouping
 		// 2- find limit for plan --> 2.1 find plan, 2.2 find limit for plan
 		// 3- find global limit
 
-		return userLimitRepository.findUsageLimit(feature, usageLimitId, userGrouping)
-				.or(() -> productRepository.getGlobalLimit(feature, usageLimitId));
+		return userLimitRepository.findLimitRule(feature, limitRuleId, userGrouping)
+				.or(() -> productRepository.getGlobalLimit(feature, limitRuleId));
 
 	}
 
 	public static class NoOpUserLimitRepository implements UserLimitRepository {
 
 		@Override
-		public Optional<UsageLimit> findUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping) {
+		public Optional<LimitRule> findLimitRule(Feature feature, String limitRuleId, UserGrouping userGrouping) {
 			return Optional.empty();
 		}
 
 		@Override
-		public void updateUsageLimit(Feature feature, UsageLimit usageLimit, UserGrouping userGrouping) {
+		public void updateLimitRule(Feature feature, LimitRule limitRule, UserGrouping userGrouping) {
 			// No action
 		}
 
 		@Override
-		public void deleteUsageLimit(Feature feature, String usageLimitId, UserGrouping userGrouping) {
+		public void deleteLimitRule(Feature feature, String limitRuleId, UserGrouping userGrouping) {
 			// No action
 		}
 	}
