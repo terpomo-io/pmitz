@@ -443,7 +443,7 @@ class JDBCUserLimitRepositoryTests {
 				limitInterval = calendarPeriodRateLimit.getPeriodicity().name();
 				limitDuration = calendarPeriodRateLimit.getDuration();
 			}
-			stmt.setString(1, usageLimit.getId());
+			stmt.setString(1, limitRule.getId());
 			stmt.setString(2, feature.getFeatureId());
 			stmt.setString(3, userGroup.getId());
 			stmt.setString(4, limitRule.getClass().getSimpleName());
