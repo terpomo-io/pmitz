@@ -21,7 +21,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.temporal.ChronoUnit;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.testcontainers.containers.MSSQLServerContainer;
@@ -31,7 +30,6 @@ import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
-import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 import io.terpomo.pmitz.utils.JDBCTestUtils;
@@ -87,11 +85,6 @@ public class SQLServerJDBCUserLimitRepositoryIntegrationTests extends AbstractJD
 				"Maximum number of picture uploaded in calendar month", 1000, CalendarPeriodRateLimit.Periodicity.MONTH
 		);
 		insertLimitRuleRecord(this.feature, this.user, calendarPeriodRateLimit);
-
-		SlidingWindowRateLimit slidingWindowRateLimit = new SlidingWindowRateLimit(
-				"Maximum number of picture uploaded by day", 15, ChronoUnit.DAYS, 1
-		);
-		insertLimitRuleRecord(this.feature, this.user, slidingWindowRateLimit);
 	}
 
 	private void insertLimitRuleRecord(Feature feature, UserGrouping userGroup,
@@ -114,10 +107,6 @@ public class SQLServerJDBCUserLimitRepositoryIntegrationTests extends AbstractJD
 			if (limitRule instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
 				limitInterval = calendarPeriodRateLimit.getPeriodicity().name();
 				limitDuration = calendarPeriodRateLimit.getDuration();
-			}
-			else if (limitRule instanceof SlidingWindowRateLimit slidingWindowRateLimit) {
-				limitInterval = slidingWindowRateLimit.getInterval().name();
-				limitDuration = slidingWindowRateLimit.getDuration();
 			}
 			stmt.setString(1, limitRule.getId());
 			stmt.setString(2, feature.getFeatureId());

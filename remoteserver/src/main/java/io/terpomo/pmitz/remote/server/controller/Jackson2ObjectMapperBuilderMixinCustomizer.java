@@ -25,13 +25,11 @@ import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
-import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 import io.terpomo.pmitz.core.repository.product.inmemory.CalendarPeriodRateLimitMixIn;
 import io.terpomo.pmitz.core.repository.product.inmemory.CountLimitMixIn;
 import io.terpomo.pmitz.core.repository.product.inmemory.FeatureMixIn;
 import io.terpomo.pmitz.core.repository.product.inmemory.LimitRuleMixIn;
 import io.terpomo.pmitz.core.repository.product.inmemory.ProductMixIn;
-import io.terpomo.pmitz.core.repository.product.inmemory.SlidingWindowRateLimitMixIn;
 
 @Configuration
 public class Jackson2ObjectMapperBuilderMixinCustomizer implements Jackson2ObjectMapperBuilderCustomizer {
@@ -41,7 +39,6 @@ public class Jackson2ObjectMapperBuilderMixinCustomizer implements Jackson2Objec
 				.mixIn(Product.class, ProductMixIn.class)
 				.mixIn(Feature.class, FeatureMixIn.class)
 				.mixIn(LimitRule.class, LimitRuleMixIn.class)
-				.mixIn(SlidingWindowRateLimit.class, SlidingWindowRateLimitMixIn.class)
 				.mixIn(CalendarPeriodRateLimit.class, CalendarPeriodRateLimitMixIn.class)
 				.mixIn(CountLimit.class, CountLimitMixIn.class);
 	}

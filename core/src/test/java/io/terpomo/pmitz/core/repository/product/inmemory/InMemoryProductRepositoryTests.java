@@ -19,7 +19,6 @@ package io.terpomo.pmitz.core.repository.product.inmemory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,7 +36,6 @@ import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
-import io.terpomo.pmitz.core.limits.types.SlidingWindowRateLimit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -521,7 +519,7 @@ class InMemoryProductRepositoryTests {
 		assertThat((int) dc.read("$[1].features.length()")).isEqualTo(2);
 
 		assertThat((String) dc.read("$[1].features[0].featureId")).isEqualTo("Uploading pictures");
-		assertThat((int) dc.read("$[1].features[0].limits.length()")).isEqualTo(2);
+		assertThat((int) dc.read("$[1].features[0].limits.length()")).isEqualTo(1);
 
 		assertThat((String) dc.read("$[1].features[1].featureId")).isEqualTo("Downloading pictures");
 		assertThat((int) dc.read("$[1].features[1].limits.length()")).isEqualTo(2);
@@ -549,20 +547,13 @@ class InMemoryProductRepositoryTests {
 		assertThat((int) dc.read("$[1].features[0].limits[0].count")).isEqualTo(10);
 		assertThat((String) dc.read("$[1].features[0].limits[0].unit")).isEqualTo("Go");
 
-		assertThat((String) dc.read("$[1].features[0].limits[1].type")).isEqualTo("SlidingWindowRateLimit");
-		assertThat((String) dc.read("$[1].features[0].limits[1].id")).isEqualTo("Maximum of pictures uploaded by hour");
-		assertThat((int) dc.read("$[1].features[0].limits[1].quota")).isEqualTo(10);
-		assertThat((String) dc.read("$[1].features[0].limits[1].interval")).isEqualTo("HOURS");
-		assertThat((int) dc.read("$[1].features[0].limits[1].duration")).isEqualTo(1);
-
 		assertThat((String) dc.read("$[1].features[1].featureId")).isEqualTo("Downloading pictures");
 		assertThat((int) dc.read("$[1].features[1].limits.length()")).isEqualTo(2);
 
-		assertThat((String) dc.read("$[1].features[1].limits[0].type")).isEqualTo("SlidingWindowRateLimit");
-		assertThat((String) dc.read("$[1].features[1].limits[0].id")).isEqualTo("Maximum of pictures downloaded by hour");
-		assertThat((int) dc.read("$[1].features[1].limits[0].quota")).isEqualTo(8);
-		assertThat((String) dc.read("$[1].features[1].limits[0].interval")).isEqualTo("MINUTES");
-		assertThat((int) dc.read("$[1].features[1].limits[0].duration")).isEqualTo(60);
+		assertThat((String) dc.read("$[1].features[1].limits[0].type")).isEqualTo("CountLimit");
+		assertThat((String) dc.read("$[1].features[1].limits[0].id")).isEqualTo("Maximum picture size");
+		assertThat((int) dc.read("$[1].features[1].limits[0].count")).isEqualTo(20);
+		assertThat((String) dc.read("$[1].features[1].limits[0].unit")).isEqualTo("Go");
 
 		assertThat((String) dc.read("$[1].features[1].limits[1].type")).isEqualTo("CalendarPeriodRateLimit");
 		assertThat((String) dc.read("$[1].features[1].limits[1].id")).isEqualTo("Maximum of pictures downloaded by calendar month");
@@ -588,7 +579,7 @@ class InMemoryProductRepositoryTests {
 		assertThat(uploadingPicture).isPresent();
 		assertThat(uploadingPicture.get().getFeatureId()).isEqualTo("Uploading pictures");
 		assertThat(uploadingPicture.get().getProduct().getProductId()).isEqualTo("Picture hosting service");
-		assertThat(uploadingPicture.get().getLimits()).hasSize(2);
+		assertThat(uploadingPicture.get().getLimits()).hasSize(1);
 
 		Optional<Feature> downloadingPicture = this.repository.getFeature(pictureHostingService, "Downloading pictures");
 		assertThat(downloadingPicture).isPresent();
@@ -628,22 +619,14 @@ class InMemoryProductRepositoryTests {
 		assertThat(maximumPictureSize.getValue()).isEqualTo(10);
 		assertThat(maximumPictureSize.getUnit()).isEqualTo("Go");
 
-		assertThat(uploadingPicture.get().getLimits().get(1)).isInstanceOf(SlidingWindowRateLimit.class);
-		SlidingWindowRateLimit maximumPicturesInMonth = (SlidingWindowRateLimit) uploadingPicture.get().getLimits().get(1);
-		assertThat(maximumPicturesInMonth.getId()).isEqualTo("Maximum of pictures uploaded by hour");
-		assertThat(maximumPicturesInMonth.getValue()).isEqualTo(10);
-		assertThat(maximumPicturesInMonth.getInterval()).isEqualTo(ChronoUnit.HOURS);
-		assertThat(maximumPicturesInMonth.getDuration()).isEqualTo(1);
-
 		Optional<Feature> downloadingPicture = this.repository.getFeature(pictureHostingService, "Downloading pictures");
 		assertThat(downloadingPicture).isPresent();
 
-		assertThat(downloadingPicture.get().getLimits().get(0)).isInstanceOf(SlidingWindowRateLimit.class);
-		maximumPicturesInMonth = (SlidingWindowRateLimit) downloadingPicture.get().getLimits().get(0);
-		assertThat(maximumPicturesInMonth.getId()).isEqualTo("Maximum of pictures downloaded by hour");
-		assertThat(maximumPicturesInMonth.getValue()).isEqualTo(8);
-		assertThat(maximumPicturesInMonth.getInterval()).isEqualTo(ChronoUnit.MINUTES);
-		assertThat(maximumPicturesInMonth.getDuration()).isEqualTo(60);
+		assertThat(downloadingPicture.get().getLimits().get(0)).isInstanceOf(CountLimit.class);
+		maximumPictureSize = (CountLimit) downloadingPicture.get().getLimits().get(0);
+		assertThat(maximumPictureSize.getId()).isEqualTo("Maximum picture size");
+		assertThat(maximumPictureSize.getValue()).isEqualTo(20);
+		assertThat(maximumPictureSize.getUnit()).isEqualTo("Go");
 
 		assertThat(downloadingPicture.get().getLimits().get(1)).isInstanceOf(CalendarPeriodRateLimit.class);
 		CalendarPeriodRateLimit maximumPicturesInCalendarMonth = (CalendarPeriodRateLimit) downloadingPicture.get().getLimits().get(1);
@@ -664,16 +647,12 @@ class InMemoryProductRepositoryTests {
 		maximumPictureSize.setUnit("Go");
 		uploadingPicture.getLimits().add(maximumPictureSize);
 
-		SlidingWindowRateLimit maximumPicturesUploadedByHour = new SlidingWindowRateLimit("max-photos-uploaded", 10, ChronoUnit.HOURS, 1);
-		maximumPicturesUploadedByHour.setId("Maximum of pictures uploaded by hour");
-		uploadingPicture.getLimits().add(maximumPicturesUploadedByHour);
-
 		Feature downloadingPicture = new Feature(pictureHostingService, "Downloading pictures");
 		this.repository.addFeature(downloadingPicture);
 
-		SlidingWindowRateLimit maximumPicturesDownloadedByHour = new SlidingWindowRateLimit("max-photos-downloaded", 8, ChronoUnit.MINUTES, 60);
-		maximumPicturesDownloadedByHour.setId("Maximum of pictures downloaded by hour");
-		downloadingPicture.getLimits().add(maximumPicturesDownloadedByHour);
+		maximumPictureSize = new CountLimit("Maximum picture size", 20);
+		maximumPictureSize.setUnit("Go");
+		downloadingPicture.getLimits().add(maximumPictureSize);
 
 		CalendarPeriodRateLimit maximumPicturesDownloadedByCalendarMonth = new CalendarPeriodRateLimit("max-photos-downloaded-by-calendar-month", 10, CalendarPeriodRateLimit.Periodicity.MONTH);
 		maximumPicturesDownloadedByCalendarMonth.setId("Maximum of pictures downloaded by calendar month");
