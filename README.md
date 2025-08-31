@@ -1,6 +1,7 @@
 # Pmitz
 
-![Licence](https://img.shields.io/badge/License-Apache%202.0-green.svg)
+[![Build](https://github.com/terpomo-io/pmitz/actions/workflows/ci-workflow.yml/badge.svg)](https://github.com/terpomo-io/pmitz/actions)
+[![Licence](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
 
 Pmitz is a tool to control users' access to application features based on users' subscriptions and / or configured usage limits.
