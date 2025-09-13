@@ -1,6 +1,6 @@
 # Pmitz
 
-[![Build](https://github.com/terpomo-io/pmitz/actions/workflows/ci-workflow.yml/badge.svg)](https://github.com/terpomo-io/pmitz/actions)
+[![Build Snapshot](https://github.com/terpomo-io/pmitz/actions/workflows/ci-workflow.yml/badge.svg)](https://github.com/terpomo-io/pmitz/actions)
 [![Licence](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
 

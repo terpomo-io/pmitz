@@ -1,4 +1,4 @@
-name: CI
+name: Build Snapshot
 on: [push]
 jobs:
   build:
