@@ -1,5 +1,6 @@
 [versions]
 
+# Libraries
 assertj-core-version = '3.27.4'
 commons-dbcp2-version = '2.13.0'
 h2database-h2-version = '2.3.232'
@@ -14,12 +15,15 @@ mysqlConnectorJava-version = '8.0.33'
 postgresql-version = '42.7.7'
 slf4j-version = '2.0.17'
 springboot-version = '3.5.5'
-springDependencyManagement-version = "1.1.7"
-springJavaformatCheckstyle-version = '0.0.47'
 sqlserver-mssqlJdbc-version = '13.2.0.jre11'
 testcontainers-version = '1.21.3'
 wiremock-version = '3.13.1'
 system-stubs-version='2.1.8'
+
+# Plugins
+benManesVersions-version='0.52.0'
+springDependencyManagement-version = "1.1.7"
+springJavaformatCheckstyle-version = '0.0.47'
 
 
 [libraries]
@@ -58,5 +62,7 @@ system-stubs= { group = 'uk.org.webcompere', name = 'system-stubs-jupiter', vers
 
 [plugins]
 
-springboot = { id = "org.springframework.boot", version.ref = 'springboot-version' }
+springboot = { id = 'org.springframework.boot', version.ref = 'springboot-version' }
 springDependencyManagement = { id = 'io.spring.dependency-management', version.ref = 'springDependencyManagement-version' }
+benManesVersions = { id = 'com.github.ben-manes.versions', version.ref = 'benManesVersions-version' }
+
