@@ -34,7 +34,9 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationService authenticationService) throws Exception {
 		http.csrf(AbstractHttpConfigurer::disable)
-				.authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> authorizationManagerRequestMatcherRegistry.requestMatchers("/**").authenticated())
+				.authorizeHttpRequests(authorize -> authorize
+						.requestMatchers("/actuator/health").permitAll()
+						.requestMatchers("/**").authenticated())
 				.httpBasic(Customizer.withDefaults())
 				.sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.addFilterBefore(new ApiKeyAuthenticationFilter(authenticationService), UsernamePasswordAuthenticationFilter.class);
