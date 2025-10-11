@@ -5,7 +5,7 @@ WORKDIR /app
 COPY . .
 
 # Build the remoteserver JAR
-RUN ./gradlew :remoteserver:bootJar --no-daemon
+RUN ./gradlew clean build -x test --no-daemon
 
 # Runtime stage  
 FROM openjdk:17
@@ -13,7 +13,7 @@ FROM openjdk:17
 WORKDIR /app
 
 # Copy the built JAR
-COPY --from=builder /app/remoteserver/build/libs/pmitz-remoteserver-*.jar app.jar
+COPY --from=builder /app/remoteserver/build/libs/pmitz-remoteserver-*-SNAPSHOT.jar app.jar
 
 # Install curl for health checks
 RUN microdnf update -y && microdnf install -y curl && microdnf clean all

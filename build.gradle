@@ -43,7 +43,6 @@ subprojects {
     tasks.withType(Jar).configureEach {
         archiveBaseName.set("pmitz-${project.name}")
         archiveVersion.set(rootProject.version.toString())
-        archiveFileName.set("${archiveBaseName.get()}-${archiveVersion.get()}.jar")
     }
 
     repositories {
