@@ -18,7 +18,6 @@ package io.terpomo.pmitz.remote.server.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.stereotype.Component;
@@ -41,10 +40,11 @@ public class AuthenticationService {
 
 	public Authentication getAuthentication(HttpServletRequest request) {
 		String apiKey = request.getHeader(AUTH_TOKEN_HEADER_NAME);
-		if (apiKey == null || !apiKey.equals(apiKeyProperties.pmitzApiKey())) {
-			throw new BadCredentialsException("Invalid API Key");
+		if (apiKey != null && apiKey.equals(apiKeyProperties.pmitzApiKey())) {
+			return new ApiKeyAuthentication(apiKey, AuthorityUtils.NO_AUTHORITIES);
 		}
+		return null;
 
-		return new ApiKeyAuthentication(apiKey, AuthorityUtils.NO_AUTHORITIES);
+
 	}
 }

@@ -29,7 +29,6 @@ import org.mockito.ArgumentMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -137,7 +136,7 @@ class UserGroupingControllerTests {
 	@ParameterizedTest
 	@MethodSource("verifyLimitsUrlsAndUserGroupingsProvider")
 	void verifyLimitsShouldReturnStatus401WhenAuthenticationFails(String url, UserGrouping userGrouping) throws Exception {
-		when(authenticationService.getAuthentication(any())).thenThrow(new BadCredentialsException("Authenticaion error"));
+		when(authenticationService.getAuthentication(any())).thenReturn(null);
 		String jsonContent = """
 				{
 					"limit1" : 1,
@@ -249,7 +248,7 @@ class UserGroupingControllerTests {
 	@ParameterizedTest
 	@MethodSource("usageUrlsAndUserGroupingsProvider")
 	void recordOrReduceFeatureUsageShouldReturnStatus401WhenAuthenticationFails(String url, UserGrouping userGrouping) throws Exception {
-		when(authenticationService.getAuthentication(any())).thenThrow(new BadCredentialsException("Authentication error"));
+		when(authenticationService.getAuthentication(any())).thenReturn(null);
 		String jsonContent = """
 				{
 					"reduceUnits" : true,
@@ -300,7 +299,7 @@ class UserGroupingControllerTests {
 	@ParameterizedTest
 	@MethodSource("usageUrlsAndUserGroupingsProvider")
 	void verifyFeatureUsageShouldReturnStatus401WhenAuthenticationFails(String url, UserGrouping userGrouping) throws Exception {
-		when(authenticationService.getAuthentication(any())).thenThrow(new BadCredentialsException("Authentication error"));
+		when(authenticationService.getAuthentication(any())).thenReturn(null);
 		mockMvc.perform(get(url)
 						.contentType("application/json"))
 				.andExpect(status().is(401));

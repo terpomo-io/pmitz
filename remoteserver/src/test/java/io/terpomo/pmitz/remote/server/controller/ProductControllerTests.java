@@ -27,7 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -101,7 +100,7 @@ class ProductControllerTests {
 
 	@Test
 	void addProductWhenAuthenticationFailsShouldReturn401() throws Exception {
-		when(authenticationService.getAuthentication(any())).thenThrow(new BadCredentialsException("Authentication error"));
+		when(authenticationService.getAuthentication(any())).thenReturn(null);
 		String jsonContent = new ClassPathResource("/product-picshare.json").getContentAsString(StandardCharsets.UTF_8);
 
 		String url = "/products";
@@ -149,7 +148,7 @@ class ProductControllerTests {
 
 	@Test
 	void removeProductWhenAuthenticationFailsShouldReturnStatus401() throws Exception {
-		when(authenticationService.getAuthentication(any())).thenThrow(new BadCredentialsException("Authentication error"));
+		when(authenticationService.getAuthentication(any())).thenReturn(null);
 
 		String url = "/products/picshare";
 		mockMvc.perform(delete(url)
