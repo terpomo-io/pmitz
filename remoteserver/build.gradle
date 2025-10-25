@@ -4,19 +4,6 @@ plugins {
     alias libs.plugins.springDependencyManagement
 }
 
-group = 'com.example'
-version = '0.0.1-SNAPSHOT'
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-}
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     implementation project(path: ':all')
     implementation project(path: ':core')
@@ -36,10 +23,6 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
+test {
     useJUnitPlatform()
-}
-
-task wrapper(type: Wrapper){
-    gradleVersion = '8.11'
 }

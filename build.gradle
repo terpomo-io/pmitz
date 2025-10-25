@@ -1,21 +1,26 @@
-apply plugin: 'java'
-apply plugin: 'com.github.ben-manes.versions'
+plugins {
+    id 'java'
+    alias(libs.plugins.benManesVersions)
+}
 
 group = 'io.terpomo.pmitz'
-version = '1.0.0-SNAPSHOT'
-
-buildscript {
-    repositories {
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath 'com.github.ben-manes:gradle-versions-plugin:0.52.0'
-    }
-}
+version = '0.8.0-SNAPSHOT'
 
 subprojects {
     apply plugin: 'checkstyle'
     apply plugin: 'com.github.ben-manes.versions'
+
+    tasks.withType(JavaCompile).configureEach {
+        sourceCompatibility = '17'
+        targetCompatibility = '17'
+        options.encoding = 'UTF-8'
+    }
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
 
     checkstyle {
         toolVersion = "11.0.0"
@@ -43,7 +48,6 @@ subprojects {
     tasks.withType(Jar).configureEach {
         archiveBaseName.set("pmitz-${project.name}")
         archiveVersion.set(rootProject.version.toString())
-        archiveFileName.set("${archiveBaseName.get()}-${archiveVersion.get()}.jar")
     }
 
     repositories {
