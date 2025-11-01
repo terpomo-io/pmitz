@@ -31,7 +31,7 @@ dependencies {
     implementation 'org.flywaydb:flyway-database-postgresql'
 
     implementation 'com.h2database:h2'
-    implementation 'org.postgresql:postgresql:42.7.8'
+    implementation libs.postgresql
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
