@@ -1,10 +1,16 @@
 plugins {
     id 'java'
+    alias(libs.plugins.owaspDependencyCheck)
     alias(libs.plugins.benManesVersions)
 }
 
 group = 'io.terpomo.pmitz'
 version = '0.8.0-SNAPSHOT'
+
+dependencyCheck {
+    analyzers.ossIndex.enabled = false
+    suppressionFile = 'dependency-check-suppressions.xml'
+}
 
 subprojects {
     apply plugin: 'checkstyle'
@@ -23,7 +29,7 @@ subprojects {
     }
 
     checkstyle {
-        toolVersion = "11.0.0"
+        toolVersion = "12.1.1"
         ignoreFailures = false
         showViolations = true
         configFile = rootProject.file('./checkstyle/config/pmitz-checkstyle.xml')

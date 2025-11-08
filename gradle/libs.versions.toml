@@ -1,27 +1,28 @@
 [versions]
 
 # Libraries
-assertj-core-version = '3.27.4'
+assertj-core-version = '3.27.6'
 commons-dbcp2-version = '2.13.0'
-h2database-h2-version = '2.3.232'
-httpcomponents-client5-httpclient5-version = '5.5'
-jackson-databind-version = '2.19.2'
-json-path-version = '2.9.0'
-junitJuniper-version = '5.13.4'
-junitPlatformLauncher-version = '1.13.4'
-logback-version = '1.5.18'
-mockito-junitJuniper-version = '5.19.0'
+h2database-h2-version = '2.4.240'
+httpcomponents-client5-httpclient5-version = '5.5.1'
+jackson-databind-version = '2.20.1'
+json-path-version = '2.10.0'
+junitJuniper-version = '6.0.1'
+junitPlatformLauncher-version = '6.0.1'
+logback-version = '1.5.20'
+mockito-junitJuniper-version = '5.20.0'
 mysqlConnectorJava-version = '8.0.33'
 postgresql-version = '42.7.8'
 slf4j-version = '2.0.17'
-springboot-version = '3.5.5'
-sqlserver-mssqlJdbc-version = '13.2.0.jre11'
+springboot-version = '3.5.7'
+sqlserver-mssqlJdbc-version = '13.2.1.jre11'
 testcontainers-version = '1.21.3'
 wiremock-version = '3.13.1'
 system-stubs-version='2.1.8'
 
 # Plugins
-benManesVersions-version='0.52.0'
+benManesVersions-version='0.53.0'
+owaspDependencyCheck-version='12.1.8'
 springDependencyManagement-version = "1.1.7"
 springJavaformatCheckstyle-version = '0.0.47'
 
@@ -64,5 +65,6 @@ system-stubs= { group = 'uk.org.webcompere', name = 'system-stubs-jupiter', vers
 
 springboot = { id = 'org.springframework.boot', version.ref = 'springboot-version' }
 springDependencyManagement = { id = 'io.spring.dependency-management', version.ref = 'springDependencyManagement-version' }
+owaspDependencyCheck = { id = 'org.owasp.dependencycheck', version.ref = 'owaspDependencyCheck-version' }
 benManesVersions = { id = 'com.github.ben-manes.versions', version.ref = 'benManesVersions-version' }
 
