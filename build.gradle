@@ -2,6 +2,8 @@ plugins {
     id 'java'
     alias(libs.plugins.owaspDependencyCheck)
     alias(libs.plugins.benManesVersions)
+    id 'maven-publish'
+    id 'org.jreleaser' version '1.21.0'
 }
 
 group = 'io.terpomo.pmitz'
@@ -15,6 +17,9 @@ dependencyCheck {
 subprojects {
     apply plugin: 'checkstyle'
     apply plugin: 'com.github.ben-manes.versions'
+    apply plugin: 'java'
+    apply plugin: 'maven-publish'
+    apply plugin: 'org.jreleaser'
 
     tasks.withType(JavaCompile).configureEach {
         sourceCompatibility = '17'
@@ -23,6 +28,8 @@ subprojects {
     }
 
     java {
+        withJavadocJar()
+        withSourcesJar()
         toolchain {
             languageVersion = JavaLanguageVersion.of(17)
         }
@@ -59,4 +66,79 @@ subprojects {
     repositories {
         mavenCentral()
     }
+
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                from components.java
+                groupId = rootProject.group
+                artifactId = "pmitz-${project.name}" //"pmitz-all"
+                version = project.version
+
+                pom {
+                    name.set("pmitz-${project.name}")
+                    description.set("Library to manage usage limits in Java programs")
+                    url.set("https://github.com/terpomo-io/pmitz")
+                    licenses {
+                        license {
+                            name.set("Apache-2.0")
+                            url.set("https://spdx.org/licenses/Apache-2.0.html")
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'terpomo-io'
+                            name = 'Terpomo Software'
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:https://github.com/terpomo-io/pmitz.git")
+                        developerConnection.set("scm:git:ssh://github.com/terpomo-io/pmitz.git")
+                        url.set("https://github.com/terpomo-io/pmitz")
+                    }
+
+                }
+            }
+        }
+        repositories {
+            maven {
+                name = "localDirRepo"
+                url = layout.buildDirectory.dir('staging-deploy')
+            }
+        }
+    }
+
+    jreleaser {
+        gitRootSearch = true
+
+        project {
+            languages {
+                java {
+                    multiProject = true
+                }
+            }
+            author("Terpomo Software")
+
+        }
+
+        signing {
+            active = 'ALWAYS'
+            armored = true
+        }
+        deploy {
+            maven {
+                mavenCentral {
+                    sonatype {
+                        active = 'RELEASE'
+                        url = 'https://central.sonatype.com/api/v1/publisher'
+                        stagingRepository('build/staging-deploy')
+                    }
+                }
+
+            }
+        }
+    }
+
 }
+
+
