@@ -8,19 +8,20 @@ COPY . .
 RUN ./gradlew clean build -x test --no-daemon
 
 # Runtime stage  
-FROM openjdk:17
+FROM eclipse-temurin:17
 
 WORKDIR /app
 
 # Copy the built JAR
 COPY --from=builder /app/remoteserver/build/libs/pmitz-remoteserver-*-SNAPSHOT.jar app.jar
 
-# Install curl for health checks
-RUN microdnf update -y && microdnf install -y curl && microdnf clean all
+# Install curl for health checks and create non-root user
+RUN apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd -r pmitz && useradd -r -g pmitz pmitz && \
+    chown pmitz:pmitz /app
 
-# Create non-root user
-RUN groupadd -r pmitz && useradd -r -g pmitz pmitz
-RUN chown pmitz:pmitz /app
 USER pmitz
 
 EXPOSE 8080
