@@ -1,4 +1,4 @@
-<meta name="google-site-verification" content="FUhxsxHHdr9X6Ys2vFNZOdYnxIXfK12oj8qhvHtlNRA" />
+<meta name="google-site-verification" content="wJhSO9RTsMUSwpu-myIzdobIQFMsq3Ej-zbwxAl6blU" />
 # Pmitz
 
 [![Build Snapshot](https://github.com/terpomo-io/pmitz/actions/workflows/ci-workflow.yml/badge.svg)](https://github.com/terpomo-io/pmitz/actions)
