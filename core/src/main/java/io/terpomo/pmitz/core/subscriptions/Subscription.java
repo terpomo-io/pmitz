@@ -17,19 +17,19 @@
 package io.terpomo.pmitz.core.subscriptions;
 
 import java.time.ZonedDateTime;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
-import io.terpomo.pmitz.core.Plan;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 
 public class Subscription extends UserGrouping {
 
-	private String subscriptionId;
+	private final String subscriptionId;
 	private SubscriptionStatus status;
 	private ZonedDateTime expirationDate;
 
-
-	private Plan plan;
+	private Map<String, String> plansByProduct;
 
 	public Subscription(String subscriptionId) {
 		this.subscriptionId = subscriptionId;
@@ -40,16 +40,16 @@ public class Subscription extends UserGrouping {
 	}
 
 	public boolean isExpired() {
-		return SubscriptionStatus.EXPIRED == status;
+		return !status.isValid() || (status.isValid() && isExpirationDatePassed());
+	}
+
+	public boolean isValid() {
+		return status.isValid() && !isExpirationDatePassed();
 	}
 
 	@Override
 	public String getId() {
 		return subscriptionId;
-	}
-
-	public Plan getPlan() {
-		return plan;
 	}
 
 	public String getSubscriptionId() {
@@ -62,6 +62,28 @@ public class Subscription extends UserGrouping {
 
 	public ZonedDateTime getExpirationDate() {
 		return expirationDate;
+	}
+
+	public Map<String, String> getPlansByProduct() {
+		return plansByProduct;
+	}
+
+	@Override
+	public boolean isProductAllowed(String productId) {
+		return plansByProduct != null && plansByProduct.containsKey(productId);
+	}
+
+	@Override
+	public Optional<String> getPlan(String productId) {
+		return Optional.ofNullable(plansByProduct.get(productId));
+	}
+
+	public void setPlans(Map<String, String> plansByProduct) {
+		this.plansByProduct = plansByProduct;
+	}
+
+	private boolean isExpirationDatePassed() {
+		return expirationDate != null && expirationDate.isBefore(ZonedDateTime.now());
 	}
 
 	@Override

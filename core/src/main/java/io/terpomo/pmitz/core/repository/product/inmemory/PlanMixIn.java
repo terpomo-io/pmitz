@@ -18,28 +18,33 @@ package io.terpomo.pmitz.core.repository.product.inmemory;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Plan;
+import io.terpomo.pmitz.core.Product;
+import io.terpomo.pmitz.core.limits.LimitRule;
 
 @ExcludeFromJacocoGeneratedReport
-public class ProductMixIn {
+public class PlanMixIn {
 
-	@JsonProperty("productId")
-	String productId;
-
-	@JsonManagedReference
-	List<Plan> plans;
+	@JsonProperty
+	List<LimitRule> limitOverride;
 
 	@JsonManagedReference
-	List<Feature> features;
+	List<Feature> includedFeatures;
+
+	@JsonBackReference
+	Product product;
 
 	@JsonCreator
-	public ProductMixIn(
-			@JsonProperty("productId") String productId) {
+	public PlanMixIn(
+			@JsonProperty("product") Product product,
+			@JsonProperty("planId") String planId,
+			@JsonProperty("includedFeatures") List<String> includedFeatures) {
+
 	}
 
 }

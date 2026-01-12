@@ -45,6 +45,29 @@
           }
         ]
       }
+    ],
+    "plans": [
+      {"planId" :  "basic",
+        "description": "Basic plan",
+        "includedFeatures": ["Downloading pictures", "Uploading pictures"]
+      },
+      {"planId" :  "standard",
+        "description": "Standard plan",
+        "includedFeatures": ["Downloading pictures", "Uploading pictures"]
+      },
+      {
+        "planId" :  "premium",
+        "description": "Premium plan",
+        "includedFeatures": ["Downloading pictures", "Uploading pictures"],
+        "limitsOverride" : [
+          {
+            "type": "CalendarPeriodRateLimit",
+            "id": "dwnl-num-pics-month",
+            "quota": 50,
+            "periodicity": "MONTH"
+          }
+        ]
+      }
     ]
   }
 ]

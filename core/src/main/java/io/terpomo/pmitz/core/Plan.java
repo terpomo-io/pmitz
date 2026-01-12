@@ -17,16 +17,34 @@
 package io.terpomo.pmitz.core;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import io.terpomo.pmitz.core.limits.LimitRule;
 
 public class Plan implements Serializable {
 
-	private Product product;
+	private final Product product;
 
 	private String planId;
 
-	public Plan(Product product, String planId) {
+	private String description;
+
+	private Set<Feature> includedFeatures;
+
+	private Map<String, Feature> includedFeaturesById;
+
+	private List<LimitRule> limitsOverride = Collections.emptyList();
+
+	public Plan(Product product, String planId, List<String> includedFeatures) {
 		this.planId = planId;
 		this.product = product;
+		setIncludedFeatures(includedFeatures.stream().map(id -> new Feature(product, id)).collect(Collectors.toSet()));
 	}
 
 	public Product getProduct() {
@@ -35,5 +53,35 @@ public class Plan implements Serializable {
 
 	public String getPlanId() {
 		return planId;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public Set<Feature> getIncludedFeatures() {
+		return includedFeatures;
+	}
+
+	public Optional<Feature> getIncludedFeature(String featureId) {
+		return Optional.ofNullable(includedFeaturesById.get(featureId));
+	}
+
+	public void setIncludedFeatures(Set<Feature> includedFeatures) {
+		this.includedFeatures = includedFeatures;
+		this.includedFeaturesById = includedFeatures.stream()
+				.collect(Collectors.toMap(Feature::getFeatureId, Function.identity()));
+	}
+
+	public List<LimitRule> getLimitsOverride() {
+		return limitsOverride;
+	}
+
+	public void setLimitsOverride(List<LimitRule> limitsOverride) {
+		this.limitsOverride = limitsOverride;
 	}
 }

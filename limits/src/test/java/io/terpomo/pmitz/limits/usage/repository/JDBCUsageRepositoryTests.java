@@ -169,7 +169,7 @@ class JDBCUsageRepositoryTests {
 
 	@Test
 	void testLoadUsageDataWithMultipleRecords() throws Exception {
-		ZonedDateTime time = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+		ZonedDateTime time = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
 
 		UsageRecord newRecord1 = new UsageRecord(null, "limit4", time.minusDays(60),
 				time.minusDays(40), 200L, time.plusMonths(6));

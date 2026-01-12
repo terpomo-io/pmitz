@@ -16,6 +16,7 @@
 
 package io.terpomo.pmitz.core.repository.product.inmemory;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,7 +28,8 @@ public class FeatureMixIn {
 
 	@JsonProperty("featureId")
 	String featureId;
-	@JsonIgnore
+
+	@JsonBackReference
 	Product product;
 
 	@JsonCreator
@@ -41,8 +43,4 @@ public class FeatureMixIn {
 		// Method added to ignore attribute by json library
 	}
 
-	@JsonIgnore
-	public Product getProduct() {
-		return null;
-	}
 }

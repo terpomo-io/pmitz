@@ -45,7 +45,7 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 
 	@Override
 	public void recordFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> requestedUnits) {
-		if (!subscriptionVerifier.isFeatureAllowed(feature, userGrouping)) {
+		if (!subscriptionVerifier.verifyEntitlement(feature, userGrouping).isFeatureAllowed()) {
 			throw new FeatureNotAllowedException("Feature not allowed for userGrouping", feature, userGrouping);
 		}
 		limitVerifier.recordFeatureUsage(feature, userGrouping, requestedUnits);
@@ -58,7 +58,7 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 
 	@Override
 	public FeatureUsageInfo verifyLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
-		if (!subscriptionVerifier.isFeatureAllowed(feature, userGrouping)) {
+		if (!subscriptionVerifier.verifyEntitlement(feature, userGrouping).isFeatureAllowed()) {
 			return new FeatureUsageInfo(FeatureStatus.NOT_ALLOWED, Collections.emptyMap());
 		}
 
@@ -76,7 +76,7 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 
 	@Override
 	public FeatureUsageInfo getUsageInfo(Feature feature, UserGrouping userGrouping) {
-		if (!subscriptionVerifier.isFeatureAllowed(feature, userGrouping)) {
+		if (!subscriptionVerifier.verifyEntitlement(feature, userGrouping).isFeatureAllowed()) {
 			return new FeatureUsageInfo(FeatureStatus.NOT_ALLOWED, Collections.emptyMap());
 		}
 

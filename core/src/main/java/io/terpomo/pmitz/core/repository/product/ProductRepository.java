@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Plan;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.limits.LimitRule;
 
@@ -44,4 +45,17 @@ public interface ProductRepository {
 	void updateFeature(Feature feature);
 
 	void removeFeature(Feature feature);
+
+	List<Plan> getPlans(Product product);
+
+	Optional<Plan> getPlan(Product product, String planId);
+
+	void addPlan(Plan plan);
+
+	void updatePlan(Plan plan);
+
+	void removePlan(Plan plan);
+
+	boolean isFeatureIncluded(Plan plan, Feature feature);
+
 }

@@ -16,18 +16,28 @@
 
 package io.terpomo.pmitz.subscriptions;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.PlanRepository;
+import java.util.Optional;
+
 import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
 
-public class SubscriptionFeatureManagerImpl implements SubscriptionFeatureManager {
+public interface SubscriptionRepository {
 
-	private PlanRepository planRepository;
+	void create(Subscription subscription);
 
-	@Override
-	public boolean isFeatureIncluded(Subscription subscription, Feature feature) {
-		var plan = subscription.getPlan();
+	Optional<Subscription> find(String subscriptionId);
 
-		return planRepository.isIncluded(plan, feature);
+	void updateStatus(Subscription subscription, SubscriptionStatus newStatus);
+
+	default void activate(Subscription subscription) {
+		updateStatus(subscription, SubscriptionStatus.ACTIVE);
+	}
+
+	default void cancel(Subscription subscription) {
+		updateStatus(subscription, SubscriptionStatus.CANCELLED);
+	}
+
+	default void terminate(Subscription subscription) {
+		updateStatus(subscription, SubscriptionStatus.TERMINATED);
 	}
 }

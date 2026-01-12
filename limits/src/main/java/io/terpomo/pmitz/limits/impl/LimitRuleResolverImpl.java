@@ -16,9 +16,11 @@
 
 package io.terpomo.pmitz.limits.impl;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Plan;
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
@@ -27,8 +29,8 @@ import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 
 public class LimitRuleResolverImpl implements LimitRuleResolver {
 
-	private ProductRepository productRepository;
-	private UserLimitRepository userLimitRepository;
+	private final ProductRepository productRepository;
+	private final UserLimitRepository userLimitRepository;
 
 	public LimitRuleResolverImpl(ProductRepository productRepository) {
 		this(productRepository, new NoOpUserLimitRepository());
@@ -41,14 +43,21 @@ public class LimitRuleResolverImpl implements LimitRuleResolver {
 
 	@Override
 	public Optional<LimitRule> resolveLimitRule(Feature feature, String limitRuleId, UserGrouping userGrouping) {
-		//TODO verify interfaces' specs
-		// 1- find limit specific to userGrouping
-		// 2- find limit for plan --> 2.1 find plan, 2.2 find limit for plan
-		// 3- find global limit
+		var optUserLimitRule = userLimitRepository.findLimitRule(feature, limitRuleId, userGrouping);
+		var product = feature.getProduct();
+		if (optUserLimitRule.isPresent()) {
+			return optUserLimitRule;
+		}
 
-		return userLimitRepository.findLimitRule(feature, limitRuleId, userGrouping)
-				.or(() -> productRepository.getGlobalLimit(feature, limitRuleId));
+		var optPlanId = userGrouping.getPlan(product.getProductId());
 
+		Optional<LimitRule> planLimitRule = optPlanId.flatMap(id -> productRepository.getPlan(product, id))
+					.map(Plan::getLimitsOverride)
+					.orElseGet(Collections::emptyList)
+					.stream().filter(rule -> limitRuleId.equals(rule.getId()))
+					.findFirst();
+
+		return planLimitRule.or(() -> productRepository.getGlobalLimit(feature, limitRuleId));
 	}
 
 	public static class NoOpUserLimitRepository implements UserLimitRepository {

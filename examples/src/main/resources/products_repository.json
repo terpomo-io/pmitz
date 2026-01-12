@@ -18,17 +18,17 @@
     "productId": "Picture hosting service",
     "features": [
       {
-        "featureId": "Uploading pictures",
+        "featureId": "uploading-pictures",
         "limits": [
           {
             "type": "CountLimit",
-            "id": "Maximum picture size",
+            "id": "upl-max-pic-size",
             "count": 10,
             "unit": "Go"
           },
           {
-            "type": "SlidingWindowRateLimit",
-            "id": "Maximum of pictures uploaded by hour",
+            "type": "CalendarPeriodRateLimit",
+            "id": "upl-num-pics",
             "quota": 10,
             "interval": "HOURS",
             "duration": 1
@@ -36,19 +36,46 @@
         ]
       },
       {
-        "featureId": "Downloading pictures",
+        "featureId": "downloading-pictures",
         "limits": [
           {
-            "type": "SlidingWindowRateLimit",
-            "id": "Maximum of pictures downloaded by hour",
+            "type": "CalendarPeriodRateLimit",
+            "id": "dwnl-num-pics-hr",
             "quota": 8,
             "interval": "MINUTES",
             "duration": 60
           },
           {
             "type": "CalendarPeriodRateLimit",
-            "id": "Maximum of pictures downloaded by calendar month",
+            "id": "dwnl-num-pics-month",
             "quota": 10,
+            "periodicity": "MONTH"
+          }
+        ]
+      }
+    ],
+    "plans": [
+      {"id" :  "basic",
+       "description": "Basic plan",
+       "includedFeatures": ["downloading-pictures", "uploading-pictures"],
+       "limitsOverride" : [
+         {"max-pic-size" :  3},
+         {"num-pics":  3}
+       ]
+      },
+      {"id" :  "standard",
+        "description": "Standard plan",
+        "includedFeatures": ["downloading-pictures", "uploading-pictures"]
+      },
+      {
+        "id" :  "premium",
+        "description": "Premium plan",
+        "includedFeatures": ["downloading-pictures", "uploading-pictures"],
+        "limitsOverride" : [
+          {
+            "type": "CalendarPeriodRateLimit",
+            "id": "dwnl-num-pics-month",
+            "quota": 50,
             "periodicity": "MONTH"
           }
         ]

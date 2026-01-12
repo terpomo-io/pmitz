@@ -16,8 +16,6 @@
 
 package io.terpomo.pmitz.remote.server.service;
 
-import java.util.Optional;
-
 import javax.sql.DataSource;
 
 import org.springframework.context.annotation.Bean;
@@ -26,10 +24,10 @@ import org.springframework.context.annotation.Configuration;
 import io.terpomo.pmitz.all.usage.tracker.FeatureUsageTracker;
 import io.terpomo.pmitz.all.usage.tracker.impl.FeatureUsageTrackerImpl;
 import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Plan;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.repository.product.inmemory.InMemoryProductRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.limits.LimitVerifier;
 import io.terpomo.pmitz.limits.LimitVerifierBuilder;
@@ -62,13 +60,8 @@ public class UsageTrackerConfig {
 		var subscriptionVerifier = new SubscriptionVerifier() {
 
 			@Override
-			public boolean isFeatureAllowed(Feature feature, UserGrouping userGrouping) {
-				return true;
-			}
-
-			@Override
-			public Optional<Plan> findPlan(Feature feature, UserGrouping userGrouping) {
-				return Optional.empty();
+			public SubscriptionVerifDetail verifyEntitlement(Feature feature, UserGrouping userGrouping) {
+				return SubscriptionVerifDetail.verificationOk();
 			}
 		};
 		return new FeatureUsageTrackerImpl(limitVerifier, subscriptionVerifier);
