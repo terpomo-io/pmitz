@@ -12,8 +12,8 @@ FROM eclipse-temurin:17
 
 WORKDIR /app
 
-# Copy the built JAR
-COPY --from=builder /app/remoteserver/build/libs/pmitz-remoteserver-*-SNAPSHOT.jar app.jar
+# Copy the built JAR (versioned artifact)
+COPY --from=builder /app/remoteserver/build/libs/pmitz-remoteserver-*.jar /app/app.jar
 
 # Install curl for health checks and create non-root user
 RUN apt-get update && \

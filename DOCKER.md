@@ -168,6 +168,10 @@ docker compose exec postgres psql -U pmitz -d pmitz
 
 # View usage data
 SELECT * FROM dbo.usage;
+
+# View subscription data
+SELECT * FROM dbo.subscription;
+SELECT * FROM dbo.subscription_plan;
 ```
 
 ## Management

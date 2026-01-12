@@ -23,15 +23,16 @@ import org.springframework.context.annotation.Configuration;
 
 import io.terpomo.pmitz.all.usage.tracker.FeatureUsageTracker;
 import io.terpomo.pmitz.all.usage.tracker.impl.FeatureUsageTrackerImpl;
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.repository.product.inmemory.InMemoryProductRepository;
-import io.terpomo.pmitz.core.subjects.UserGrouping;
-import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
-import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.limits.LimitVerifier;
 import io.terpomo.pmitz.limits.LimitVerifierBuilder;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
+import io.terpomo.pmitz.subscriptions.DefaultSubscriptionFeatureManager;
+import io.terpomo.pmitz.subscriptions.SubscriptionFeatureManager;
+import io.terpomo.pmitz.subscriptions.SubscriptionRepository;
+import io.terpomo.pmitz.subscriptions.SubscriptionVerifierImpl;
+import io.terpomo.pmitz.subscriptions.jdbc.JDBCSubscriptionRepository;
 
 @Configuration
 public class UsageTrackerConfig {
@@ -39,6 +40,8 @@ public class UsageTrackerConfig {
 	private static final String DB_SCHEMA_NAME = "dbo";
 	private static final String DB_USER_USAGE_TABLE_NAME = "usage";
 	private static final String DB_USER_LIMIT_TABLE_NAME = "user_limit";
+	private static final String DB_SUBSCRIPTION_TABLE_NAME = "subscription";
+	private static final String DB_SUBSCRIPTION_PLAN_TABLE_NAME = "subscription_plan";
 
 	@Bean
 	ProductRepository productRepository() {
@@ -56,14 +59,19 @@ public class UsageTrackerConfig {
 	}
 
 	@Bean
-	FeatureUsageTracker featureUsageTracker(LimitVerifier limitVerifier) {
-		var subscriptionVerifier = new SubscriptionVerifier() {
+	SubscriptionRepository subscriptionRepository(DataSource dataSource) {
+		return new JDBCSubscriptionRepository(dataSource, DB_SCHEMA_NAME, DB_SUBSCRIPTION_TABLE_NAME, DB_SUBSCRIPTION_PLAN_TABLE_NAME);
+	}
 
-			@Override
-			public SubscriptionVerifDetail verifyEntitlement(Feature feature, UserGrouping userGrouping) {
-				return SubscriptionVerifDetail.verificationOk();
-			}
-		};
+	@Bean
+	SubscriptionFeatureManager subscriptionFeatureManager(ProductRepository productRepo) {
+		return new DefaultSubscriptionFeatureManager(productRepo);
+	}
+
+	@Bean
+	FeatureUsageTracker featureUsageTracker(LimitVerifier limitVerifier, SubscriptionRepository subscriptionRepository,
+			SubscriptionFeatureManager subscriptionFeatureManager) {
+		var subscriptionVerifier = new SubscriptionVerifierImpl(subscriptionRepository, subscriptionFeatureManager);
 		return new FeatureUsageTrackerImpl(limitVerifier, subscriptionVerifier);
 	}
 }

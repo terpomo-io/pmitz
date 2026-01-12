@@ -8,6 +8,7 @@ dependencies {
     implementation project(path: ':all')
     implementation project(path: ':core')
     implementation project(path: ':limits')
+    implementation project(path: ':subscriptions')
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'

@@ -36,6 +36,9 @@ public class SubscriptionVerifierImpl implements SubscriptionVerifier {
 
 	@Override
 	public SubscriptionVerifDetail verifyEntitlement(Feature feature, UserGrouping userGrouping) {
+		if (!(userGrouping instanceof Subscription)) {
+			return SubscriptionVerifDetail.verificationOk();
+		}
 
 		String productId = feature.getProduct().getProductId();
 		Optional<Subscription> optSubscription = subscriptionRepository.find(userGrouping.getId());

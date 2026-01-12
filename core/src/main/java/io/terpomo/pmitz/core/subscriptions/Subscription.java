@@ -40,11 +40,11 @@ public class Subscription extends UserGrouping {
 	}
 
 	public boolean isExpired() {
-		return !status.isValid() || (status.isValid() && isExpirationDatePassed());
+		return status == null || !status.isValid() || (status.isValid() && isExpirationDatePassed());
 	}
 
 	public boolean isValid() {
-		return status.isValid() && !isExpirationDatePassed();
+		return status != null && status.isValid() && !isExpirationDatePassed();
 	}
 
 	@Override
@@ -60,8 +60,16 @@ public class Subscription extends UserGrouping {
 		return status;
 	}
 
+	public void setStatus(SubscriptionStatus status) {
+		this.status = status;
+	}
+
 	public ZonedDateTime getExpirationDate() {
 		return expirationDate;
+	}
+
+	public void setExpirationDate(ZonedDateTime expirationDate) {
+		this.expirationDate = expirationDate;
 	}
 
 	public Map<String, String> getPlansByProduct() {

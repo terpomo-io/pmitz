@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
+import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 
@@ -115,6 +116,14 @@ class SubscriptionVerifierImplTests {
 		when(subscriptionFeatureManager.isFeatureIncluded(subscription, feature)).thenReturn(true);
 
 		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(feature, subscription);
+
+		assertThat(result.isFeatureAllowed()).isTrue();
+		assertThat(result.getErrorCause()).isNull();
+	}
+
+	@Test
+	void verifyEntitlementShouldAllowNonSubscriptionGroupings() {
+		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(feature, new IndividualUser("user-123"));
 
 		assertThat(result.isFeatureAllowed()).isTrue();
 		assertThat(result.getErrorCause()).isNull();
