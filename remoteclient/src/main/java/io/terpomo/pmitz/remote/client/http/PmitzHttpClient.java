@@ -20,10 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.hc.client5.http.classic.methods.HttpDelete;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -34,6 +30,11 @@ import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.io.entity.InputStreamEntity;
 import org.apache.hc.core5.http.io.entity.StringEntity;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
@@ -57,13 +58,15 @@ public class PmitzHttpClient implements PmitzClient {
 
 	private final CloseableHttpClient httpClient;
 
-	private final ObjectMapper objectMapper = new ObjectMapper();
+	private final ObjectMapper objectMapper;
 
 	private final Map<Class<?>, String> userGroupingTypes;
 	private final PmitzHttpAuthProvider authProvider;
 
 	public PmitzHttpClient(String url, PmitzHttpAuthProvider authProvider) {
-		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		this.objectMapper = JsonMapper.builder()
+				.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+				.build();
 
 		this.url = url;
 
@@ -108,7 +111,7 @@ public class PmitzHttpClient implements PmitzClient {
 		try {
 			return objectMapper.treeToValue(responseData, FeatureUsageInfo.class);
 		}
-		catch (JsonProcessingException jsonEx) {
+		catch (JacksonException jsonEx) {
 			throw new RemoteCallException("Unexpected error while parsing server response", jsonEx);
 		}
 	}
@@ -123,7 +126,7 @@ public class PmitzHttpClient implements PmitzClient {
 			httpPost.setHeader("Content-Type", "application/json");
 			addAuthenticationHeaders(httpPost);
 		}
-		catch (JsonProcessingException jsonEx) {
+		catch (JacksonException jsonEx) {
 			throw new RemoteCallException("Unexpected exception while preparing request", jsonEx);
 		}
 
@@ -155,7 +158,7 @@ public class PmitzHttpClient implements PmitzClient {
 		try {
 			return objectMapper.treeToValue(responseData, FeatureUsageInfo.class);
 		}
-		catch (JsonProcessingException jsonEx) {
+		catch (JacksonException jsonEx) {
 			throw new RemoteCallException("Unexpected error while parsing server response", jsonEx);
 		}
 	}
@@ -172,7 +175,7 @@ public class PmitzHttpClient implements PmitzClient {
 			httpPost.setHeader("Content-Type", "application/json");
 			addAuthenticationHeaders(httpPost);
 		}
-		catch (JsonProcessingException jsonEx) {
+		catch (JacksonException jsonEx) {
 			throw new RemoteCallException("Unexpected exception while preparing request", jsonEx);
 		}
 

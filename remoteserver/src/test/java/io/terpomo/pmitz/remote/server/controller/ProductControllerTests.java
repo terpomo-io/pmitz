@@ -22,9 +22,8 @@ import java.util.Optional;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -59,15 +58,11 @@ class ProductControllerTests {
 	@MockitoBean
 	ProductRepository productRepository;
 
-	@Captor
-	ArgumentCaptor<Product> productArgumentCaptor;
-
 	private ApiKeyAuthentication apiKeyAuthentication = new ApiKeyAuthentication("test-api-key", AuthorityUtils.NO_AUTHORITIES);
 
 	@Test
 	void addProductShouldAddProductToRepository() throws Exception {
 		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
-		doNothing().when(productRepository).addProduct(productArgumentCaptor.capture());
 
 		String jsonContent = new ClassPathResource("/product-picshare.json").getContentAsString(StandardCharsets.UTF_8);
 
@@ -78,7 +73,9 @@ class ProductControllerTests {
 						.content(jsonContent))
 				.andExpect(status().isOk());
 
+		ArgumentCaptor<Product> productArgumentCaptor = ArgumentCaptor.forClass(Product.class);
 		verify(productRepository).addProduct(productArgumentCaptor.capture());
+
 
 		var product = productArgumentCaptor.getValue();
 		assertThat(product).isNotNull();
@@ -132,13 +129,13 @@ class ProductControllerTests {
 	void removeProductShouldRemoveProductFromRepository() throws Exception {
 		when(authenticationService.getAuthentication(any())).thenReturn(apiKeyAuthentication);
 		when(productRepository.getProductById("picshare")).thenReturn(Optional.of(new Product("picshare")));
-		doNothing().when(productRepository).removeProduct(productArgumentCaptor.capture());
 
 		String url = "/products/picshare";
 		mockMvc.perform(delete(url)
 						.contentType("application/json"))
 				.andExpect(status().isOk());
 
+		ArgumentCaptor<Product> productArgumentCaptor = ArgumentCaptor.forClass(Product.class);
 		verify(productRepository).removeProduct(productArgumentCaptor.capture());
 
 		var product = productArgumentCaptor.getValue();

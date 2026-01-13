@@ -16,7 +16,6 @@
 
 package io.terpomo.pmitz.core.repository.product.inmemory;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
@@ -28,9 +27,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Plan;
@@ -49,15 +49,16 @@ public class InMemoryProductRepository implements ProductRepository {
 
 	public InMemoryProductRepository() {
 
-		this.mapper = new ObjectMapper()
-				.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
+		this.mapper = JsonMapper.builder()
+				.changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
 				.enable(SerializationFeature.INDENT_OUTPUT)
 				.addMixIn(Product.class, ProductMixIn.class)
 				.addMixIn(Feature.class, FeatureMixIn.class)
 				.addMixIn(Plan.class, PlanMixIn.class)
 				.addMixIn(LimitRule.class, LimitRuleMixIn.class)
 				.addMixIn(CalendarPeriodRateLimit.class, CalendarPeriodRateLimitMixIn.class)
-				.addMixIn(CountLimit.class, CountLimitMixIn.class);
+				.addMixIn(CountLimit.class, CountLimitMixIn.class)
+				.build();
 	}
 
 	@Override
@@ -309,7 +310,7 @@ public class InMemoryProductRepository implements ProductRepository {
 		this.products.clear();
 	}
 
-	public void load(InputStream inputStream) throws IOException {
+	public void load(InputStream inputStream) {
 
 		TypeReference<List<Product>> typeRef = new TypeReference<>() { };
 		List<Product> loadedProducts = this.mapper.readValue(inputStream, typeRef);
@@ -320,7 +321,7 @@ public class InMemoryProductRepository implements ProductRepository {
 				.collect(Collectors.toMap(Product::getProductId, product -> product));
 	}
 
-	public void store(OutputStream outputStream) throws IOException {
+	public void store(OutputStream outputStream) {
 
 		this.mapper.writeValue(outputStream, this.products.values());
 	}

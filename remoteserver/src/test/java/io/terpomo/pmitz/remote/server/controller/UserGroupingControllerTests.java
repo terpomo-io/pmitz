@@ -27,7 +27,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -275,7 +275,7 @@ class UserGroupingControllerTests {
 
 		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
 
-		doReturn(featureUsageInfo).when(featureUsageTracker).getUsageInfo(eq(feature), eq(userGrouping));
+		doReturn(featureUsageInfo).when(featureUsageTracker).getUsageInfo(feature, userGrouping);
 
 		String expectedJson = """
 				{
@@ -292,7 +292,7 @@ class UserGroupingControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().json(expectedJson));
 
-		verify(featureUsageTracker, times(1)).getUsageInfo(eq(feature), eq(userGrouping));
+		verify(featureUsageTracker, times(1)).getUsageInfo(feature, userGrouping);
 
 	}
 
