@@ -16,7 +16,6 @@
 
 package io.terpomo.pmitz;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
@@ -129,7 +128,7 @@ public class InMemorySample {
 		try {
 			productRepo.load(InMemorySample.class.getResourceAsStream("/products_repository.json"));
 		}
-		catch (IOException ex) {
+		catch (Exception ex) {
 			throw new RuntimeException("Product Repository file not found", ex);
 		}
 
