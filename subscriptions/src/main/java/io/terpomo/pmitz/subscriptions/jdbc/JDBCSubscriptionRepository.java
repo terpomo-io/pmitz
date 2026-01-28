@@ -32,8 +32,8 @@ import javax.sql.DataSource;
 
 import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionRepository;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
-import io.terpomo.pmitz.subscriptions.SubscriptionRepository;
 
 public class JDBCSubscriptionRepository implements SubscriptionRepository {
 

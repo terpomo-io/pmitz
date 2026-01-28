@@ -19,6 +19,7 @@ package io.terpomo.pmitz.subscriptions;
 import javax.sql.DataSource;
 
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionRepository;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.subscriptions.jdbc.JDBCSubscriptionRepository;
 

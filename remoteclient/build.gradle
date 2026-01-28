@@ -5,6 +5,7 @@ plugins {
 dependencies {
     implementation project(':core')
     implementation project(':limits')
+    implementation project(':subscriptions')
 
     implementation libs.slf4jApi
     implementation libs.jackson.databind

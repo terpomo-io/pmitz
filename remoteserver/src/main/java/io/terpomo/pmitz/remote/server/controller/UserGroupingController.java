@@ -34,6 +34,8 @@ import io.terpomo.pmitz.core.subjects.DirectoryGroup;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.limits.impl.LimitsValidationUtil;
 
 @RestController
@@ -41,10 +43,13 @@ public class UserGroupingController {
 
 	private final FeatureUsageTracker featureUsageTracker;
 	private final ProductRepository productRepository;
+	private final SubscriptionVerifier subscriptionVerifier;
 
-	public UserGroupingController(FeatureUsageTracker featureUsageTracker, ProductRepository productRepository) {
+	public UserGroupingController(FeatureUsageTracker featureUsageTracker, ProductRepository productRepository,
+			SubscriptionVerifier subscriptionVerifier) {
 		this.featureUsageTracker = featureUsageTracker;
 		this.productRepository = productRepository;
+		this.subscriptionVerifier = subscriptionVerifier;
 	}
 
 	@GetMapping("/{userGroupingType}/{userGroupingId}/usage/{productId}/{featureId}")
@@ -81,6 +86,16 @@ public class UserGroupingController {
 		UserGrouping userGrouping = resolveUserGrouping(userGroupingType, userGroupingId);
 
 		return featureUsageTracker.verifyLimits(feature, userGrouping, additionalUnits);
+	}
+
+	@GetMapping("/{userGroupingType}/{userGroupingId}/subscription-check/{productId}/{featureId}")
+	public SubscriptionVerifDetail verifySubscription(@PathVariable String userGroupingType,
+			@PathVariable String productId,
+			@PathVariable String featureId,
+			@PathVariable String userGroupingId) {
+		Feature feature = findFeature(productId, featureId);
+		UserGrouping userGrouping = resolveUserGrouping(userGroupingType, userGroupingId);
+		return subscriptionVerifier.verifyEntitlement(feature, userGrouping);
 	}
 
 	private Feature findFeature(String productId, String featureId) {

@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionRepository;
 import io.terpomo.pmitz.subscriptions.jdbc.JDBCSubscriptionRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;

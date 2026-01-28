@@ -25,11 +25,16 @@ import io.terpomo.pmitz.core.subjects.UserGrouping;
 
 public class Subscription extends UserGrouping {
 
-	private final String subscriptionId;
+	private String subscriptionId;
 	private SubscriptionStatus status;
 	private ZonedDateTime expirationDate;
 
 	private Map<String, String> plansByProduct;
+
+	@SuppressWarnings("unused")
+	private Subscription() {
+		// Default constructor for Jackson deserialization
+	}
 
 	public Subscription(String subscriptionId) {
 		this.subscriptionId = subscriptionId;

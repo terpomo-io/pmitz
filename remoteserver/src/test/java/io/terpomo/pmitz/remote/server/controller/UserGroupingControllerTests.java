@@ -44,6 +44,8 @@ import io.terpomo.pmitz.core.subjects.DirectoryGroup;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.remote.server.security.ApiKeyAuthentication;
 import io.terpomo.pmitz.remote.server.security.AuthenticationService;
 import io.terpomo.pmitz.remote.server.security.SecurityConfig;
@@ -53,7 +55,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest
+@WebMvcTest(controllers = UserGroupingController.class)
 @Import({SecurityConfig.class})
 class UserGroupingControllerTests {
 
@@ -68,6 +70,8 @@ class UserGroupingControllerTests {
 	FeatureUsageTracker featureUsageTracker;
 	@MockitoBean
 	ProductRepository productRepository;
+	@MockitoBean
+	SubscriptionVerifier subscriptionVerifier;
 	@Autowired
 	MockMvc mockMvc;
 
@@ -85,6 +89,13 @@ class UserGroupingControllerTests {
 				Arguments.of("/users/theId/limits-check/product1/feature1", new IndividualUser("theId")),
 				Arguments.of("/directory-groups/theId/limits-check/product1/feature1", new DirectoryGroup("theId")),
 				Arguments.of("/subscriptions/theId/limits-check/product1/feature1", new Subscription("theId")));
+	}
+
+	private static Stream<Arguments> subscriptionCheckUrlsAndUserGroupingsProvider() {
+		return Stream.of(
+				Arguments.of("/users/theId/subscription-check/product1/feature1", new IndividualUser("theId")),
+				Arguments.of("/directory-groups/theId/subscription-check/product1/feature1", new DirectoryGroup("theId")),
+				Arguments.of("/subscriptions/theId/subscription-check/product1/feature1", new Subscription("theId")));
 	}
 
 	@BeforeEach
@@ -305,5 +316,109 @@ class UserGroupingControllerTests {
 				.andExpect(status().is(401));
 
 		verify(featureUsageTracker, never()).getUsageInfo(any(), any());
+	}
+
+	@ParameterizedTest
+	@MethodSource("subscriptionCheckUrlsAndUserGroupingsProvider")
+	void verifySubscriptionShouldReturnVerifDetailWhenFeatureAllowed(String url, UserGrouping userGrouping) throws Exception {
+		var verifDetail = SubscriptionVerifDetail.verificationOk();
+
+		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
+		doReturn(verifDetail).when(subscriptionVerifier).verifyEntitlement(feature, userGrouping);
+
+		String expectedJson = """
+				{
+					"featureAllowed" : true,
+					"errorCause" : null
+				}
+				""";
+
+		mockMvc.perform(get(url)
+						.contentType("application/json"))
+				.andExpect(status().isOk())
+				.andExpect(content().json(expectedJson));
+
+		verify(subscriptionVerifier, times(1)).verifyEntitlement(feature, userGrouping);
+	}
+
+	@ParameterizedTest
+	@MethodSource("subscriptionCheckUrlsAndUserGroupingsProvider")
+	void verifySubscriptionShouldReturnVerifDetailWhenInvalidSubscription(String url, UserGrouping userGrouping) throws Exception {
+		var verifDetail = SubscriptionVerifDetail.verificationError(SubscriptionVerifDetail.ErrorCause.INVALID_SUBSCRIPTION);
+
+		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
+		doReturn(verifDetail).when(subscriptionVerifier).verifyEntitlement(feature, userGrouping);
+
+		String expectedJson = """
+				{
+					"featureAllowed" : false,
+					"errorCause" : "INVALID_SUBSCRIPTION"
+				}
+				""";
+
+		mockMvc.perform(get(url)
+						.contentType("application/json"))
+				.andExpect(status().isOk())
+				.andExpect(content().json(expectedJson));
+
+		verify(subscriptionVerifier, times(1)).verifyEntitlement(feature, userGrouping);
+	}
+
+	@ParameterizedTest
+	@MethodSource("subscriptionCheckUrlsAndUserGroupingsProvider")
+	void verifySubscriptionShouldReturnVerifDetailWhenProductNotAllowed(String url, UserGrouping userGrouping) throws Exception {
+		var verifDetail = SubscriptionVerifDetail.verificationError(SubscriptionVerifDetail.ErrorCause.PRODUCT_NOT_ALLOWED);
+
+		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
+		doReturn(verifDetail).when(subscriptionVerifier).verifyEntitlement(feature, userGrouping);
+
+		String expectedJson = """
+				{
+					"featureAllowed" : false,
+					"errorCause" : "PRODUCT_NOT_ALLOWED"
+				}
+				""";
+
+		mockMvc.perform(get(url)
+						.contentType("application/json"))
+				.andExpect(status().isOk())
+				.andExpect(content().json(expectedJson));
+
+		verify(subscriptionVerifier, times(1)).verifyEntitlement(feature, userGrouping);
+	}
+
+	@ParameterizedTest
+	@MethodSource("subscriptionCheckUrlsAndUserGroupingsProvider")
+	void verifySubscriptionShouldReturnVerifDetailWhenFeatureNotAllowed(String url, UserGrouping userGrouping) throws Exception {
+		var verifDetail = SubscriptionVerifDetail.verificationError(SubscriptionVerifDetail.ErrorCause.FEATURE_NOT_ALLOWED);
+
+		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
+		doReturn(verifDetail).when(subscriptionVerifier).verifyEntitlement(feature, userGrouping);
+
+		String expectedJson = """
+				{
+					"featureAllowed" : false,
+					"errorCause" : "FEATURE_NOT_ALLOWED"
+				}
+				""";
+
+		mockMvc.perform(get(url)
+						.contentType("application/json"))
+				.andExpect(status().isOk())
+				.andExpect(content().json(expectedJson));
+
+		verify(subscriptionVerifier, times(1)).verifyEntitlement(feature, userGrouping);
+	}
+
+	@ParameterizedTest
+	@MethodSource("subscriptionCheckUrlsAndUserGroupingsProvider")
+	void verifySubscriptionShouldReturnStatus401WhenAuthenticationFails(String url, UserGrouping userGrouping) throws Exception {
+		when(authenticationService.getAuthentication(any())).thenReturn(null);
+
+		mockMvc.perform(get(url)
+						.contentType("application/json"))
+				.andExpect(status().is(401));
+
+		verify(subscriptionVerifier, never()).verifyEntitlement(any(), any());
 	}
 }

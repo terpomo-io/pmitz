@@ -18,10 +18,14 @@ package io.terpomo.pmitz.remote.client;
 
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Optional;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 
 public interface PmitzClient {
 
@@ -30,6 +34,14 @@ public interface PmitzClient {
 	FeatureUsageInfo verifyLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
 
 	void recordOrReduce(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits, boolean isReduce);
+
+	SubscriptionVerifDetail verifySubscription(Feature feature, UserGrouping userGrouping);
+
+	void createSubscription(Subscription subscription);
+
+	Optional<Subscription> findSubscription(String subscriptionId);
+
+	void updateSubscriptionStatus(String subscriptionId, SubscriptionStatus newStatus);
 
 	void uploadProduct(InputStream inputStream);
 

@@ -25,12 +25,13 @@ import io.terpomo.pmitz.all.usage.tracker.FeatureUsageTracker;
 import io.terpomo.pmitz.all.usage.tracker.impl.FeatureUsageTrackerImpl;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.repository.product.inmemory.InMemoryProductRepository;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionRepository;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.limits.LimitVerifier;
 import io.terpomo.pmitz.limits.LimitVerifierBuilder;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 import io.terpomo.pmitz.subscriptions.DefaultSubscriptionFeatureManager;
 import io.terpomo.pmitz.subscriptions.SubscriptionFeatureManager;
-import io.terpomo.pmitz.subscriptions.SubscriptionRepository;
 import io.terpomo.pmitz.subscriptions.SubscriptionVerifierImpl;
 import io.terpomo.pmitz.subscriptions.jdbc.JDBCSubscriptionRepository;
 
@@ -69,9 +70,13 @@ public class UsageTrackerConfig {
 	}
 
 	@Bean
-	FeatureUsageTracker featureUsageTracker(LimitVerifier limitVerifier, SubscriptionRepository subscriptionRepository,
+	SubscriptionVerifier subscriptionVerifier(SubscriptionRepository subscriptionRepository,
 			SubscriptionFeatureManager subscriptionFeatureManager) {
-		var subscriptionVerifier = new SubscriptionVerifierImpl(subscriptionRepository, subscriptionFeatureManager);
+		return new SubscriptionVerifierImpl(subscriptionRepository, subscriptionFeatureManager);
+	}
+
+	@Bean
+	FeatureUsageTracker featureUsageTracker(LimitVerifier limitVerifier, SubscriptionVerifier subscriptionVerifier) {
 		return new FeatureUsageTrackerImpl(limitVerifier, subscriptionVerifier);
 	}
 }

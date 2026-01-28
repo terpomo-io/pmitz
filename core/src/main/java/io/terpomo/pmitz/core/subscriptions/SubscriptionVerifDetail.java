@@ -21,6 +21,11 @@ public final class SubscriptionVerifDetail {
 	private boolean featureAllowed;
 	private ErrorCause errorCause;
 
+	@SuppressWarnings("unused")
+	private SubscriptionVerifDetail() {
+		// Default constructor for Jackson deserialization
+	}
+
 	private SubscriptionVerifDetail(boolean featureAllowed, ErrorCause validationErrorCause) {
 		this.featureAllowed = featureAllowed;
 		this.errorCause = validationErrorCause;

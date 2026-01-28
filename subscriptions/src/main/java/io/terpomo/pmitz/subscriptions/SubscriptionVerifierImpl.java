@@ -21,12 +21,13 @@ import java.util.Optional;
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionRepository;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 
 public class SubscriptionVerifierImpl implements SubscriptionVerifier {
 
-	private SubscriptionRepository subscriptionRepository;
+	private io.terpomo.pmitz.core.subscriptions.SubscriptionRepository subscriptionRepository;
 	private SubscriptionFeatureManager subscriptionFeatureManager;
 
 	public SubscriptionVerifierImpl(SubscriptionRepository subscriptionRepository, SubscriptionFeatureManager subscriptionFeatureManager) {

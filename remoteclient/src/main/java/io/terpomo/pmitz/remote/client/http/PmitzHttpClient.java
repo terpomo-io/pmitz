@@ -19,9 +19,11 @@ package io.terpomo.pmitz.remote.client.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.hc.client5.http.classic.methods.HttpDelete;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPatch;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -45,6 +47,8 @@ import io.terpomo.pmitz.core.subjects.DirectoryGroup;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 import io.terpomo.pmitz.limits.impl.LimitsValidationUtil;
 import io.terpomo.pmitz.remote.client.AuthenticationException;
 import io.terpomo.pmitz.remote.client.PmitzClient;
@@ -192,6 +196,148 @@ public class PmitzHttpClient implements PmitzClient {
 				}
 				else if (response.getCode() >= 300) {
 					throw new RemoteCallException(response.getReasonPhrase());
+				}
+				return null;
+			});
+		}
+		catch (IOException ioEx) {
+			throw new RemoteCallException("Unexpected error while calling remote server", ioEx);
+		}
+	}
+
+	@Override
+	public SubscriptionVerifDetail verifySubscription(Feature feature, UserGrouping userGrouping) {
+		HttpGet httpGet = new HttpGet(url + URL_DELIMITER + formatEndpoint("subscription-check", userGrouping, feature));
+		addAuthenticationHeaders(httpGet);
+		JsonNode responseData;
+		try {
+			responseData = httpClient.execute(httpGet, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
+				if (response.getCode() >= 400 && response.getCode() < 500) {
+					throw new FeatureNotFoundException("Invalid productId or FeatureId : " + response.getReasonPhrase());
+				}
+				else if (response.getCode() >= 300) {
+					throw new RemoteCallException(response.getReasonPhrase());
+				}
+				final HttpEntity responseEntity = response.getEntity();
+				if (responseEntity == null) {
+					throw new RemoteCallException("Unexpected response from server (response empty)");
+				}
+				try (InputStream inputStream = responseEntity.getContent()) {
+					return objectMapper.readTree(inputStream);
+				}
+			});
+		}
+		catch (IOException ioEx) {
+			throw new RemoteCallException("Unexpected error while calling remote server", ioEx);
+		}
+
+		try {
+			return objectMapper.treeToValue(responseData, SubscriptionVerifDetail.class);
+		}
+		catch (JacksonException jsonEx) {
+			throw new RemoteCallException("Unexpected error while parsing server response", jsonEx);
+		}
+	}
+
+	@Override
+	public void createSubscription(Subscription subscription) {
+		HttpPost httpPost = new HttpPost(url + URL_DELIMITER + "subscriptions");
+		try {
+			var jsonBody = objectMapper.writeValueAsString(subscription);
+			httpPost.setEntity(new StringEntity(jsonBody));
+			httpPost.setHeader("Content-Type", "application/json");
+			addAuthenticationHeaders(httpPost);
+		}
+		catch (JacksonException jsonEx) {
+			throw new RemoteCallException("Unexpected exception while preparing request", jsonEx);
+		}
+
+		try {
+			httpClient.execute(httpPost, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
+				if (response.getCode() == 409) {
+					throw new RepositoryException("Subscription already exists");
+				}
+				if (response.getCode() >= 400) {
+					throw new RemoteCallException("Error encountered while creating subscription : " + response.getReasonPhrase());
+				}
+				return null;
+			});
+		}
+		catch (IOException ioEx) {
+			throw new RemoteCallException("Unexpected error while calling remote server", ioEx);
+		}
+	}
+
+	@Override
+	public Optional<Subscription> findSubscription(String subscriptionId) {
+		HttpGet httpGet = new HttpGet(url + URL_DELIMITER + "subscriptions" + URL_DELIMITER + subscriptionId);
+		addAuthenticationHeaders(httpGet);
+		JsonNode responseData;
+		try {
+			responseData = httpClient.execute(httpGet, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
+				if (response.getCode() == 404) {
+					return null;
+				}
+				if (response.getCode() >= 400) {
+					throw new RemoteCallException("Error encountered while finding subscription");
+				}
+				final HttpEntity responseEntity = response.getEntity();
+				if (responseEntity == null) {
+					throw new RemoteCallException("Unexpected response from server (response empty)");
+				}
+				try (InputStream inputStream = responseEntity.getContent()) {
+					return objectMapper.readTree(inputStream);
+				}
+			});
+		}
+		catch (IOException ioEx) {
+			throw new RemoteCallException("Unexpected error while calling remote server", ioEx);
+		}
+
+		if (responseData == null) {
+			return Optional.empty();
+		}
+
+		try {
+			return Optional.of(objectMapper.treeToValue(responseData, Subscription.class));
+		}
+		catch (JacksonException jsonEx) {
+			throw new RemoteCallException("Unexpected error while parsing server response", jsonEx);
+		}
+	}
+
+	@Override
+	public void updateSubscriptionStatus(String subscriptionId, SubscriptionStatus newStatus) {
+		HttpPatch httpPatch = new HttpPatch(url + URL_DELIMITER + "subscriptions" + URL_DELIMITER + subscriptionId + URL_DELIMITER + "status");
+		try {
+			var jsonBody = objectMapper.writeValueAsString(Map.of("status", newStatus));
+			httpPatch.setEntity(new StringEntity(jsonBody));
+			httpPatch.setHeader("Content-Type", "application/json");
+			addAuthenticationHeaders(httpPatch);
+		}
+		catch (JacksonException jsonEx) {
+			throw new RemoteCallException("Unexpected exception while preparing request", jsonEx);
+		}
+
+		try {
+			httpClient.execute(httpPatch, response -> {
+				if (response.getCode() == 401) {
+					throw new AuthenticationException("Authentication error. Please check your Credentials");
+				}
+				if (response.getCode() == 404) {
+					throw new RepositoryException("Subscription not found with id " + subscriptionId);
+				}
+				if (response.getCode() >= 400) {
+					throw new RemoteCallException("Error encountered while updating subscription status");
 				}
 				return null;
 			});
