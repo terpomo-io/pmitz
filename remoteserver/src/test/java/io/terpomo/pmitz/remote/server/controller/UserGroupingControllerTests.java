@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,9 @@
 package io.terpomo.pmitz.remote.server.controller;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,15 +32,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import io.terpomo.pmitz.all.usage.tracker.FeatureUsageTracker;
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureStatus;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.LimitExceededException;
-import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.subjects.DirectoryGroup;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
@@ -61,15 +57,12 @@ class UserGroupingControllerTests {
 
 	private final String productId = "product1";
 	private final String featureId = "feature1";
-	private final Product product = new Product(productId);
-	private final Feature feature = new Feature(product, featureId);
+	private final FeatureRef featureRef = new FeatureRef(productId, featureId);
 
 	@MockitoBean
 	AuthenticationService authenticationService;
 	@MockitoBean
 	FeatureUsageTracker featureUsageTracker;
-	@MockitoBean
-	ProductRepository productRepository;
 	@MockitoBean
 	SubscriptionVerifier subscriptionVerifier;
 	@Autowired
@@ -98,12 +91,6 @@ class UserGroupingControllerTests {
 				Arguments.of("/subscriptions/theId/subscription-check/product1/feature1", new Subscription("theId")));
 	}
 
-	@BeforeEach
-	void setup() {
-		doReturn(Optional.of(product)).when(productRepository).getProductById(productId);
-		doReturn(Optional.of(feature)).when(productRepository).getFeature(product, featureId);
-	}
-
 	@ParameterizedTest
 	@MethodSource("verifyLimitsUrlsAndUserGroupingsProvider")
 	void verifyLimitsShouldReturnUsageInfoIncludingAdditionalUnits(String url, UserGrouping userGrouping) throws Exception {
@@ -115,7 +102,7 @@ class UserGroupingControllerTests {
 
 		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
 
-		doReturn(featureUsageInfo).when(featureUsageTracker).verifyLimits(eq(feature), eq(userGrouping),
+		doReturn(featureUsageInfo).when(featureUsageTracker).verifyLimits(eq(featureRef), eq(userGrouping),
 				argThat(unitsArgMatcher));
 
 		String jsonContent = """
@@ -140,7 +127,7 @@ class UserGroupingControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().json(expectedJson));
 
-		verify(featureUsageTracker, times(1)).verifyLimits(eq(feature), eq(userGrouping), argThat(unitsArgMatcher));
+		verify(featureUsageTracker, times(1)).verifyLimits(eq(featureRef), eq(userGrouping), argThat(unitsArgMatcher));
 
 	}
 
@@ -173,7 +160,7 @@ class UserGroupingControllerTests {
 
 		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
 
-		doNothing().when(featureUsageTracker).recordFeatureUsage(eq(feature), eq(userGrouping),
+		doNothing().when(featureUsageTracker).recordFeatureUsage(eq(featureRef), eq(userGrouping),
 				argThat(unitsArgMatcher));
 
 		String jsonContent = """
@@ -191,7 +178,7 @@ class UserGroupingControllerTests {
 						.content(jsonContent))
 				.andExpect(status().isOk());
 
-		verify(featureUsageTracker, times(1)).recordFeatureUsage(eq(feature), eq(userGrouping),
+		verify(featureUsageTracker, times(1)).recordFeatureUsage(eq(featureRef), eq(userGrouping),
 				argThat(unitsArgMatcher));
 	}
 
@@ -203,8 +190,8 @@ class UserGroupingControllerTests {
 
 		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
 
-		var exception = new LimitExceededException("Limit exceeded", feature, userGrouping);
-		doThrow(exception).when(featureUsageTracker).recordFeatureUsage(eq(feature), eq(userGrouping),
+		var exception = new LimitExceededException("Limit exceeded", featureRef, userGrouping);
+		doThrow(exception).when(featureUsageTracker).recordFeatureUsage(eq(featureRef), eq(userGrouping),
 				argThat(unitsArgMatcher));
 
 		String jsonContent = """
@@ -222,7 +209,7 @@ class UserGroupingControllerTests {
 						.content(jsonContent))
 				.andExpect(status().is(422));
 
-		verify(featureUsageTracker, times(1)).recordFeatureUsage(eq(feature), eq(userGrouping),
+		verify(featureUsageTracker, times(1)).recordFeatureUsage(eq(featureRef), eq(userGrouping),
 				argThat(unitsArgMatcher));
 	}
 
@@ -234,7 +221,7 @@ class UserGroupingControllerTests {
 
 		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
 
-		doNothing().when(featureUsageTracker).reduceFeatureUsage(eq(feature), eq(userGrouping),
+		doNothing().when(featureUsageTracker).reduceFeatureUsage(eq(featureRef), eq(userGrouping),
 				argThat(unitsArgMatcher));
 
 		String jsonContent = """
@@ -252,7 +239,7 @@ class UserGroupingControllerTests {
 						.content(jsonContent))
 				.andExpect(status().isOk());
 
-		verify(featureUsageTracker, times(1)).reduceFeatureUsage(eq(feature), eq(userGrouping),
+		verify(featureUsageTracker, times(1)).reduceFeatureUsage(eq(featureRef), eq(userGrouping),
 				argThat(unitsArgMatcher));
 	}
 
@@ -286,7 +273,7 @@ class UserGroupingControllerTests {
 
 		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
 
-		doReturn(featureUsageInfo).when(featureUsageTracker).getUsageInfo(feature, userGrouping);
+		doReturn(featureUsageInfo).when(featureUsageTracker).getUsageInfo(featureRef, userGrouping);
 
 		String expectedJson = """
 				{
@@ -303,7 +290,7 @@ class UserGroupingControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().json(expectedJson));
 
-		verify(featureUsageTracker, times(1)).getUsageInfo(feature, userGrouping);
+		verify(featureUsageTracker, times(1)).getUsageInfo(featureRef, userGrouping);
 
 	}
 
@@ -324,7 +311,7 @@ class UserGroupingControllerTests {
 		var verifDetail = SubscriptionVerifDetail.verificationOk();
 
 		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
-		doReturn(verifDetail).when(subscriptionVerifier).verifyEntitlement(feature, userGrouping);
+		doReturn(verifDetail).when(subscriptionVerifier).verifyEntitlement(featureRef, userGrouping);
 
 		String expectedJson = """
 				{
@@ -338,7 +325,7 @@ class UserGroupingControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().json(expectedJson));
 
-		verify(subscriptionVerifier, times(1)).verifyEntitlement(feature, userGrouping);
+		verify(subscriptionVerifier, times(1)).verifyEntitlement(featureRef, userGrouping);
 	}
 
 	@ParameterizedTest
@@ -347,7 +334,7 @@ class UserGroupingControllerTests {
 		var verifDetail = SubscriptionVerifDetail.verificationError(SubscriptionVerifDetail.ErrorCause.INVALID_SUBSCRIPTION);
 
 		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
-		doReturn(verifDetail).when(subscriptionVerifier).verifyEntitlement(feature, userGrouping);
+		doReturn(verifDetail).when(subscriptionVerifier).verifyEntitlement(featureRef, userGrouping);
 
 		String expectedJson = """
 				{
@@ -361,7 +348,7 @@ class UserGroupingControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().json(expectedJson));
 
-		verify(subscriptionVerifier, times(1)).verifyEntitlement(feature, userGrouping);
+		verify(subscriptionVerifier, times(1)).verifyEntitlement(featureRef, userGrouping);
 	}
 
 	@ParameterizedTest
@@ -370,7 +357,7 @@ class UserGroupingControllerTests {
 		var verifDetail = SubscriptionVerifDetail.verificationError(SubscriptionVerifDetail.ErrorCause.PRODUCT_NOT_ALLOWED);
 
 		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
-		doReturn(verifDetail).when(subscriptionVerifier).verifyEntitlement(feature, userGrouping);
+		doReturn(verifDetail).when(subscriptionVerifier).verifyEntitlement(featureRef, userGrouping);
 
 		String expectedJson = """
 				{
@@ -384,7 +371,7 @@ class UserGroupingControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().json(expectedJson));
 
-		verify(subscriptionVerifier, times(1)).verifyEntitlement(feature, userGrouping);
+		verify(subscriptionVerifier, times(1)).verifyEntitlement(featureRef, userGrouping);
 	}
 
 	@ParameterizedTest
@@ -393,7 +380,7 @@ class UserGroupingControllerTests {
 		var verifDetail = SubscriptionVerifDetail.verificationError(SubscriptionVerifDetail.ErrorCause.FEATURE_NOT_ALLOWED);
 
 		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
-		doReturn(verifDetail).when(subscriptionVerifier).verifyEntitlement(feature, userGrouping);
+		doReturn(verifDetail).when(subscriptionVerifier).verifyEntitlement(featureRef, userGrouping);
 
 		String expectedJson = """
 				{
@@ -407,7 +394,7 @@ class UserGroupingControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().json(expectedJson));
 
-		verify(subscriptionVerifier, times(1)).verifyEntitlement(feature, userGrouping);
+		verify(subscriptionVerifier, times(1)).verifyEntitlement(featureRef, userGrouping);
 	}
 
 	@ParameterizedTest

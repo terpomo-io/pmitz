@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,15 +33,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureStatus;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.FeatureNotFoundException;
 import io.terpomo.pmitz.core.exception.LimitExceededException;
 import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.subjects.DirectoryGroup;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
@@ -109,8 +108,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		var feature = new Feature(new Product(productId), featureId);
-		var featureUsageInfo = pmitzHttpClient.getLimitsRemainingUnits(feature, userGrouping);
+		var featureRef = new FeatureRef(productId, featureId);
+		var featureUsageInfo = pmitzHttpClient.getLimitsRemainingUnits(featureRef, userGrouping);
 
 		assertThat(featureUsageInfo).isNotNull();
 		assertThat(featureUsageInfo.featureStatus()).isEqualTo(FeatureStatus.AVAILABLE);
@@ -129,8 +128,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		var feature = new Feature(new Product("picUpload"), "newPicUpload");
-		assertThatThrownBy(() -> pmitzHttpClient.getLimitsRemainingUnits(feature, userGrouping))
+		var featureRef = new FeatureRef("picUpload", "newPicUpload");
+		assertThatThrownBy(() -> pmitzHttpClient.getLimitsRemainingUnits(featureRef, userGrouping))
 				.isInstanceOf(FeatureNotFoundException.class);
 	}
 
@@ -144,8 +143,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		var feature = new Feature(new Product("picUpload"), "newPicUpload");
-		assertThatThrownBy(() -> pmitzHttpClient.getLimitsRemainingUnits(feature, userGrouping))
+		var featureRef = new FeatureRef("picUpload", "newPicUpload");
+		assertThatThrownBy(() -> pmitzHttpClient.getLimitsRemainingUnits(featureRef, userGrouping))
 				.isInstanceOf(RemoteCallException.class);
 	}
 
@@ -154,7 +153,7 @@ class PmitzHttpClientTests {
 	void recordOrReduceRemoteShouldNotThrowExceptionWhenResponse200(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
-		var feature = new Feature(new Product(productId), featureId);
+		var featureRef = new FeatureRef(productId, featureId);
 
 		stubFor(post(endpoint + "/usage/picUpload/newPicUpload")
 				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
@@ -163,7 +162,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		pmitzHttpClient.recordOrReduce(feature, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false);
+		assertThatCode(() -> pmitzHttpClient.recordOrReduce(featureRef, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
+				.doesNotThrowAnyException();
 	}
 
 	@ParameterizedTest
@@ -171,7 +171,7 @@ class PmitzHttpClientTests {
 	void recordOrReduceRemoteShouldThrowLimitExceededExceptionWhenResponse422(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
-		var feature = new Feature(new Product(productId), featureId);
+		var featureRef = new FeatureRef(productId, featureId);
 
 		stubFor(post(endpoint + "/usage/picUpload/newPicUpload")
 				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
@@ -180,7 +180,7 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(feature, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
+		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(featureRef, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
 				.isInstanceOf(LimitExceededException.class);
 	}
 
@@ -189,7 +189,7 @@ class PmitzHttpClientTests {
 	void recordOrReduceRemoteShouldThrowRemoteCallExceptionWnenResponse4xx(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
-		var feature = new Feature(new Product(productId), featureId);
+		var featureRef = new FeatureRef(productId, featureId);
 
 		stubFor(post(endpoint + "/usage/picUpload/newPicUpload")
 				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
@@ -198,7 +198,7 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(feature, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
+		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(featureRef, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
 				.isInstanceOf(FeatureNotFoundException.class);
 	}
 
@@ -207,7 +207,7 @@ class PmitzHttpClientTests {
 	void recordOrReduceRemoteShouldThrowRemoteCallExceptionWhenResponse5xx(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
-		var feature = new Feature(new Product(productId), featureId);
+		var featureRef = new FeatureRef(productId, featureId);
 
 		stubFor(post(endpoint + "/usage/picUpload/newPicUpload")
 				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
@@ -216,7 +216,7 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(feature, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
+		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(featureRef, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
 				.isInstanceOf(RemoteCallException.class);
 	}
 
@@ -242,8 +242,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		var feature = new Feature(new Product(productId), featureId);
-		var featureUsageInfo = pmitzHttpClient.verifyLimits(feature, userGrouping, Map.of("limit1", 1L));
+		var featureRef = new FeatureRef(productId, featureId);
+		var featureUsageInfo = pmitzHttpClient.verifyLimits(featureRef, userGrouping, Map.of("limit1", 1L));
 
 		assertThat(featureUsageInfo).isNotNull();
 		assertThat(featureUsageInfo.featureStatus()).isEqualTo(FeatureStatus.AVAILABLE);
@@ -266,7 +266,9 @@ class PmitzHttpClientTests {
 				.willReturn(aResponse().withStatus(200)));
 
 		var inputStream = new ByteArrayInputStream(jsonProduct.getBytes(StandardCharsets.UTF_8));
-		pmitzHttpClient.uploadProduct(inputStream);
+
+		assertThatCode(() -> pmitzHttpClient.uploadProduct(inputStream))
+				.doesNotThrowAnyException();
 	}
 
 	@Test
@@ -297,7 +299,8 @@ class PmitzHttpClientTests {
 				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.willReturn(aResponse().withStatus(200)));
 
-		pmitzHttpClient.removeProduct("aProductId");
+		assertThatCode(() -> pmitzHttpClient.removeProduct("aProductId"))
+				.doesNotThrowAnyException();
 	}
 
 	@Test
@@ -332,8 +335,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		var feature = new Feature(new Product(productId), featureId);
-		var verifDetail = pmitzHttpClient.verifySubscription(feature, userGrouping);
+		var featureRef = new FeatureRef(productId, featureId);
+		var verifDetail = pmitzHttpClient.verifySubscription(featureRef, userGrouping);
 
 		assertThat(verifDetail).isNotNull();
 		assertThat(verifDetail.isFeatureAllowed()).isTrue();
@@ -359,8 +362,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		var feature = new Feature(new Product(productId), featureId);
-		var verifDetail = pmitzHttpClient.verifySubscription(feature, userGrouping);
+		var featureRef = new FeatureRef(productId, featureId);
+		var verifDetail = pmitzHttpClient.verifySubscription(featureRef, userGrouping);
 
 		assertThat(verifDetail).isNotNull();
 		assertThat(verifDetail.isFeatureAllowed()).isFalse();
@@ -376,8 +379,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		var feature = new Feature(new Product("picUpload"), "newPicUpload");
-		assertThatThrownBy(() -> pmitzHttpClient.verifySubscription(feature, userGrouping))
+		var featureRef = new FeatureRef("picUpload", "newPicUpload");
+		assertThatThrownBy(() -> pmitzHttpClient.verifySubscription(featureRef, userGrouping))
 				.isInstanceOf(FeatureNotFoundException.class);
 	}
 
@@ -390,8 +393,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		var feature = new Feature(new Product("picUpload"), "newPicUpload");
-		assertThatThrownBy(() -> pmitzHttpClient.verifySubscription(feature, userGrouping))
+		var featureRef = new FeatureRef("picUpload", "newPicUpload");
+		assertThatThrownBy(() -> pmitzHttpClient.verifySubscription(featureRef, userGrouping))
 				.isInstanceOf(RemoteCallException.class);
 	}
 
@@ -404,8 +407,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		var feature = new Feature(new Product("picUpload"), "newPicUpload");
-		assertThatThrownBy(() -> pmitzHttpClient.verifySubscription(feature, userGrouping))
+		var featureRef = new FeatureRef("picUpload", "newPicUpload");
+		assertThatThrownBy(() -> pmitzHttpClient.verifySubscription(featureRef, userGrouping))
 				.isInstanceOf(AuthenticationException.class);
 	}
 
@@ -420,7 +423,8 @@ class PmitzHttpClientTests {
 		var subscription = new Subscription("sub001");
 		subscription.setStatus(SubscriptionStatus.ACTIVE);
 
-		pmitzHttpClient.createSubscription(subscription);
+		assertThatCode(() -> pmitzHttpClient.createSubscription(subscription))
+				.doesNotThrowAnyException();
 	}
 
 	@Test
@@ -540,7 +544,8 @@ class PmitzHttpClientTests {
 				.withRequestBody(equalToJson(expectedRequestBody))
 				.willReturn(aResponse().withStatus(200)));
 
-		pmitzHttpClient.updateSubscriptionStatus("sub001", SubscriptionStatus.SUSPENDED);
+		assertThatCode(() -> pmitzHttpClient.updateSubscriptionStatus("sub001", SubscriptionStatus.SUSPENDED))
+				.doesNotThrowAnyException();
 	}
 
 	@Test

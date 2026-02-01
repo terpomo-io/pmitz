@@ -14,26 +14,7 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.core.exception;
+package io.terpomo.pmitz.core.subscriptions;
 
-import io.terpomo.pmitz.core.subjects.UserGrouping;
-import io.terpomo.pmitz.core.subscriptions.FeatureRef;
-
-public class FeatureNotAllowedException extends RuntimeException {
-	private final FeatureRef featureRef;
-	private final UserGrouping userGrouping;
-
-	public FeatureNotAllowedException(String message, FeatureRef featureRef, UserGrouping userGrouping) {
-		super(message);
-		this.featureRef = featureRef;
-		this.userGrouping = userGrouping;
-	}
-
-	public FeatureRef getFeatureRef() {
-		return featureRef;
-	}
-
-	public UserGrouping getUserGrouping() {
-		return userGrouping;
-	}
+public record FeatureRef(String productId, String featureId) {
 }

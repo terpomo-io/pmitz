@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,8 +119,8 @@ public class JDBCUsageRepository implements UsageRepository {
 
 	private List<Object> buildLoadParameters(LimitTrackingContext context) {
 		List<Object> parameters = new ArrayList<>();
-		parameters.add(context.getFeature().getFeatureId());
-		parameters.add(context.getFeature().getProduct().getProductId());
+		parameters.add(context.getFeatureRef().featureId());
+		parameters.add(context.getFeatureRef().productId());
 		parameters.add(context.getUserGrouping().getId());
 		return parameters;
 	}
@@ -169,8 +169,8 @@ public class JDBCUsageRepository implements UsageRepository {
 			LimitTrackingContext context, long usageId) throws SQLException {
 		updateStatement.clearParameters();
 		int index = 1;
-		updateStatement.setString(index++, context.getFeature().getFeatureId());
-		updateStatement.setString(index++, context.getFeature().getProduct().getProductId());
+		updateStatement.setString(index++, context.getFeatureRef().featureId());
+		updateStatement.setString(index++, context.getFeatureRef().productId());
 		updateStatement.setString(index++, context.getUserGrouping().getId());
 		updateStatement.setString(index++, usageRecord.limitId());
 
@@ -200,8 +200,8 @@ public class JDBCUsageRepository implements UsageRepository {
 			LimitTrackingContext context) throws SQLException {
 		insertStatement.clearParameters();
 		int index = 1;
-		insertStatement.setString(index++, context.getFeature().getFeatureId());
-		insertStatement.setString(index++, context.getFeature().getProduct().getProductId());
+		insertStatement.setString(index++, context.getFeatureRef().featureId());
+		insertStatement.setString(index++, context.getFeatureRef().productId());
 		insertStatement.setString(index++, context.getUserGrouping().getId());
 		insertStatement.setString(index++, usageRecord.limitId());
 
@@ -242,8 +242,8 @@ public class JDBCUsageRepository implements UsageRepository {
 			query.append(" AND window_start IS NULL");
 		}
 		query.append(" AND feature_id = ? AND product_id = ? AND user_grouping = ?");
-		params.add(context.getFeature().getFeatureId());
-		params.add(context.getFeature().getProduct().getProductId());
+		params.add(context.getFeatureRef().featureId());
+		params.add(context.getFeatureRef().productId());
 		params.add(context.getUserGrouping().getId());
 
 		try (PreparedStatement statement = connection.prepareStatement(query.toString())) {

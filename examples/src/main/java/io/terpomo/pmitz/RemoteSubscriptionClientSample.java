@@ -19,9 +19,8 @@ package io.terpomo.pmitz;
 import java.security.SecureRandom;
 import java.util.Map;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.RepositoryException;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
 import io.terpomo.pmitz.limits.LimitVerifier;
@@ -62,7 +61,7 @@ public class RemoteSubscriptionClientSample {
 
 		var subscriptionVerifier = new SubscriptionVerifierRemoteClient(remoteServerUrl);
 
-		boolean featureAllowed = subscriptionVerifier.isFeatureAllowed(new Feature(new Product("library"), "reserve"), subscription);
+		boolean featureAllowed = subscriptionVerifier.isFeatureAllowed(new FeatureRef("library", "reserve"), subscription);
 
 		System.out.println("Subscription verifier feature allowed is :" + featureAllowed);
 

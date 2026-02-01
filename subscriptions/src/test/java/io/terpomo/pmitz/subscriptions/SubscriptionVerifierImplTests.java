@@ -24,9 +24,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionRepository;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
@@ -48,14 +47,12 @@ class SubscriptionVerifierImplTests {
 
 	private SubscriptionVerifierImpl subscriptionVerifier;
 
-	private Product product;
-	private Feature feature;
+	private FeatureRef featureRef;
 
 	@BeforeEach
 	void setUp() {
 		subscriptionVerifier = new SubscriptionVerifierImpl(subscriptionRepository, subscriptionFeatureManager);
-		product = new Product("test-product");
-		feature = new Feature(product, "test-feature");
+		featureRef = new FeatureRef("test-product", "test-feature");
 	}
 
 	@Test
@@ -63,7 +60,7 @@ class SubscriptionVerifierImplTests {
 		when(subscriptionRepository.find("user-123")).thenReturn(Optional.empty());
 		when(subscription.getId()).thenReturn("user-123");
 
-		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(feature, subscription);
+		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(featureRef, subscription);
 
 		assertThat(result.isFeatureAllowed()).isFalse();
 		assertThat(result.getErrorCause()).isEqualTo(SubscriptionVerifDetail.ErrorCause.INVALID_SUBSCRIPTION);
@@ -75,7 +72,7 @@ class SubscriptionVerifierImplTests {
 		when(subscription.getId()).thenReturn("user-123");
 		when(subscription.isValid()).thenReturn(false);
 
-		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(feature, subscription);
+		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(featureRef, subscription);
 
 		assertThat(result.isFeatureAllowed()).isFalse();
 		assertThat(result.getErrorCause()).isEqualTo(SubscriptionVerifDetail.ErrorCause.INVALID_SUBSCRIPTION);
@@ -88,7 +85,7 @@ class SubscriptionVerifierImplTests {
 		when(subscription.isValid()).thenReturn(true);
 		when(subscription.isProductAllowed("test-product")).thenReturn(false);
 
-		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(feature, subscription);
+		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(featureRef, subscription);
 
 		assertThat(result.isFeatureAllowed()).isFalse();
 		assertThat(result.getErrorCause()).isEqualTo(SubscriptionVerifDetail.ErrorCause.PRODUCT_NOT_ALLOWED);
@@ -100,9 +97,9 @@ class SubscriptionVerifierImplTests {
 		when(subscription.getId()).thenReturn("user-123");
 		when(subscription.isValid()).thenReturn(true);
 		when(subscription.isProductAllowed("test-product")).thenReturn(true);
-		when(subscriptionFeatureManager.isFeatureIncluded(subscription, feature)).thenReturn(false);
+		when(subscriptionFeatureManager.isFeatureIncluded(subscription, featureRef)).thenReturn(false);
 
-		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(feature, subscription);
+		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(featureRef, subscription);
 
 		assertThat(result.isFeatureAllowed()).isFalse();
 		assertThat(result.getErrorCause()).isEqualTo(SubscriptionVerifDetail.ErrorCause.FEATURE_NOT_ALLOWED);
@@ -114,9 +111,9 @@ class SubscriptionVerifierImplTests {
 		when(subscription.getId()).thenReturn("user-123");
 		when(subscription.isValid()).thenReturn(true);
 		when(subscription.isProductAllowed("test-product")).thenReturn(true);
-		when(subscriptionFeatureManager.isFeatureIncluded(subscription, feature)).thenReturn(true);
+		when(subscriptionFeatureManager.isFeatureIncluded(subscription, featureRef)).thenReturn(true);
 
-		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(feature, subscription);
+		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(featureRef, subscription);
 
 		assertThat(result.isFeatureAllowed()).isTrue();
 		assertThat(result.getErrorCause()).isNull();
@@ -124,7 +121,7 @@ class SubscriptionVerifierImplTests {
 
 	@Test
 	void verifyEntitlementShouldAllowNonSubscriptionGroupings() {
-		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(feature, new IndividualUser("user-123"));
+		SubscriptionVerifDetail result = subscriptionVerifier.verifyEntitlement(featureRef, new IndividualUser("user-123"));
 
 		assertThat(result.isFeatureAllowed()).isTrue();
 		assertThat(result.getErrorCause()).isNull();

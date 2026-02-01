@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.exception.FeatureNotFoundException;
 import io.terpomo.pmitz.core.exception.LimitExceededException;
@@ -46,6 +45,7 @@ import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.subjects.DirectoryGroup;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
@@ -58,6 +58,9 @@ import io.terpomo.pmitz.remote.client.RemoteCallException;
 public class PmitzHttpClient implements PmitzClient {
 
 	public static final String URL_DELIMITER = "/";
+	public static final String CONTENT_TYPE_HEADER = "Content-Type";
+	public static final String CONTENT_TYPE_JSON = "application/json";
+	public static final String SUBSCRIPTIONS_ENDPOINT = "subscriptions";
 	private final String url;
 
 	private final CloseableHttpClient httpClient;
@@ -84,8 +87,8 @@ public class PmitzHttpClient implements PmitzClient {
 	}
 
 	@Override
-	public FeatureUsageInfo getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping) {
-		HttpGet httpGet = new HttpGet(url + URL_DELIMITER + formatEndpoint("usage", userGrouping, feature));
+	public FeatureUsageInfo getLimitsRemainingUnits(FeatureRef featureRef, UserGrouping userGrouping) {
+		HttpGet httpGet = new HttpGet(url + URL_DELIMITER + formatEndpoint("usage", userGrouping, featureRef));
 		JsonNode responseData;
 		addAuthenticationHeaders(httpGet);
 		try {
@@ -121,13 +124,13 @@ public class PmitzHttpClient implements PmitzClient {
 	}
 
 	@Override
-	public FeatureUsageInfo verifyLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
-		HttpPost httpPost = new HttpPost(url + URL_DELIMITER + formatEndpoint("limits-check", userGrouping, feature));
+	public FeatureUsageInfo verifyLimits(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
+		HttpPost httpPost = new HttpPost(url + URL_DELIMITER + formatEndpoint("limits-check", userGrouping, featureRef));
 
 		try {
 			var jsonBody = objectMapper.writeValueAsString(additionalUnits);
 			httpPost.setEntity(new StringEntity(jsonBody));
-			httpPost.setHeader("Content-Type", "application/json");
+			httpPost.setHeader(CONTENT_TYPE_HEADER, CONTENT_TYPE_JSON);
 			addAuthenticationHeaders(httpPost);
 		}
 		catch (JacksonException jsonEx) {
@@ -168,15 +171,15 @@ public class PmitzHttpClient implements PmitzClient {
 	}
 
 	@Override
-	public void recordOrReduce(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits, boolean isReduce) {
+	public void recordOrReduce(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> additionalUnits, boolean isReduce) {
 		LimitsValidationUtil.validateAdditionalUnits(additionalUnits);
-		HttpPost httpPost = new HttpPost(url + URL_DELIMITER + formatEndpoint("usage", userGrouping, feature));
+		HttpPost httpPost = new HttpPost(url + URL_DELIMITER + formatEndpoint("usage", userGrouping, featureRef));
 
 		var recordOrReduceRequest = new RecordOrReduceRequest(isReduce, additionalUnits);
 		try {
 			var jsonBody = objectMapper.writeValueAsString(recordOrReduceRequest);
 			httpPost.setEntity(new StringEntity(jsonBody));
-			httpPost.setHeader("Content-Type", "application/json");
+			httpPost.setHeader(CONTENT_TYPE_HEADER, CONTENT_TYPE_JSON);
 			addAuthenticationHeaders(httpPost);
 		}
 		catch (JacksonException jsonEx) {
@@ -189,7 +192,7 @@ public class PmitzHttpClient implements PmitzClient {
 					throw new AuthenticationException("Authentication error. Please check your Credentials");
 				}
 				if (response.getCode() == 422) {
-					throw new LimitExceededException("Limit exceeded", feature, userGrouping);
+					throw new LimitExceededException("Limit exceeded", featureRef, userGrouping);
 				}
 				else if (response.getCode() >= 400 && response.getCode() < 500) {
 					throw new FeatureNotFoundException("Invalid productId or FeatureId : " + response.getReasonPhrase());
@@ -206,8 +209,8 @@ public class PmitzHttpClient implements PmitzClient {
 	}
 
 	@Override
-	public SubscriptionVerifDetail verifySubscription(Feature feature, UserGrouping userGrouping) {
-		HttpGet httpGet = new HttpGet(url + URL_DELIMITER + formatEndpoint("subscription-check", userGrouping, feature));
+	public SubscriptionVerifDetail verifySubscription(FeatureRef featureRef, UserGrouping userGrouping) {
+		HttpGet httpGet = new HttpGet(url + URL_DELIMITER + formatEndpoint("subscription-check", userGrouping, featureRef));
 		addAuthenticationHeaders(httpGet);
 		JsonNode responseData;
 		try {
@@ -244,11 +247,11 @@ public class PmitzHttpClient implements PmitzClient {
 
 	@Override
 	public void createSubscription(Subscription subscription) {
-		HttpPost httpPost = new HttpPost(url + URL_DELIMITER + "subscriptions");
+		HttpPost httpPost = new HttpPost(url + URL_DELIMITER + SUBSCRIPTIONS_ENDPOINT);
 		try {
 			var jsonBody = objectMapper.writeValueAsString(subscription);
 			httpPost.setEntity(new StringEntity(jsonBody));
-			httpPost.setHeader("Content-Type", "application/json");
+			httpPost.setHeader(CONTENT_TYPE_HEADER, CONTENT_TYPE_JSON);
 			addAuthenticationHeaders(httpPost);
 		}
 		catch (JacksonException jsonEx) {
@@ -276,7 +279,7 @@ public class PmitzHttpClient implements PmitzClient {
 
 	@Override
 	public Optional<Subscription> findSubscription(String subscriptionId) {
-		HttpGet httpGet = new HttpGet(url + URL_DELIMITER + "subscriptions" + URL_DELIMITER + subscriptionId);
+		HttpGet httpGet = new HttpGet(url + URL_DELIMITER + SUBSCRIPTIONS_ENDPOINT + URL_DELIMITER + subscriptionId);
 		addAuthenticationHeaders(httpGet);
 		JsonNode responseData;
 		try {
@@ -317,11 +320,11 @@ public class PmitzHttpClient implements PmitzClient {
 
 	@Override
 	public void updateSubscriptionStatus(String subscriptionId, SubscriptionStatus newStatus) {
-		HttpPatch httpPatch = new HttpPatch(url + URL_DELIMITER + "subscriptions" + URL_DELIMITER + subscriptionId + URL_DELIMITER + "status");
+		HttpPatch httpPatch = new HttpPatch(url + URL_DELIMITER + SUBSCRIPTIONS_ENDPOINT + URL_DELIMITER + subscriptionId + URL_DELIMITER + "status");
 		try {
 			var jsonBody = objectMapper.writeValueAsString(Map.of("status", newStatus));
 			httpPatch.setEntity(new StringEntity(jsonBody));
-			httpPatch.setHeader("Content-Type", "application/json");
+			httpPatch.setHeader(CONTENT_TYPE_HEADER, CONTENT_TYPE_JSON);
 			addAuthenticationHeaders(httpPatch);
 		}
 		catch (JacksonException jsonEx) {
@@ -394,11 +397,9 @@ public class PmitzHttpClient implements PmitzClient {
 		}
 	}
 
-	private String formatEndpoint(String resource, UserGrouping userGrouping, Feature feature) {
+	private String formatEndpoint(String resource, UserGrouping userGrouping, FeatureRef featureRef) {
 		String rootEndpoint = userGroupingTypes.get(userGrouping.getClass());
-		String productId = feature.getProduct().getProductId();
-		String featureId = feature.getFeatureId();
-		return String.join(URL_DELIMITER, rootEndpoint, userGrouping.getId(), resource, productId, featureId);
+		return String.join(URL_DELIMITER, rootEndpoint, userGrouping.getId(), resource, featureRef.productId(), featureRef.featureId());
 	}
 
 	private void addAuthenticationHeaders(HttpUriRequestBase httpUriRequestBase) {

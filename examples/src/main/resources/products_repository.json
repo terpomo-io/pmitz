@@ -30,7 +30,7 @@
             "type": "CalendarPeriodRateLimit",
             "id": "upl-num-pics",
             "quota": 10,
-            "interval": "HOURS",
+            "periodicity": "HOUR",
             "duration": 1
           }
         ]
@@ -42,8 +42,7 @@
             "type": "CalendarPeriodRateLimit",
             "id": "dwnl-num-pics-hr",
             "quota": 8,
-            "interval": "MINUTES",
-            "duration": 60
+            "periodicity": "HOUR"
           },
           {
             "type": "CalendarPeriodRateLimit",
@@ -57,11 +56,7 @@
     "plans": [
       {"id" :  "basic",
        "description": "Basic plan",
-       "includedFeatures": ["downloading-pictures", "uploading-pictures"],
-       "limitsOverride" : [
-         {"max-pic-size" :  3},
-         {"num-pics":  3}
-       ]
+       "includedFeatures": ["downloading-pictures", "uploading-pictures"]
       },
       {"id" :  "standard",
         "description": "Standard plan",

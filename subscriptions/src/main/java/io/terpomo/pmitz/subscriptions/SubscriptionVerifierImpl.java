@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package io.terpomo.pmitz.subscriptions;
 
 import java.util.Optional;
 
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionRepository;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
@@ -36,12 +36,12 @@ public class SubscriptionVerifierImpl implements SubscriptionVerifier {
 	}
 
 	@Override
-	public SubscriptionVerifDetail verifyEntitlement(Feature feature, UserGrouping userGrouping) {
+	public SubscriptionVerifDetail verifyEntitlement(FeatureRef featureRef, UserGrouping userGrouping) {
 		if (!(userGrouping instanceof Subscription)) {
 			return SubscriptionVerifDetail.verificationOk();
 		}
 
-		String productId = feature.getProduct().getProductId();
+		String productId = featureRef.productId();
 		Optional<Subscription> optSubscription = subscriptionRepository.find(userGrouping.getId());
 
 		SubscriptionVerifDetail.ErrorCause errorCause = null;
@@ -52,7 +52,7 @@ public class SubscriptionVerifierImpl implements SubscriptionVerifier {
 		else if (!optSubscription.get().isProductAllowed(productId)) {
 			errorCause = SubscriptionVerifDetail.ErrorCause.PRODUCT_NOT_ALLOWED;
 		}
-		else if (!subscriptionFeatureManager.isFeatureIncluded(optSubscription.get(), feature)) {
+		else if (!subscriptionFeatureManager.isFeatureIncluded(optSubscription.get(), featureRef)) {
 			errorCause = SubscriptionVerifDetail.ErrorCause.FEATURE_NOT_ALLOWED;
 		}
 

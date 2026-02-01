@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,17 +24,17 @@ public interface SubscriptionRepository {
 
 	Optional<Subscription> find(String subscriptionId);
 
-	void updateStatus(Subscription subscription, SubscriptionStatus newStatus);
+	void updateStatus(String subscriptionId, SubscriptionStatus newStatus);
 
-	default void activate(Subscription subscription) {
-		updateStatus(subscription, SubscriptionStatus.ACTIVE);
+	default void activate(String subscriptionId) {
+		updateStatus(subscriptionId, SubscriptionStatus.ACTIVE);
 	}
 
-	default void cancel(Subscription subscription) {
-		updateStatus(subscription, SubscriptionStatus.CANCELLED);
+	default void cancel(String subscriptionId) {
+		updateStatus(subscriptionId, SubscriptionStatus.CANCELLED);
 	}
 
-	default void terminate(Subscription subscription) {
-		updateStatus(subscription, SubscriptionStatus.TERMINATED);
+	default void terminate(String subscriptionId) {
+		updateStatus(subscriptionId, SubscriptionStatus.TERMINATED);
 	}
 }

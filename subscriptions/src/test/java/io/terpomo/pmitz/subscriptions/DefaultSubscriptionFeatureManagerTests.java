@@ -27,6 +27,7 @@ import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Plan;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 
 import static org.assertj.core.api.Assertions.*;
@@ -48,43 +49,44 @@ class DefaultSubscriptionFeatureManagerTests {
 	ProductRepository productRepository;
 
 	private final String productId = "PhotoSharing";
+	private final String featureId = "featureId";
 
 	@Test
 	void isFeatureIncludedShouldReturnFalseWhenProductNotAllowed() {
+		FeatureRef featureRef = new FeatureRef(productId, featureId);
 
 		when(subscription.isProductAllowed(productId)).thenReturn(false);
-		when(feature.getProduct()).thenReturn(new Product(productId));
 
 		DefaultSubscriptionFeatureManager subscriptionFeatureManager = new DefaultSubscriptionFeatureManager(productRepository);
-		assertThat(subscriptionFeatureManager.isFeatureIncluded(subscription, feature)).isFalse();
+		assertThat(subscriptionFeatureManager.isFeatureIncluded(subscription, featureRef)).isFalse();
 	}
 
 	@Test
 	void isFeatureIncludedShouldReturnFalseWhenNoPlanForProduct() {
+		FeatureRef featureRef = new FeatureRef(productId, featureId);
+
 		when(subscription.isProductAllowed(productId)).thenReturn(true);
 		when(subscription.getPlan(productId)).thenReturn(Optional.empty());
-		when(feature.getProduct()).thenReturn(new Product(productId));
 
 		DefaultSubscriptionFeatureManager subscriptionFeatureManager = new DefaultSubscriptionFeatureManager(productRepository);
-		assertThat(subscriptionFeatureManager.isFeatureIncluded(subscription, feature)).isFalse();
+		assertThat(subscriptionFeatureManager.isFeatureIncluded(subscription, featureRef)).isFalse();
 	}
 
 	@Test
 	void isFeatureIncludedShouldReturnTrueWhenFeatureAllowed() {
 		String planId = "planId";
-		String featureId = "featureId";
+		FeatureRef featureRef = new FeatureRef(productId, featureId);
 		Product product = new Product(productId);
-		when(feature.getProduct()).thenReturn(product);
-		when(feature.getFeatureId()).thenReturn(featureId);
 
 		when(subscription.isProductAllowed(productId)).thenReturn(true);
 		when(subscription.getPlan(productId)).thenReturn(Optional.of(planId));
 
+		when(productRepository.getProductById(productId)).thenReturn(Optional.of(product));
 		when(productRepository.getPlan(product, planId)).thenReturn(Optional.of(plan));
 		when(plan.getIncludedFeature(featureId)).thenReturn(Optional.of(feature));
 
 		DefaultSubscriptionFeatureManager subscriptionFeatureManager = new DefaultSubscriptionFeatureManager(productRepository);
-		assertThat(subscriptionFeatureManager.isFeatureIncluded(subscription, feature)).isTrue();
+		assertThat(subscriptionFeatureManager.isFeatureIncluded(subscription, featureRef)).isTrue();
 	}
 
 }

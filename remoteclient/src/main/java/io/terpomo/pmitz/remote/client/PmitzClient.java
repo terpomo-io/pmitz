@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,22 +20,22 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.Optional;
 
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 
 public interface PmitzClient {
 
-	FeatureUsageInfo getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping);
+	FeatureUsageInfo getLimitsRemainingUnits(FeatureRef featureRef, UserGrouping userGrouping);
 
-	FeatureUsageInfo verifyLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
+	FeatureUsageInfo verifyLimits(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> additionalUnits);
 
-	void recordOrReduce(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits, boolean isReduce);
+	void recordOrReduce(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> additionalUnits, boolean isReduce);
 
-	SubscriptionVerifDetail verifySubscription(Feature feature, UserGrouping userGrouping);
+	SubscriptionVerifDetail verifySubscription(FeatureRef featureRef, UserGrouping userGrouping);
 
 	void createSubscription(Subscription subscription);
 

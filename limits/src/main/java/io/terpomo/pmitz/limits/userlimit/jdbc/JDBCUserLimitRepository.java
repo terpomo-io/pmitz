@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ import java.util.Optional;
 
 import javax.sql.DataSource;
 
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 
 public class JDBCUserLimitRepository implements UserLimitRepository {
@@ -46,9 +46,9 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 	}
 
 	@Override
-	public Optional<LimitRule> findLimitRule(Feature feature, String limitRuleId, UserGrouping userGroup) {
+	public Optional<LimitRule> findLimitRule(FeatureRef featureRef, String limitRuleId, UserGrouping userGroup) {
 
-		this.validateFeature(feature);
+		this.validateFeatureRef(featureRef);
 		this.validateNotNull(limitRuleId, "limitId");
 		this.validateUserGrouping(userGroup);
 
@@ -65,7 +65,7 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 				PreparedStatement statement = connection.prepareStatement(query)) {
 
 			statement.setString(1, limitRuleId);
-			statement.setString(2, feature.getFeatureId());
+			statement.setString(2, featureRef.featureId());
 			statement.setString(3, userGroup.getId());
 
 			try (ResultSet resultSet = statement.executeQuery()) {
@@ -81,9 +81,9 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 		return Optional.ofNullable(limitRule);
 	}
 
-	public void addLimitRule(Feature feature, LimitRule limitRule, UserGrouping userGroup) {
+	public void addLimitRule(FeatureRef featureRef, LimitRule limitRule, UserGrouping userGroup) {
 
-		this.validateFeature(feature);
+		this.validateFeatureRef(featureRef);
 		this.validateLimitRule(limitRule);
 		this.validateUserGrouping(userGroup);
 
@@ -101,7 +101,7 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 					PreparedStatement stmt = conn.prepareStatement(query)) {
 
 				stmt.setString(1, limitRule.getId());
-				stmt.setString(2, feature.getFeatureId());
+				stmt.setString(2, featureRef.featureId());
 				stmt.setString(3, userGroup.getId());
 				stmt.setString(4, limitRule.getClass().getSimpleName());
 				stmt.setLong(5, limitRule.getValue());
@@ -124,23 +124,23 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 		}
 	}
 
-	public void updateLimitRule(Feature feature, LimitRule limitRule, UserGrouping userGroup) {
+	public void updateLimitRule(FeatureRef featureRef, LimitRule limitRule, UserGrouping userGroup) {
 
 		this.validateLimitRule(limitRule);
 
-		Optional<LimitRule> existingLimit = findLimitRule(feature, limitRule.getId(), userGroup);
+		Optional<LimitRule> existingLimit = findLimitRule(featureRef, limitRule.getId(), userGroup);
 
 		if (existingLimit.isPresent()) {
 			// Update existing limit
-			updateLimitRuleInternal(feature, limitRule, userGroup);
+			updateLimitRuleInternal(featureRef, limitRule, userGroup);
 		}
 		else {
 			// Add new limit
-			addLimitRule(feature, limitRule, userGroup);
+			addLimitRule(featureRef, limitRule, userGroup);
 		}
 	}
 
-	private void updateLimitRuleInternal(Feature feature, LimitRule limitRule, UserGrouping userGroup) {
+	private void updateLimitRuleInternal(FeatureRef featureRef, LimitRule limitRule, UserGrouping userGroup) {
 
 		try {
 			String query = String.format(
@@ -168,7 +168,7 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 				}
 
 				stmt.setString(idx++, limitRule.getId());
-				stmt.setString(idx++, feature.getFeatureId());
+				stmt.setString(idx++, featureRef.featureId());
 				stmt.setString(idx, userGroup.getId());
 
 				stmt.executeUpdate();
@@ -180,9 +180,9 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 
 	}
 
-	public void deleteLimitRule(Feature feature, String limitRuleId, UserGrouping userGroup) {
+	public void deleteLimitRule(FeatureRef featureRef, String limitRuleId, UserGrouping userGroup) {
 
-		this.validateFeature(feature);
+		this.validateFeatureRef(featureRef);
 		this.validateNotNull(limitRuleId, "limitId");
 		this.validateUserGrouping(userGroup);
 
@@ -198,7 +198,7 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 					PreparedStatement stmt = conn.prepareStatement(query)) {
 
 				stmt.setString(1, limitRuleId);
-				stmt.setString(2, feature.getFeatureId());
+				stmt.setString(2, featureRef.featureId());
 				stmt.setString(3, userGroup.getId());
 
 				stmt.executeUpdate();
@@ -241,15 +241,15 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 		return limitRule;
 	}
 
-	private void validateFeature(Feature feature) {
+	private void validateFeatureRef(FeatureRef feature) {
 
 		if (feature == null) {
 			throw new IllegalArgumentException(("The feature parameter cannot be null"));
 		}
-		if (feature.getFeatureId() == null) {
+		if (feature.featureId() == null) {
 			throw new IllegalArgumentException("A feature must have a identifier");
 		}
-		if ((feature.getProduct() == null) || (feature.getProduct().getProductId() == null)) {
+		if ((feature.productId() == null)) {
 			throw new IllegalArgumentException("A feature must have a product with identifier");
 		}
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package io.terpomo.pmitz.subscriptions;
 
-import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 
 public interface SubscriptionFeatureManager {
 
-	boolean isFeatureIncluded(Subscription subscription, Feature feature);
+	boolean isFeatureIncluded(Subscription subscription, FeatureRef featureRef);
 
 }

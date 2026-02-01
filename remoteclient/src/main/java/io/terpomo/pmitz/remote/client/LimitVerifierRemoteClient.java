@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package io.terpomo.pmitz.remote.client;
 import java.io.InputStream;
 import java.util.Map;
 
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.LimitVerifier;
 import io.terpomo.pmitz.remote.client.http.PmitzApiKeyAuthenticationProvider;
 import io.terpomo.pmitz.remote.client.http.PmitzHttpClient;
@@ -39,26 +39,26 @@ public class LimitVerifierRemoteClient implements LimitVerifier {
 	}
 
 	@Override
-	public Map<String, Long> getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping) {
-		FeatureUsageInfo usageInfo = pmitzClient.getLimitsRemainingUnits(feature, userGrouping);
+	public Map<String, Long> getLimitsRemainingUnits(FeatureRef featureRef, UserGrouping userGrouping) {
+		FeatureUsageInfo usageInfo = pmitzClient.getLimitsRemainingUnits(featureRef, userGrouping);
 		return usageInfo.remainingUsageUnits();
 	}
 
 	@Override
-	public boolean isWithinLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
-		FeatureUsageInfo usageInfo = pmitzClient.verifyLimits(feature, userGrouping, additionalUnits);
+	public boolean isWithinLimits(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
+		FeatureUsageInfo usageInfo = pmitzClient.verifyLimits(featureRef, userGrouping, additionalUnits);
 		Map<String, Long> remainingUsageUnits = usageInfo.remainingUsageUnits();
 		return remainingUsageUnits != null && remainingUsageUnits.values().stream().noneMatch(v -> v < 0);
 	}
 
 	@Override
-	public void recordFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
-		pmitzClient.recordOrReduce(feature, userGrouping, additionalUnits, false);
+	public void recordFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
+		pmitzClient.recordOrReduce(featureRef, userGrouping, additionalUnits, false);
 	}
 
 	@Override
-	public void reduceFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> reducedUnits) {
-		pmitzClient.recordOrReduce(feature, userGrouping, reducedUnits, true);
+	public void reduceFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> reducedUnits) {
+		pmitzClient.recordOrReduce(featureRef, userGrouping, reducedUnits, true);
 	}
 
 	public void uploadProduct(InputStream inputStream) {

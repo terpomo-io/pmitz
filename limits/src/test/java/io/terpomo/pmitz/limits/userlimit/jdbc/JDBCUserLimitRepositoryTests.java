@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,14 +33,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,8 +50,7 @@ class JDBCUserLimitRepositoryTests {
 	private static final String SCHEMA_NAME = "public";
 	private static final String TABLE_NAME = "user_usage_limit";
 
-	private final Product product = new Product("Picture hosting service");
-	private final Feature feature = new Feature(this.product, "Uploading pictures");
+	private final FeatureRef featureRef = new FeatureRef("Picture hosting service", "Uploading pictures");
 	private final UserGrouping user = new IndividualUser("User1");
 
 	private UserLimitRepository repository;
@@ -63,22 +61,19 @@ class JDBCUserLimitRepositoryTests {
 				Arguments.of(null,
 						"Maximum picture resolution", new IndividualUser("user1"),
 						"The feature parameter cannot be null"),
-				Arguments.of(new Feature(new Product(null), "f1"),
+				Arguments.of(new FeatureRef(null, "f1"),
 						"Maximum picture resolution", new IndividualUser("user1"),
 						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(null, "f1"),
-						"Maximum picture resolution", new IndividualUser("user1"),
-						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(new Product("p1"), null),
+				Arguments.of(new FeatureRef("p1", null),
 						"Maximum picture resolution", new IndividualUser("user1"),
 						"A feature must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
+				Arguments.of(new FeatureRef("p1", "f1"),
 						null, new IndividualUser("user1"),
 						"The 'limitId' parameter cannot be null"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
+				Arguments.of(new FeatureRef("p1", "f1"),
 						"Maximum picture resolution", new IndividualUser(null),
 						"A user or group of users must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
+				Arguments.of(new FeatureRef("p1", "f1"),
 						"Maximum picture resolution", null,
 						"The user/group parameter cannot be null")
 		);
@@ -89,25 +84,22 @@ class JDBCUserLimitRepositoryTests {
 				Arguments.of(null,
 						new CountLimit("c1", 10), new IndividualUser("user1"),
 						"The feature parameter cannot be null"),
-				Arguments.of(new Feature(new Product(null), "f1"),
+				Arguments.of(new FeatureRef(null, "f1"),
 						new CountLimit("c1", 10), new IndividualUser("user1"),
 						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(null, "f1"),
-						new CountLimit("c1", 10), new IndividualUser("user1"),
-						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(new Product("p1"), null),
+				Arguments.of(new FeatureRef("p1", null),
 						new CountLimit("c1", 10), new IndividualUser("user1"),
 						"A feature must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
+				Arguments.of(new FeatureRef("p1", "f1"),
 						null, new IndividualUser("user1"),
 						"The limit parameter cannot be null"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
+				Arguments.of(new FeatureRef("p1", "f1"),
 						new CountLimit(null, 10), new IndividualUser("user1"),
 						"A limit must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
+				Arguments.of(new FeatureRef("p1", "f1"),
 						new CountLimit("c1", 10), new IndividualUser(null),
 						"A user or group of users must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
+				Arguments.of(new FeatureRef("p1", "f1"),
 						new CountLimit("c1", 10), null,
 						"The user/group parameter cannot be null")
 		);
@@ -118,22 +110,19 @@ class JDBCUserLimitRepositoryTests {
 				Arguments.of(null,
 						"Maximum picture resolution", new IndividualUser("user1"),
 						"The feature parameter cannot be null"),
-				Arguments.of(new Feature(new Product(null), "f1"),
+				Arguments.of(new FeatureRef(null, "f1"),
 						"Maximum picture resolution", new IndividualUser("user1"),
 						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(null, "f1"),
-						"Maximum picture resolution", new IndividualUser("user1"),
-						"A feature must have a product with identifier"),
-				Arguments.of(new Feature(new Product("p1"), null),
+				Arguments.of(new FeatureRef("p1", null),
 						"Maximum picture resolution", new IndividualUser("user1"),
 						"A feature must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
+				Arguments.of(new FeatureRef("p1", "f1"),
 						null, new IndividualUser("user1"),
 						"The 'limitId' parameter cannot be null"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
+				Arguments.of(new FeatureRef("p1", "f1"),
 						"Maximum picture resolution", new IndividualUser(null),
 						"A user or group of users must have a identifier"),
-				Arguments.of(new Feature(new Product("p1"), "f1"),
+				Arguments.of(new FeatureRef("p1", "f1"),
 						"Maximum picture resolution", null,
 						"The user/group parameter cannot be null")
 		);
@@ -165,7 +154,7 @@ class JDBCUserLimitRepositoryTests {
 	@Test
 	void findLimitRule_CountLimitRuleExist() {
 
-		Optional<LimitRule> limitRule = this.repository.findLimitRule(this.feature,
+		Optional<LimitRule> limitRule = this.repository.findLimitRule(this.featureRef,
 				"Maximum picture size", this.user);
 
 		assertThat(limitRule).isPresent();
@@ -179,7 +168,7 @@ class JDBCUserLimitRepositoryTests {
 	@Test
 	void findLimitRule_CalendarPeriodRateLimitRuleExist() {
 
-		Optional<LimitRule> limitRule = this.repository.findLimitRule(this.feature,
+		Optional<LimitRule> limitRule = this.repository.findLimitRule(this.featureRef,
 				"Maximum number of picture uploaded in calendar month", this.user);
 
 		assertThat(limitRule).isPresent();
@@ -193,7 +182,7 @@ class JDBCUserLimitRepositoryTests {
 	@Test
 	void findLimitRule_LimitRuleNotExist() {
 
-		Optional<LimitRule> limitRule = this.repository.findLimitRule(this.feature,
+		Optional<LimitRule> limitRule = this.repository.findLimitRule(this.featureRef,
 				"Maximum picture resolution", this.user);
 
 		assertThat(limitRule).isNotPresent();
@@ -205,7 +194,7 @@ class JDBCUserLimitRepositoryTests {
 		UserLimitRepository repositoryTest = new JDBCUserLimitRepository(new JdbcDataSource(), SCHEMA_NAME, "abc");
 
 		assertThatExceptionOfType(RepositoryException.class).as("The search should return an error").isThrownBy(
-				() -> repositoryTest.findLimitRule(this.feature, "Maximum picture resolution", this.user))
+				() -> repositoryTest.findLimitRule(this.featureRef, "Maximum picture resolution", this.user))
 				.withMessage("Error finding limit")
 				.withCauseInstanceOf(SQLException.class);
 	}
@@ -215,20 +204,20 @@ class JDBCUserLimitRepositoryTests {
 
 		UnknownLimit unknownLimit = new UnknownLimit("Unknown limit", 10L);
 
-		this.repository.updateLimitRule(this.feature, unknownLimit, this.user);
+		this.repository.updateLimitRule(this.featureRef, unknownLimit, this.user);
 
 		assertThatExceptionOfType(RepositoryException.class).isThrownBy(
-				() -> this.repository.findLimitRule(this.feature, "Unknown limit", this.user))
+				() -> this.repository.findLimitRule(this.featureRef, "Unknown limit", this.user))
 				.havingRootCause()
 				.withMessage("Unknown limit type: UnknownLimit");
 	}
 
 	@ParameterizedTest
 	@MethodSource
-	void findLimitRule_invalidParameter(Feature feature, String limitId, UserGrouping userGrouping, String message) {
+	void findLimitRule_invalidParameter(FeatureRef featureRef, String limitId, UserGrouping userGrouping, String message) {
 
 		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(
-				() -> this.repository.findLimitRule(feature, limitId, userGrouping))
+				() -> this.repository.findLimitRule(featureRef, limitId, userGrouping))
 				.withMessage(message);
 	}
 
@@ -242,9 +231,9 @@ class JDBCUserLimitRepositoryTests {
 		CountLimit countLimit = new CountLimit(limitId, limitCount);
 		countLimit.setUnit(limitUnit);
 
-		this.repository.updateLimitRule(this.feature, countLimit, this.user);
+		this.repository.updateLimitRule(this.featureRef, countLimit, this.user);
 
-		Optional<LimitRule> userLimit = this.repository.findLimitRule(this.feature,
+		Optional<LimitRule> userLimit = this.repository.findLimitRule(this.featureRef,
 				"Maximum picture resolution", this.user);
 
 		assertThat(userLimit).isPresent();
@@ -267,10 +256,10 @@ class JDBCUserLimitRepositoryTests {
 				new CalendarPeriodRateLimit(limitId, limitQuota, limitPeriodicity);
 		calendarPeriodRateLimit.setUnit(limitUnit);
 
-		this.repository.updateLimitRule(this.feature, calendarPeriodRateLimit, this.user);
+		this.repository.updateLimitRule(this.featureRef, calendarPeriodRateLimit, this.user);
 
 		Optional<LimitRule> userLimit =
-				this.repository.findLimitRule(this.feature,
+				this.repository.findLimitRule(this.featureRef,
 						"Maximum number of picture uploaded in calendar week", this.user);
 
 		assertThat(userLimit).isPresent();
@@ -286,9 +275,9 @@ class JDBCUserLimitRepositoryTests {
 	void updateLimitRule_CountLimitRuleModified() {
 		CountLimit countLimitToModified = new CountLimit("Maximum number of picture", 15);
 
-		this.repository.updateLimitRule(this.feature, countLimitToModified, this.user);
+		this.repository.updateLimitRule(this.featureRef, countLimitToModified, this.user);
 
-		Optional<LimitRule> userLimit = this.repository.findLimitRule(this.feature,
+		Optional<LimitRule> userLimit = this.repository.findLimitRule(this.featureRef,
 				"Maximum number of picture", this.user);
 
 		assertThat(userLimit).isPresent();
@@ -304,9 +293,9 @@ class JDBCUserLimitRepositoryTests {
 				new CalendarPeriodRateLimit("Maximum number of picture uploaded in calendar month",
 						1500, CalendarPeriodRateLimit.Periodicity.MONTH);
 
-		this.repository.updateLimitRule(this.feature, calendarPeriodRateLimitModified, this.user);
+		this.repository.updateLimitRule(this.featureRef, calendarPeriodRateLimitModified, this.user);
 
-		Optional<LimitRule> userLimit = this.repository.findLimitRule(this.feature,
+		Optional<LimitRule> userLimit = this.repository.findLimitRule(this.featureRef,
 				"Maximum number of picture uploaded in calendar month", this.user);
 
 		assertThat(userLimit).isPresent();
@@ -325,17 +314,17 @@ class JDBCUserLimitRepositoryTests {
 		countLimit.setUnit("dpi");
 
 		assertThatExceptionOfType(RepositoryException.class).as("The search should return an error").isThrownBy(
-				() -> repositoryTest.updateLimitRule(this.feature, countLimit, this.user))
+				() -> repositoryTest.updateLimitRule(this.featureRef, countLimit, this.user))
 				.withMessage("Error finding limit")
 				.withCauseInstanceOf(SQLException.class);
 	}
 
 	@ParameterizedTest
 	@MethodSource
-	void updateLimitRule_invalidParameter(Feature feature, LimitRule limitRule, UserGrouping userGrouping, String message) {
+	void updateLimitRule_invalidParameter(FeatureRef featureRef, LimitRule limitRule, UserGrouping userGrouping, String message) {
 
 		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(
-				() -> this.repository.updateLimitRule(feature, limitRule, userGrouping))
+				() -> this.repository.updateLimitRule(featureRef, limitRule, userGrouping))
 				.withMessage(message);
 	}
 
@@ -345,11 +334,11 @@ class JDBCUserLimitRepositoryTests {
 
 		CountLimit countLimit = new CountLimit("Maximum number of picture", 10);
 
-		this.repository.updateLimitRule(feature, countLimit, user1);
+		this.repository.updateLimitRule(featureRef, countLimit, user1);
 
-		this.repository.deleteLimitRule(feature, "Maximum number of picture", user1);
+		this.repository.deleteLimitRule(featureRef, "Maximum number of picture", user1);
 
-		Optional<LimitRule> userLimit = this.repository.findLimitRule(feature, "Maximum number of picture", user1);
+		Optional<LimitRule> userLimit = this.repository.findLimitRule(featureRef, "Maximum number of picture", user1);
 
 		assertThat(userLimit).isEmpty();
 	}
@@ -360,17 +349,17 @@ class JDBCUserLimitRepositoryTests {
 		UserLimitRepository repositoryTest = new JDBCUserLimitRepository(new JdbcDataSource(), SCHEMA_NAME, "abc");
 
 		assertThatExceptionOfType(RepositoryException.class).as("The search should return an error").isThrownBy(
-				() -> repositoryTest.deleteLimitRule(this.feature, "Maximum picture resolution", this.user))
+				() -> repositoryTest.deleteLimitRule(this.featureRef, "Maximum picture resolution", this.user))
 				.withMessage("Error deleting limit")
 				.withCauseInstanceOf(SQLException.class);
 	}
 
 	@ParameterizedTest
 	@MethodSource
-	void deleteLimitRule_invalidParameter(Feature feature, String limitId, UserGrouping userGrouping, String message) {
+	void deleteLimitRule_invalidParameter(FeatureRef featureRef, String limitId, UserGrouping userGrouping, String message) {
 
 		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(
-				() -> this.repository.deleteLimitRule(feature, limitId, userGrouping))
+				() -> this.repository.deleteLimitRule(featureRef, limitId, userGrouping))
 				.withMessage(message);
 	}
 
@@ -411,18 +400,18 @@ class JDBCUserLimitRepositoryTests {
 
 		CountLimit countLimit = new CountLimit("Maximum picture size", 10);
 		countLimit.setUnit("Go");
-		insertLimitRuleRecord(dataSource, this.feature, this.user, countLimit);
+		insertLimitRuleRecord(dataSource, this.featureRef, this.user, countLimit);
 
 		countLimit = new CountLimit("Maximum number of picture", 50);
-		insertLimitRuleRecord(dataSource, this.feature, this.user, countLimit);
+		insertLimitRuleRecord(dataSource, this.featureRef, this.user, countLimit);
 
 		CalendarPeriodRateLimit calendarPeriodRateLimit = new CalendarPeriodRateLimit(
 				"Maximum number of picture uploaded in calendar month", 1000, CalendarPeriodRateLimit.Periodicity.MONTH
 		);
-		insertLimitRuleRecord(dataSource, this.feature, this.user, calendarPeriodRateLimit);
+		insertLimitRuleRecord(dataSource, this.featureRef, this.user, calendarPeriodRateLimit);
 	}
 
-	private void insertLimitRuleRecord(DataSource dataSource, Feature feature, UserGrouping userGroup,
+	private void insertLimitRuleRecord(DataSource dataSource, FeatureRef featureRef, UserGrouping userGroup,
 			LimitRule limitRule) throws SQLException {
 
 		String query = String.format(
@@ -444,7 +433,7 @@ class JDBCUserLimitRepositoryTests {
 				limitDuration = calendarPeriodRateLimit.getDuration();
 			}
 			stmt.setString(1, limitRule.getId());
-			stmt.setString(2, feature.getFeatureId());
+			stmt.setString(2, featureRef.featureId());
 			stmt.setString(3, userGroup.getId());
 			stmt.setString(4, limitRule.getClass().getSimpleName());
 			stmt.setLong(5, limitRule.getValue());

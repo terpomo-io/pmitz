@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,8 +39,7 @@ public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
 	protected static final String CUSTOM_SCHEMA = "pmitz";
 	protected static final String TABLE_NAME = "user_usage_limit";
 
-	protected final Product product = new Product("Picture hosting service");
-	protected final Feature feature = new Feature(this.product, "Uploading pictures");
+	protected final FeatureRef featureRef = new FeatureRef("Picture hosting service", "Uploading pictures");
 	protected final UserGrouping user = new IndividualUser("User1");
 	protected BasicDataSource dataSource;
 	protected JDBCUserLimitRepository repository;
@@ -71,9 +69,9 @@ public abstract class AbstractJDBCUserLimitRepositoryIntegrationTests {
 
 		CountLimit countLimitToModified = new CountLimit("Maximum number of picture", 15);
 
-		this.repository.updateLimitRule(this.feature, countLimitToModified, this.user);
+		this.repository.updateLimitRule(this.featureRef, countLimitToModified, this.user);
 
-		Optional<LimitRule> limitRule = this.repository.findLimitRule(this.feature,
+		Optional<LimitRule> limitRule = this.repository.findLimitRule(this.featureRef,
 				"Maximum number of picture", this.user);
 
 		assertThat(limitRule).isPresent();

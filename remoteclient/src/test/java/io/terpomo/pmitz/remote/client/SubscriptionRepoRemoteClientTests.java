@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ class SubscriptionRepoRemoteClientTests {
 		var result = subscriptionRepoRemoteClient.find("sub001");
 
 		assertThat(result).isPresent();
-		assertThat(result.get()).isSameAs(expectedSubscription);
+		assertThat(result).containsSame(expectedSubscription);
 		verify(pmitzClient).findSubscription("sub001");
 	}
 
@@ -78,19 +78,14 @@ class SubscriptionRepoRemoteClientTests {
 
 	@Test
 	void updateStatusShouldCallPmitzClient() {
-		var subscription = new Subscription("sub001");
-		subscription.setStatus(SubscriptionStatus.ACTIVE);
-
-		subscriptionRepoRemoteClient.updateStatus(subscription, SubscriptionStatus.SUSPENDED);
+		subscriptionRepoRemoteClient.updateStatus("sub001", SubscriptionStatus.SUSPENDED);
 
 		verify(pmitzClient).updateSubscriptionStatus("sub001", SubscriptionStatus.SUSPENDED);
 	}
 
 	@Test
-	void updateStatusShouldUseSubscriptionIdFromSubscription() {
-		var subscription = new Subscription("customSubId");
-
-		subscriptionRepoRemoteClient.updateStatus(subscription, SubscriptionStatus.CANCELLED);
+	void updateStatusShouldPassSubscriptionIdToPmitzClient() {
+		subscriptionRepoRemoteClient.updateStatus("customSubId", SubscriptionStatus.CANCELLED);
 
 		verify(pmitzClient).updateSubscriptionStatus("customSubId", SubscriptionStatus.CANCELLED);
 	}

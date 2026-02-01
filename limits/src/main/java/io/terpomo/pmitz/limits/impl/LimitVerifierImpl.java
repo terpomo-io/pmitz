@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,9 @@ import java.util.stream.Collectors;
 
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.limits.LimitRule;
+import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.LimitRuleResolver;
 import io.terpomo.pmitz.limits.LimitVerificationStrategy;
 import io.terpomo.pmitz.limits.LimitVerificationStrategyResolver;
@@ -39,39 +41,42 @@ public class LimitVerifierImpl implements LimitVerifier {
 
 	private final LimitVerificationStrategyResolver limitVerifierStrategyResolver;
 	private final UsageRepository usageRepository;
+	private final ProductRepository productRepository;
 
 	public LimitVerifierImpl(LimitRuleResolver limitRuleResolver,
 			LimitVerificationStrategyResolver limitVerifierStrategyResolver,
-			UsageRepository usageRepository) {
+			UsageRepository usageRepository,
+			ProductRepository productRepository) {
 		this.limitRuleResolver = limitRuleResolver;
 		this.usageRepository = usageRepository;
 		this.limitVerifierStrategyResolver = limitVerifierStrategyResolver;
+		this.productRepository = productRepository;
 	}
 
 	@Override
-	public void recordFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
+	public void recordFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
 		LimitsValidationUtil.validateAdditionalUnits(additionalUnits);
-		recordOrReduce(feature, userGrouping, additionalUnits, true);
+		recordOrReduce(featureRef, userGrouping, additionalUnits, true);
 	}
 
 	@Override
-	public void reduceFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> reducedUnits) {
+	public void reduceFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> reducedUnits) {
 		if (reducedUnits == null || reducedUnits.isEmpty()) {
 			throw new IllegalArgumentException("Reduced units cannot be empty");
 		}
 		if (reducedUnits.values().stream().anyMatch(v -> v == null || v <= 0)) {
 			throw new IllegalArgumentException("Reduced units must be positive numbers");
 		}
-		recordOrReduce(feature, userGrouping, reducedUnits, false);
+		recordOrReduce(featureRef, userGrouping, reducedUnits, false);
 	}
 
 	@Override
-	public Map<String, Long> getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping) {
-		var limitVerificationStrategiesMap = findVerificationStrategiesByLimit(feature, userGrouping);
+	public Map<String, Long> getLimitsRemainingUnits(FeatureRef featureRef, UserGrouping userGrouping) {
+		var limitVerificationStrategiesMap = findVerificationStrategiesByLimit(featureRef, userGrouping);
 
 		var limitSearchCriteriaList = gatherSearchCriteria(limitVerificationStrategiesMap);
 
-		var context = new LimitTrackingContext(feature, userGrouping, limitSearchCriteriaList);
+		var context = new LimitTrackingContext(featureRef, userGrouping, limitSearchCriteriaList);
 
 		usageRepository.loadUsageData(context);
 
@@ -80,12 +85,12 @@ public class LimitVerifierImpl implements LimitVerifier {
 	}
 
 	@Override
-	public boolean isWithinLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
-		var limitVerificationStrategiesMap = findVerificationStrategiesByLimit(feature, userGrouping);
+	public boolean isWithinLimits(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
+		var limitVerificationStrategiesMap = findVerificationStrategiesByLimit(featureRef, userGrouping);
 
 		var limitSearchCriteriaList = gatherSearchCriteria(limitVerificationStrategiesMap);
 
-		var context = new LimitTrackingContext(feature, userGrouping, limitSearchCriteriaList);
+		var context = new LimitTrackingContext(featureRef, userGrouping, limitSearchCriteriaList);
 		usageRepository.loadUsageData(context);
 
 		return limitVerificationStrategiesMap.entrySet().stream()
@@ -93,13 +98,19 @@ public class LimitVerifierImpl implements LimitVerifier {
 
 	}
 
-	private void recordOrReduce(Feature feature, UserGrouping userGrouping, Map<String, Long> units, boolean isRecord) {
+	private Feature resolveFeature(FeatureRef featureRef) {
+		return productRepository.getProductById(featureRef.productId())
+				.flatMap(product -> productRepository.getFeature(product, featureRef.featureId()))
+				.orElseThrow(() -> new IllegalArgumentException(
+						"Feature not found: " + featureRef.productId() + "/" + featureRef.featureId()));
+	}
 
-		var limitVerificationStrategiesMap = findVerificationStrategiesByLimit(feature, userGrouping);
+	private void recordOrReduce(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> units, boolean isRecord) {
+		var limitVerificationStrategiesMap = findVerificationStrategiesByLimit(featureRef, userGrouping);
 
 		var limitSearchCriteriaList = gatherSearchCriteria(limitVerificationStrategiesMap);
 
-		var context = new LimitTrackingContext(feature, userGrouping, limitSearchCriteriaList);
+		var context = new LimitTrackingContext(featureRef, userGrouping, limitSearchCriteriaList);
 
 		usageRepository.loadUsageData(context);
 
@@ -121,9 +132,10 @@ public class LimitVerifierImpl implements LimitVerifier {
 				.toList();
 	}
 
-	private Map<LimitRule, LimitVerificationStrategy> findVerificationStrategiesByLimit(Feature feature, UserGrouping userGrouping) {
+	private Map<LimitRule, LimitVerificationStrategy> findVerificationStrategiesByLimit(FeatureRef featureRef, UserGrouping userGrouping) {
+		Feature feature = resolveFeature(featureRef);
 		return feature.getLimitsIds().stream()
-				.map(limitId -> limitRuleResolver.resolveLimitRule(feature, limitId, userGrouping))
+				.map(limitId -> limitRuleResolver.resolveLimitRule(featureRef, limitId, userGrouping))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.collect(Collectors.toMap(Function.identity(), limitVerifierStrategyResolver::resolveLimitVerificationStrategy));

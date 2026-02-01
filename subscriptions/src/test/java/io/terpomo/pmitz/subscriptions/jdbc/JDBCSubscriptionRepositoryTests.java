@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ class JDBCSubscriptionRepositoryTests {
 		subscription.setPlans(Map.of("product-a", "basic"));
 		repository.create(subscription);
 
-		repository.updateStatus(subscription, SubscriptionStatus.CANCELLED);
+		repository.updateStatus("sub-002", SubscriptionStatus.CANCELLED);
 
 		Subscription stored = repository.find("sub-002").orElseThrow();
 		assertThat(stored.getStatus()).isEqualTo(SubscriptionStatus.CANCELLED);

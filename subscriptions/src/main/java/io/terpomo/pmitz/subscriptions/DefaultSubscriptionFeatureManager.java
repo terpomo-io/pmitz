@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package io.terpomo.pmitz.subscriptions;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 
 public class DefaultSubscriptionFeatureManager implements SubscriptionFeatureManager {
@@ -30,18 +29,17 @@ public class DefaultSubscriptionFeatureManager implements SubscriptionFeatureMan
 	}
 
 	@Override
-	public boolean isFeatureIncluded(Subscription subscription, Feature feature) {
-		Product product = feature.getProduct();
-
-		String productId = product.getProductId();
+	public boolean isFeatureIncluded(Subscription subscription, FeatureRef featureRef) {
+		String productId = featureRef.productId();
 
 		if (!subscription.isProductAllowed(productId)) {
 			return false;
 		}
 
 		var plan = subscription.getPlan(productId)
-				.flatMap(planId -> productRepository.getPlan(product, planId));
+				.flatMap(planId -> productRepository.getProductById(productId)
+						.flatMap(product -> productRepository.getPlan(product, planId)));
 
-		return plan.isPresent() && plan.get().getIncludedFeature(feature.getFeatureId()).isPresent();
+		return plan.isPresent() && plan.get().getIncludedFeature(featureRef.featureId()).isPresent();
 	}
 }

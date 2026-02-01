@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
 
 public class JDBCSubscriptionRepository implements SubscriptionRepository {
 
+	public static final String SUBSCRIPTION_ID = "subscriptionId";
 	private final DataSource dataSource;
 	private final String schemaName;
 	private final String subscriptionTableName;
@@ -103,7 +104,7 @@ public class JDBCSubscriptionRepository implements SubscriptionRepository {
 
 	@Override
 	public Optional<Subscription> find(String subscriptionId) {
-		validateNotBlank(subscriptionId, "subscriptionId");
+		validateNotBlank(subscriptionId, SUBSCRIPTION_ID);
 
 		String query = String.format(
 				"SELECT subscription_id, status, expiration_date FROM %s.%s WHERE subscription_id = ?",
@@ -135,8 +136,8 @@ public class JDBCSubscriptionRepository implements SubscriptionRepository {
 	}
 
 	@Override
-	public void updateStatus(Subscription subscription, SubscriptionStatus newStatus) {
-		validateSubscription(subscription);
+	public void updateStatus(String subscriptionId, SubscriptionStatus newStatus) {
+		validateNotBlank(subscriptionId, SUBSCRIPTION_ID);
 		validateStatus(newStatus);
 
 		String query = String.format(
@@ -146,12 +147,11 @@ public class JDBCSubscriptionRepository implements SubscriptionRepository {
 		try (Connection conn = dataSource.getConnection();
 				PreparedStatement stmt = conn.prepareStatement(query)) {
 			stmt.setString(1, newStatus.name());
-			stmt.setString(2, subscription.getSubscriptionId());
+			stmt.setString(2, subscriptionId);
 			int rows = stmt.executeUpdate();
 			if (rows == 0) {
-				throw new RepositoryException("Subscription not found: " + subscription.getSubscriptionId());
+				throw new RepositoryException("Subscription not found: " + subscriptionId);
 			}
-			subscription.setStatus(newStatus);
 		}
 		catch (SQLException ex) {
 			throw new RepositoryException("Error updating subscription status", ex);
@@ -188,7 +188,7 @@ public class JDBCSubscriptionRepository implements SubscriptionRepository {
 		if (subscription == null) {
 			throw new IllegalArgumentException("Subscription must not be null");
 		}
-		validateNotBlank(subscription.getSubscriptionId(), "subscriptionId");
+		validateNotBlank(subscription.getSubscriptionId(), SUBSCRIPTION_ID);
 	}
 
 	private void validateStatus(SubscriptionStatus status) {

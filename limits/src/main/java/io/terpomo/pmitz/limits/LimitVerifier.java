@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,16 @@ package io.terpomo.pmitz.limits;
 
 import java.util.Map;
 
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 
 public interface LimitVerifier {
 
-	boolean isWithinLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
+	boolean isWithinLimits(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> additionalUnits);
 
-	void recordFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
+	void recordFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> additionalUnits);
 
-	void reduceFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> reducedUnits);
+	void reduceFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> reducedUnits);
 
-	Map<String, Long> getLimitsRemainingUnits(Feature feature, UserGrouping userGrouping);
+	Map<String, Long> getLimitsRemainingUnits(FeatureRef featureRef, UserGrouping userGrouping);
 }

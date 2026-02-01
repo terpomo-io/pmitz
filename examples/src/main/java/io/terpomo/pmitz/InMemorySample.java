@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,20 +21,18 @@ import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 
 import javax.sql.DataSource;
 
 import org.h2.jdbcx.JdbcDataSource;
 import org.h2.tools.RunScript;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.LimitExceededException;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.repository.product.inmemory.InMemoryProductRepository;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.LimitVerifier;
 import io.terpomo.pmitz.limits.LimitVerifierBuilder;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
@@ -54,7 +52,6 @@ public class InMemorySample {
 
 	private LimitVerifier limitVerifier;
 	private UserLimitRepository userLimitRepository;
-	private Product product;
 
 	public static void main(String[] args) {
 		InMemorySample sampleApp = new InMemorySample();
@@ -94,11 +91,11 @@ public class InMemorySample {
 	}
 
 	private void reserveBooks(UserGrouping user, int numberOfBooks) {
-		Feature feature = getFeature();
+		FeatureRef featureRef = new FeatureRef(PRODUCT_ID, FEATURE_ID);
 		try {
 			System.out.printf("The user %s wants to reserve %d books%n", user.getId(), numberOfBooks);
 
-			limitVerifier.recordFeatureUsage(feature, user, Collections.singletonMap(LIMIT_ID, (long) numberOfBooks));
+			limitVerifier.recordFeatureUsage(featureRef, user, Collections.singletonMap(LIMIT_ID, (long) numberOfBooks));
 
 			// Your business logic here
 			System.out.println("Books reserved!");
@@ -107,7 +104,7 @@ public class InMemorySample {
 			System.out.printf("Oops ! It appears that user '%s' has exceeded their reservation limit.%n",
 					user.getId());
 
-			Map<String, Long> limitsRemain =  limitVerifier.getLimitsRemainingUnits(feature, user);
+			Map<String, Long> limitsRemain =  limitVerifier.getLimitsRemainingUnits(featureRef, user);
 
 			System.out.printf("The reservation limit for user %s is %d books.%n",
 					user.getId(), limitsRemain.get(LIMIT_ID));
@@ -115,9 +112,9 @@ public class InMemorySample {
 	}
 
 	private void addLimitForUser(UserGrouping user, long numberOfBooks) {
-		Feature feature = getFeature();
+		FeatureRef featureRef = new FeatureRef(PRODUCT_ID, FEATURE_ID);
 
-		userLimitRepository.updateLimitRule(feature, new CountLimit(LIMIT_ID, numberOfBooks), user);
+		userLimitRepository.updateLimitRule(featureRef, new CountLimit(LIMIT_ID, numberOfBooks), user);
 
 		System.out.printf("The reservation limit for user '%s' has been increased to a %d books.%n",
 				user.getId(), numberOfBooks);
@@ -131,10 +128,6 @@ public class InMemorySample {
 		catch (Exception ex) {
 			throw new RuntimeException("Product Repository file not found", ex);
 		}
-
-		product = productRepo
-				.getProductById(PRODUCT_ID)
-				.orElseThrow(() -> new RuntimeException("Product not found: %s".formatted(PRODUCT_ID)));
 
 		userLimitRepository = UserLimitRepository.builder().jdbcRepository(usageRepoDataSource, DB_SCHEMA_NAME, DB_USER_LIMIT_TABLE_NAME);
 
@@ -173,8 +166,4 @@ public class InMemorySample {
 		}
 	}
 
-	private Feature getFeature() {
-		Optional<Feature> featureOpt = product.getFeatures().stream().filter(ft -> ft.getFeatureId().equals(FEATURE_ID)).findFirst();
-		return featureOpt.orElseThrow(() -> new RuntimeException("Feature not found: %s".formatted(FEATURE_ID)));
-	}
 }

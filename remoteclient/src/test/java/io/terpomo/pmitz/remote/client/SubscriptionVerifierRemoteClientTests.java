@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 
@@ -40,11 +39,11 @@ class SubscriptionVerifierRemoteClientTests {
 
 	SubscriptionVerifierRemoteClient subscriptionVerifierRemoteClient;
 
-	Feature feature;
+	FeatureRef featureRef;
 
 	@BeforeEach
 	void setUp() {
-		feature = new Feature(new Product("productId"), "featureId");
+		featureRef = new FeatureRef("productId", "featureId");
 		subscriptionVerifierRemoteClient = new SubscriptionVerifierRemoteClient(pmitzClient);
 	}
 
@@ -52,68 +51,68 @@ class SubscriptionVerifierRemoteClientTests {
 	void verifyEntitlementShouldReturnSuccessWhenFeatureAllowed() {
 		UserGrouping userGrouping = new IndividualUser("user001");
 		var expectedVerifDetail = SubscriptionVerifDetail.verificationOk();
-		when(pmitzClient.verifySubscription(feature, userGrouping)).thenReturn(expectedVerifDetail);
+		when(pmitzClient.verifySubscription(featureRef, userGrouping)).thenReturn(expectedVerifDetail);
 
-		var result = subscriptionVerifierRemoteClient.verifyEntitlement(feature, userGrouping);
+		var result = subscriptionVerifierRemoteClient.verifyEntitlement(featureRef, userGrouping);
 
 		assertThat(result).isSameAs(expectedVerifDetail);
 		assertThat(result.isFeatureAllowed()).isTrue();
 		assertThat(result.getErrorCause()).isNull();
-		verify(pmitzClient).verifySubscription(feature, userGrouping);
+		verify(pmitzClient).verifySubscription(featureRef, userGrouping);
 	}
 
 	@Test
 	void verifyEntitlementShouldReturnErrorWhenInvalidSubscription() {
 		UserGrouping userGrouping = new Subscription("sub001");
 		var expectedVerifDetail = SubscriptionVerifDetail.verificationError(SubscriptionVerifDetail.ErrorCause.INVALID_SUBSCRIPTION);
-		when(pmitzClient.verifySubscription(feature, userGrouping)).thenReturn(expectedVerifDetail);
+		when(pmitzClient.verifySubscription(featureRef, userGrouping)).thenReturn(expectedVerifDetail);
 
-		var result = subscriptionVerifierRemoteClient.verifyEntitlement(feature, userGrouping);
+		var result = subscriptionVerifierRemoteClient.verifyEntitlement(featureRef, userGrouping);
 
 		assertThat(result).isSameAs(expectedVerifDetail);
 		assertThat(result.isFeatureAllowed()).isFalse();
 		assertThat(result.getErrorCause()).isEqualTo(SubscriptionVerifDetail.ErrorCause.INVALID_SUBSCRIPTION);
-		verify(pmitzClient).verifySubscription(feature, userGrouping);
+		verify(pmitzClient).verifySubscription(featureRef, userGrouping);
 	}
 
 	@Test
 	void verifyEntitlementShouldReturnErrorWhenProductNotAllowed() {
 		UserGrouping userGrouping = new Subscription("sub001");
 		var expectedVerifDetail = SubscriptionVerifDetail.verificationError(SubscriptionVerifDetail.ErrorCause.PRODUCT_NOT_ALLOWED);
-		when(pmitzClient.verifySubscription(feature, userGrouping)).thenReturn(expectedVerifDetail);
+		when(pmitzClient.verifySubscription(featureRef, userGrouping)).thenReturn(expectedVerifDetail);
 
-		var result = subscriptionVerifierRemoteClient.verifyEntitlement(feature, userGrouping);
+		var result = subscriptionVerifierRemoteClient.verifyEntitlement(featureRef, userGrouping);
 
 		assertThat(result).isSameAs(expectedVerifDetail);
 		assertThat(result.isFeatureAllowed()).isFalse();
 		assertThat(result.getErrorCause()).isEqualTo(SubscriptionVerifDetail.ErrorCause.PRODUCT_NOT_ALLOWED);
-		verify(pmitzClient).verifySubscription(feature, userGrouping);
+		verify(pmitzClient).verifySubscription(featureRef, userGrouping);
 	}
 
 	@Test
 	void verifyEntitlementShouldReturnErrorWhenFeatureNotAllowed() {
 		UserGrouping userGrouping = new Subscription("sub001");
 		var expectedVerifDetail = SubscriptionVerifDetail.verificationError(SubscriptionVerifDetail.ErrorCause.FEATURE_NOT_ALLOWED);
-		when(pmitzClient.verifySubscription(feature, userGrouping)).thenReturn(expectedVerifDetail);
+		when(pmitzClient.verifySubscription(featureRef, userGrouping)).thenReturn(expectedVerifDetail);
 
-		var result = subscriptionVerifierRemoteClient.verifyEntitlement(feature, userGrouping);
+		var result = subscriptionVerifierRemoteClient.verifyEntitlement(featureRef, userGrouping);
 
 		assertThat(result).isSameAs(expectedVerifDetail);
 		assertThat(result.isFeatureAllowed()).isFalse();
 		assertThat(result.getErrorCause()).isEqualTo(SubscriptionVerifDetail.ErrorCause.FEATURE_NOT_ALLOWED);
-		verify(pmitzClient).verifySubscription(feature, userGrouping);
+		verify(pmitzClient).verifySubscription(featureRef, userGrouping);
 	}
 
 	@Test
 	void verifyEntitlementShouldPropagateExceptionFromPmitzClient() {
 		UserGrouping userGrouping = new IndividualUser("user001");
-		when(pmitzClient.verifySubscription(feature, userGrouping))
+		when(pmitzClient.verifySubscription(featureRef, userGrouping))
 				.thenThrow(new RemoteCallException("Connection failed"));
 
-		assertThatThrownBy(() -> subscriptionVerifierRemoteClient.verifyEntitlement(feature, userGrouping))
+		assertThatThrownBy(() -> subscriptionVerifierRemoteClient.verifyEntitlement(featureRef, userGrouping))
 				.isInstanceOf(RemoteCallException.class)
 				.hasMessage("Connection failed");
 
-		verify(pmitzClient).verifySubscription(feature, userGrouping);
+		verify(pmitzClient).verifySubscription(featureRef, userGrouping);
 	}
 }
