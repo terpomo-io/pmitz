@@ -1,26 +1,34 @@
 plugins {
-    id 'java'
-    alias libs.plugins.springboot
+    id 'java-library'
     alias libs.plugins.springDependencyManagement
 }
 
-dependencies {
-    implementation project(path: ':spring-boot-starter-remoteserver')
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${libs.versions.springboot.version.get()}"
+    }
+}
 
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.add('-parameters')
+}
+
+dependencies {
+    implementation project(path: ':all')
+    implementation project(path: ':core')
+    implementation project(path: ':limits')
+    implementation project(path: ':subscriptions')
+
+    implementation libs.jackson.databind
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-security'
-
-    implementation 'org.springframework.boot:spring-boot-starter-flyway'
-    implementation 'org.flywaydb:flyway-database-postgresql'
 
     implementation 'com.h2database:h2'
     implementation libs.postgresql
 
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

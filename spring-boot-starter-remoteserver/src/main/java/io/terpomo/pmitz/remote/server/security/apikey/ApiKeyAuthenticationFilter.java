@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.remote.server.security;
+package io.terpomo.pmitz.remote.server.security.apikey;
 
 import java.io.IOException;
 

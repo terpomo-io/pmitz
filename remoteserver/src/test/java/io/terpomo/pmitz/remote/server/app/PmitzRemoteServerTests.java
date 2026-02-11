@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.remote.server;
+package io.terpomo.pmitz.remote.server.app;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
 @TestPropertySource(properties = "pmitz-api-key=dummy-api-key")
-public class PmitRemoteServerTests {
+class PmitzRemoteServerTests {
 	@Autowired(required = false)
 	ProductController productController;
 
