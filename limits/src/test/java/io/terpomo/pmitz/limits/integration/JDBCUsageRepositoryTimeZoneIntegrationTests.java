@@ -34,12 +34,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.mssqlserver.MSSQLServerContainer;
-import org.testcontainers.mysql.MySQLContainer;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.mssqlserver.MSSQLServerContainer;
+import org.testcontainers.mysql.MySQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subscriptions.FeatureRef;
@@ -49,8 +49,7 @@ import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRecordRepoMetadata;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 @Testcontainers

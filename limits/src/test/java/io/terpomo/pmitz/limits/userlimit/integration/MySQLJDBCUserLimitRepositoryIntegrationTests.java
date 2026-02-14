@@ -23,9 +23,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.mysql.MySQLContainer;
 
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
