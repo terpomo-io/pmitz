@@ -23,7 +23,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -39,8 +39,8 @@ import io.terpomo.pmitz.utils.JDBCTestUtils;
 public class MySQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUserLimitRepositoryIntegrationTests {
 
 	@Container
-	private static final MySQLContainer<?> mysqlContainer =
-			new MySQLContainer<>("mysql:lts")
+	private static final MySQLContainer mysqlContainer =
+			new MySQLContainer("mysql:lts")
 					.withDatabaseName(CUSTOM_SCHEMA)
 					.withEnv("TZ", "America/New_York");
 

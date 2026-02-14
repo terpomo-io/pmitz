@@ -23,7 +23,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.testcontainers.containers.MSSQLServerContainer;
+import org.testcontainers.mssqlserver.MSSQLServerContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -39,8 +39,8 @@ import io.terpomo.pmitz.utils.JDBCTestUtils;
 public class SQLServerJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUserLimitRepositoryIntegrationTests {
 
 	@Container
-	private static final MSSQLServerContainer<?> sqlServerContainer =
-			new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:latest")
+	private static final MSSQLServerContainer sqlServerContainer =
+			new MSSQLServerContainer("mcr.microsoft.com/mssql/server:latest")
 					.acceptLicense()
 					.withEnv("TZ", "Europe/Berlin");
 

@@ -23,7 +23,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -39,8 +39,8 @@ import io.terpomo.pmitz.utils.JDBCTestUtils;
 public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUserLimitRepositoryIntegrationTests {
 
 	@Container
-	private static final PostgreSQLContainer<?> postgresContainer =
-			new PostgreSQLContainer<>("postgres:latest").withEnv("TZ", "Europe/Berlin");
+	private static final PostgreSQLContainer postgresContainer =
+			new PostgreSQLContainer("postgres:latest").withEnv("TZ", "Europe/Berlin");
 
 
 	@Override

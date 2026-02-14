@@ -25,7 +25,7 @@ import java.sql.Statement;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -40,8 +40,8 @@ public class PostgresSQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBC
 	private static final Logger logger = LoggerFactory.getLogger(PostgresSQLJDBCUsageRepositoryIntegrationTests.class);
 
 	@Container
-	private static final PostgreSQLContainer<?> postgresqlContainer =
-			new PostgreSQLContainer<>("postgres:latest");
+	private static final PostgreSQLContainer postgresqlContainer =
+			new PostgreSQLContainer("postgres:latest");
 
 	@Override
 	protected void setupDataSource() {

@@ -26,7 +26,7 @@ import java.sql.Timestamp;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.MSSQLServerContainer;
+import org.testcontainers.mssqlserver.MSSQLServerContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -41,8 +41,8 @@ public class SQLServerJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUs
 	private static final Logger logger = LoggerFactory.getLogger(SQLServerJDBCUsageRepositoryIntegrationTests.class);
 
 	@Container
-	private static final MSSQLServerContainer<?> mssqlServerContainer =
-			new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:latest")
+	private static final MSSQLServerContainer mssqlServerContainer =
+			new MSSQLServerContainer("mcr.microsoft.com/mssql/server:latest")
 					.acceptLicense();
 
 	@Override
