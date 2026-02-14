@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureStatus;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.LimitExceededException;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -45,13 +44,13 @@ class LimitVerifierRemoteClientTests {
 
 	LimitVerifierRemoteClient limitVerifierRemoteClient;
 
-	Feature feature;
+	FeatureRef featureRef;
 	UserGrouping userGrouping;
 
 	@BeforeEach
 	void setUp() {
 		userGrouping = new IndividualUser("user001");
-		feature = new Feature(new Product("productId"), "featureId");
+		featureRef = new FeatureRef("productId", "featureId");
 		limitVerifierRemoteClient = new LimitVerifierRemoteClient(pmitzClient);
 	}
 
@@ -59,12 +58,12 @@ class LimitVerifierRemoteClientTests {
 	void getLimitsRemainingUnitsShouldCallPmitzClient() {
 		var expectedRemainingUnits = Map.of("limit1", 10L);
 		var featureUsageInfo = new FeatureUsageInfo(FeatureStatus.AVAILABLE, expectedRemainingUnits);
-		when(pmitzClient.getLimitsRemainingUnits(feature, userGrouping)).thenReturn(featureUsageInfo);
+		when(pmitzClient.getLimitsRemainingUnits(featureRef, userGrouping)).thenReturn(featureUsageInfo);
 
-		var returnedRemainingUnits = limitVerifierRemoteClient.getLimitsRemainingUnits(feature, userGrouping);
+		var returnedRemainingUnits = limitVerifierRemoteClient.getLimitsRemainingUnits(featureRef, userGrouping);
 
 		assertThat(returnedRemainingUnits).isSameAs(expectedRemainingUnits);
-		verify(pmitzClient).getLimitsRemainingUnits(feature, userGrouping);
+		verify(pmitzClient).getLimitsRemainingUnits(featureRef, userGrouping);
 	}
 
 	@Test
@@ -72,12 +71,12 @@ class LimitVerifierRemoteClientTests {
 		var additionalUnits = Map.of("limit1", 10L);
 		var expectedRemainingUnits = Map.of("limit1", 0L); //zero remainingUnit is Ok in this case
 		var featureUsageInfo = new FeatureUsageInfo(FeatureStatus.AVAILABLE, expectedRemainingUnits);
-		when(pmitzClient.verifyLimits(feature, userGrouping, additionalUnits)).thenReturn(featureUsageInfo);
+		when(pmitzClient.verifyLimits(featureRef, userGrouping, additionalUnits)).thenReturn(featureUsageInfo);
 
-		var isWithinLimits = limitVerifierRemoteClient.isWithinLimits(feature, userGrouping, additionalUnits);
+		var isWithinLimits = limitVerifierRemoteClient.isWithinLimits(featureRef, userGrouping, additionalUnits);
 
 		assertThat(isWithinLimits).isTrue();
-		verify(pmitzClient).verifyLimits(feature, userGrouping, additionalUnits);
+		verify(pmitzClient).verifyLimits(featureRef, userGrouping, additionalUnits);
 	}
 
 	@Test
@@ -85,42 +84,42 @@ class LimitVerifierRemoteClientTests {
 		var additionalUnits = Map.of("limit1", 10L);
 		var expectedRemainingUnits = Map.of("limit1", -2L); //zero remainingUnit is Ok in this case
 		var featureUsageInfo = new FeatureUsageInfo(FeatureStatus.AVAILABLE, expectedRemainingUnits);
-		when(pmitzClient.verifyLimits(feature, userGrouping, additionalUnits)).thenReturn(featureUsageInfo);
+		when(pmitzClient.verifyLimits(featureRef, userGrouping, additionalUnits)).thenReturn(featureUsageInfo);
 
-		var isWithinLimits = limitVerifierRemoteClient.isWithinLimits(feature, userGrouping, additionalUnits);
+		var isWithinLimits = limitVerifierRemoteClient.isWithinLimits(featureRef, userGrouping, additionalUnits);
 
 		assertThat(isWithinLimits).isFalse();
-		verify(pmitzClient).verifyLimits(feature, userGrouping, additionalUnits);
+		verify(pmitzClient).verifyLimits(featureRef, userGrouping, additionalUnits);
 	}
 
 	@Test
 	void recordFeatureUsageShouldNotThrowExceptionWhenLimitNotExceeded() {
 		var additionalUnits = Map.of("limit1", 10L);
 
-		limitVerifierRemoteClient.recordFeatureUsage(feature, userGrouping, additionalUnits);
+		limitVerifierRemoteClient.recordFeatureUsage(featureRef, userGrouping, additionalUnits);
 
-		verify(pmitzClient).recordOrReduce(feature, userGrouping, additionalUnits, false);
+		verify(pmitzClient).recordOrReduce(featureRef, userGrouping, additionalUnits, false);
 	}
 
 	@Test
 	void recordFeatureUsageShouldThrowLimitExceededExceptionWhenLimitExceeded() {
 		var additionalUnits = Map.of("limit1", 10L);
-		doThrow(new LimitExceededException("Limit exceeded", feature, userGrouping))
-				.when(pmitzClient).recordOrReduce(feature, userGrouping, additionalUnits, false);
+		doThrow(new LimitExceededException("Limit exceeded", featureRef, userGrouping))
+				.when(pmitzClient).recordOrReduce(featureRef, userGrouping, additionalUnits, false);
 
-		assertThatThrownBy(() -> limitVerifierRemoteClient.recordFeatureUsage(feature, userGrouping, additionalUnits))
+		assertThatThrownBy(() -> limitVerifierRemoteClient.recordFeatureUsage(featureRef, userGrouping, additionalUnits))
 				.isInstanceOf(LimitExceededException.class);
 
-		verify(pmitzClient).recordOrReduce(feature, userGrouping, additionalUnits, false);
+		verify(pmitzClient).recordOrReduce(featureRef, userGrouping, additionalUnits, false);
 	}
 
 	@Test
 	void reduceFeatureUsageShouldCallPmitzClient() {
 		var additionalUnits = Map.of("limit1", 10L);
 
-		limitVerifierRemoteClient.reduceFeatureUsage(feature, userGrouping, additionalUnits);
+		limitVerifierRemoteClient.reduceFeatureUsage(featureRef, userGrouping, additionalUnits);
 
-		verify(pmitzClient).recordOrReduce(feature, userGrouping, additionalUnits, true);
+		verify(pmitzClient).recordOrReduce(featureRef, userGrouping, additionalUnits, true);
 	}
 
 	@Test

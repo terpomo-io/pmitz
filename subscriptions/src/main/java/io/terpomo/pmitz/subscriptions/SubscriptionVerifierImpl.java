@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,31 +18,46 @@ package io.terpomo.pmitz.subscriptions;
 
 import java.util.Optional;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Plan;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
+import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionRepository;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 
 public class SubscriptionVerifierImpl implements SubscriptionVerifier {
 
-	private SubscriptionLifecycleManager subscriptionLifecycleManager;
+	private io.terpomo.pmitz.core.subscriptions.SubscriptionRepository subscriptionRepository;
 	private SubscriptionFeatureManager subscriptionFeatureManager;
 
-	@Override
-	public boolean isFeatureAllowed(Feature feature, UserGrouping userGrouping) {
-
-		var optSubscription = subscriptionLifecycleManager.find(userGrouping.getId());
-
-		return optSubscription.isPresent()
-				&& subscriptionFeatureManager.isFeatureIncluded(optSubscription.get(), feature);
+	public SubscriptionVerifierImpl(SubscriptionRepository subscriptionRepository, SubscriptionFeatureManager subscriptionFeatureManager) {
+		this.subscriptionRepository = subscriptionRepository;
+		this.subscriptionFeatureManager = subscriptionFeatureManager;
 	}
 
 	@Override
-	public Optional<Plan> findPlan(Feature feature, UserGrouping userGrouping) {
-		var optSubscription = subscriptionLifecycleManager.find(userGrouping.getId());
+	public SubscriptionVerifDetail verifyEntitlement(FeatureRef featureRef, UserGrouping userGrouping) {
+		if (!(userGrouping instanceof Subscription)) {
+			return SubscriptionVerifDetail.verificationOk();
+		}
 
-		return optSubscription.isPresent() ? Optional.of(optSubscription.get().getPlan()) : Optional.empty();
+		String productId = featureRef.productId();
+		Optional<Subscription> optSubscription = subscriptionRepository.find(userGrouping.getId());
 
-		//TODO document design decision : Plans are valid only when there are subscriptions
+		SubscriptionVerifDetail.ErrorCause errorCause = null;
+
+		if (optSubscription.isEmpty() || !optSubscription.get().isValid()) {
+			errorCause = SubscriptionVerifDetail.ErrorCause.INVALID_SUBSCRIPTION;
+		}
+		else if (!optSubscription.get().isProductAllowed(productId)) {
+			errorCause = SubscriptionVerifDetail.ErrorCause.PRODUCT_NOT_ALLOWED;
+		}
+		else if (!subscriptionFeatureManager.isFeatureIncluded(optSubscription.get(), featureRef)) {
+			errorCause = SubscriptionVerifDetail.ErrorCause.FEATURE_NOT_ALLOWED;
+		}
+
+		return (errorCause != null) ? SubscriptionVerifDetail.verificationError(errorCause) : SubscriptionVerifDetail.verificationOk();
+
 	}
+
 }

@@ -18,10 +18,25 @@ package io.terpomo.pmitz.core.subscriptions;
 
 public enum SubscriptionStatus {
 
-	TRIAL,
-	ACTIVE,
-	EXPIRED,
-	CANCELLED,
-	TERMINATED
+	TRIAL(true),
+	TRIAL_ENDED(false),
+	PENDING(true),
+	ACTIVE(true),
+	SUSPENDED(false),
+	EXPIRED(false),
+	PENDING_CANCELLATION(true),
+	CANCELLED(false),
+	TERMINATED(false),
+	ENDED(false);
+
+	private final boolean valid;
+
+	SubscriptionStatus(boolean valid) {
+		this.valid = valid;
+	}
+
+	public boolean isValid() {
+		return this.valid;
+	}
 
 }

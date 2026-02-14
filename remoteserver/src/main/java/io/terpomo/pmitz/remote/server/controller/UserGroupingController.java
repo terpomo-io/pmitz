@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,25 +26,27 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.terpomo.pmitz.all.usage.tracker.FeatureUsageTracker;
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.exception.LimitExceededException;
-import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.subjects.DirectoryGroup;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.limits.impl.LimitsValidationUtil;
 
 @RestController
 public class UserGroupingController {
 
 	private final FeatureUsageTracker featureUsageTracker;
-	private final ProductRepository productRepository;
+	private final SubscriptionVerifier subscriptionVerifier;
 
-	public UserGroupingController(FeatureUsageTracker featureUsageTracker, ProductRepository productRepository) {
+	public UserGroupingController(FeatureUsageTracker featureUsageTracker,
+			SubscriptionVerifier subscriptionVerifier) {
 		this.featureUsageTracker = featureUsageTracker;
-		this.productRepository = productRepository;
+		this.subscriptionVerifier = subscriptionVerifier;
 	}
 
 	@GetMapping("/{userGroupingType}/{userGroupingId}/usage/{productId}/{featureId}")
@@ -52,11 +54,10 @@ public class UserGroupingController {
 			@PathVariable String featureId,
 			@PathVariable String userGroupingId) {
 
-		Feature feature = findFeature(productId, featureId);
-
+		FeatureRef featureRef = new FeatureRef(productId, featureId);
 		UserGrouping userGrouping = resolveUserGrouping(userGroupingType, userGroupingId);
 
-		return featureUsageTracker.getUsageInfo(feature, userGrouping);
+		return featureUsageTracker.getUsageInfo(featureRef, userGrouping);
 	}
 
 	@PostMapping("/{userGroupingType}/{userGroupingId}/usage/{productId}/{featureId}")
@@ -64,11 +65,10 @@ public class UserGroupingController {
 			@PathVariable String productId,
 			@PathVariable String featureId,
 			@PathVariable String userGroupingId) {
-		Feature feature = findFeature(productId, featureId);
-
+		FeatureRef featureRef = new FeatureRef(productId, featureId);
 		UserGrouping userGrouping = resolveUserGrouping(userGroupingType, userGroupingId);
 
-		return recordOrReduceFeatureUsage(feature, userGrouping, usageRecordRequest);
+		return recordOrReduceFeatureUsage(featureRef, userGrouping, usageRecordRequest);
 	}
 
 	@PostMapping("/{userGroupingType}/{userGroupingId}/limits-check/{productId}/{featureId}")
@@ -76,19 +76,22 @@ public class UserGroupingController {
 			@PathVariable String productId,
 			@PathVariable String featureId,
 			@PathVariable String userGroupingId) {
-		Feature feature = findFeature(productId, featureId);
-
+		FeatureRef featureRef = new FeatureRef(productId, featureId);
 		UserGrouping userGrouping = resolveUserGrouping(userGroupingType, userGroupingId);
 
-		return featureUsageTracker.verifyLimits(feature, userGrouping, additionalUnits);
+		return featureUsageTracker.verifyLimits(featureRef, userGrouping, additionalUnits);
 	}
 
-	private Feature findFeature(String productId, String featureId) {
-		var product = productRepository.getProductById(productId).orElseThrow(() -> new IllegalArgumentException("Invalid product"));
-		return productRepository.getFeature(product, featureId).orElseThrow(() -> new IllegalArgumentException("Invalid feature"));
+	@GetMapping("/{userGroupingType}/{userGroupingId}/subscription-check/{productId}/{featureId}")
+	public SubscriptionVerifDetail verifySubscription(@PathVariable String userGroupingType,
+			@PathVariable String productId,
+			@PathVariable String featureId,
+			@PathVariable String userGroupingId) {
+		UserGrouping userGrouping = resolveUserGrouping(userGroupingType, userGroupingId);
+		return subscriptionVerifier.verifyEntitlement(new FeatureRef(productId, featureId), userGrouping);
 	}
 
-	private ResponseEntity<Void> recordOrReduceFeatureUsage(Feature feature, UserGrouping userGrouping, UsageRecordRequest usageRecordRequest) {
+	private ResponseEntity<Void> recordOrReduceFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, UsageRecordRequest usageRecordRequest) {
 		try {
 			LimitsValidationUtil.validateAdditionalUnits(usageRecordRequest.getUnits());
 		}
@@ -97,11 +100,11 @@ public class UserGroupingController {
 		}
 
 		if (usageRecordRequest.isReduceUnits()) {
-			featureUsageTracker.reduceFeatureUsage(feature, userGrouping, usageRecordRequest.getUnits());
+			featureUsageTracker.reduceFeatureUsage(featureRef, userGrouping, usageRecordRequest.getUnits());
 		}
 		else {
 			try {
-				featureUsageTracker.recordFeatureUsage(feature, userGrouping, usageRecordRequest.getUnits());
+				featureUsageTracker.recordFeatureUsage(featureRef, userGrouping, usageRecordRequest.getUnits());
 			}
 			catch (LimitExceededException exception) {
 				return ResponseEntity.status(422).build();

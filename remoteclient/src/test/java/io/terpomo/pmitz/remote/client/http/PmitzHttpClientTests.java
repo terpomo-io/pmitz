@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,16 +33,18 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureStatus;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.FeatureNotFoundException;
 import io.terpomo.pmitz.core.exception.LimitExceededException;
 import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.subjects.DirectoryGroup;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
+import io.terpomo.pmitz.remote.client.AuthenticationException;
 import io.terpomo.pmitz.remote.client.RemoteCallException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -106,8 +108,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		var feature = new Feature(new Product(productId), featureId);
-		var featureUsageInfo = pmitzHttpClient.getLimitsRemainingUnits(feature, userGrouping);
+		var featureRef = new FeatureRef(productId, featureId);
+		var featureUsageInfo = pmitzHttpClient.getLimitsRemainingUnits(featureRef, userGrouping);
 
 		assertThat(featureUsageInfo).isNotNull();
 		assertThat(featureUsageInfo.featureStatus()).isEqualTo(FeatureStatus.AVAILABLE);
@@ -126,8 +128,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		var feature = new Feature(new Product("picUpload"), "newPicUpload");
-		assertThatThrownBy(() -> pmitzHttpClient.getLimitsRemainingUnits(feature, userGrouping))
+		var featureRef = new FeatureRef("picUpload", "newPicUpload");
+		assertThatThrownBy(() -> pmitzHttpClient.getLimitsRemainingUnits(featureRef, userGrouping))
 				.isInstanceOf(FeatureNotFoundException.class);
 	}
 
@@ -141,8 +143,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		var feature = new Feature(new Product("picUpload"), "newPicUpload");
-		assertThatThrownBy(() -> pmitzHttpClient.getLimitsRemainingUnits(feature, userGrouping))
+		var featureRef = new FeatureRef("picUpload", "newPicUpload");
+		assertThatThrownBy(() -> pmitzHttpClient.getLimitsRemainingUnits(featureRef, userGrouping))
 				.isInstanceOf(RemoteCallException.class);
 	}
 
@@ -151,7 +153,7 @@ class PmitzHttpClientTests {
 	void recordOrReduceRemoteShouldNotThrowExceptionWhenResponse200(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
-		var feature = new Feature(new Product(productId), featureId);
+		var featureRef = new FeatureRef(productId, featureId);
 
 		stubFor(post(endpoint + "/usage/picUpload/newPicUpload")
 				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
@@ -160,7 +162,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		pmitzHttpClient.recordOrReduce(feature, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false);
+		assertThatCode(() -> pmitzHttpClient.recordOrReduce(featureRef, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
+				.doesNotThrowAnyException();
 	}
 
 	@ParameterizedTest
@@ -168,7 +171,7 @@ class PmitzHttpClientTests {
 	void recordOrReduceRemoteShouldThrowLimitExceededExceptionWhenResponse422(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
-		var feature = new Feature(new Product(productId), featureId);
+		var featureRef = new FeatureRef(productId, featureId);
 
 		stubFor(post(endpoint + "/usage/picUpload/newPicUpload")
 				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
@@ -177,7 +180,7 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(feature, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
+		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(featureRef, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
 				.isInstanceOf(LimitExceededException.class);
 	}
 
@@ -186,7 +189,7 @@ class PmitzHttpClientTests {
 	void recordOrReduceRemoteShouldThrowRemoteCallExceptionWnenResponse4xx(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
-		var feature = new Feature(new Product(productId), featureId);
+		var featureRef = new FeatureRef(productId, featureId);
 
 		stubFor(post(endpoint + "/usage/picUpload/newPicUpload")
 				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
@@ -195,7 +198,7 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(feature, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
+		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(featureRef, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
 				.isInstanceOf(FeatureNotFoundException.class);
 	}
 
@@ -204,7 +207,7 @@ class PmitzHttpClientTests {
 	void recordOrReduceRemoteShouldThrowRemoteCallExceptionWhenResponse5xx(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
 		String featureId = "newPicUpload";
 		String productId = "picUpload";
-		var feature = new Feature(new Product(productId), featureId);
+		var featureRef = new FeatureRef(productId, featureId);
 
 		stubFor(post(endpoint + "/usage/picUpload/newPicUpload")
 				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
@@ -213,7 +216,7 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(feature, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
+		assertThatThrownBy(() -> pmitzHttpClient.recordOrReduce(featureRef, userGrouping, Map.of("limit1", 1L, "limit2", 2L), false))
 				.isInstanceOf(RemoteCallException.class);
 	}
 
@@ -239,8 +242,8 @@ class PmitzHttpClientTests {
 
 		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
 
-		var feature = new Feature(new Product(productId), featureId);
-		var featureUsageInfo = pmitzHttpClient.verifyLimits(feature, userGrouping, Map.of("limit1", 1L));
+		var featureRef = new FeatureRef(productId, featureId);
+		var featureUsageInfo = pmitzHttpClient.verifyLimits(featureRef, userGrouping, Map.of("limit1", 1L));
 
 		assertThat(featureUsageInfo).isNotNull();
 		assertThat(featureUsageInfo.featureStatus()).isEqualTo(FeatureStatus.AVAILABLE);
@@ -263,7 +266,9 @@ class PmitzHttpClientTests {
 				.willReturn(aResponse().withStatus(200)));
 
 		var inputStream = new ByteArrayInputStream(jsonProduct.getBytes(StandardCharsets.UTF_8));
-		pmitzHttpClient.uploadProduct(inputStream);
+
+		assertThatCode(() -> pmitzHttpClient.uploadProduct(inputStream))
+				.doesNotThrowAnyException();
 	}
 
 	@Test
@@ -294,7 +299,8 @@ class PmitzHttpClientTests {
 				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
 				.willReturn(aResponse().withStatus(200)));
 
-		pmitzHttpClient.removeProduct("aProductId");
+		assertThatCode(() -> pmitzHttpClient.removeProduct("aProductId"))
+				.doesNotThrowAnyException();
 	}
 
 	@Test
@@ -308,5 +314,274 @@ class PmitzHttpClientTests {
 		assertThatThrownBy(() -> pmitzHttpClient.removeProduct("aProductId"))
 				.isInstanceOf(RepositoryException.class)
 				.hasMessage("Product not found with id aProductId");
+	}
+
+	@ParameterizedTest
+	@MethodSource({"userGroupingsProvider"})
+	void verifySubscriptionShouldReturnVerifDetailWhenResponse200(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+		String featureId = "newPicUpload";
+		String productId = "picUpload";
+
+		String jsonResponse = """
+				{
+					"featureAllowed" : true,
+					"errorCause" : null
+				}
+				""";
+
+		stubFor(get(endpoint + "/subscription-check/picUpload/newPicUpload")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withBody(jsonResponse).withStatus(200)));
+
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		var featureRef = new FeatureRef(productId, featureId);
+		var verifDetail = pmitzHttpClient.verifySubscription(featureRef, userGrouping);
+
+		assertThat(verifDetail).isNotNull();
+		assertThat(verifDetail.isFeatureAllowed()).isTrue();
+		assertThat(verifDetail.getErrorCause()).isNull();
+	}
+
+	@ParameterizedTest
+	@MethodSource({"userGroupingsProvider"})
+	void verifySubscriptionShouldReturnErrorCauseWhenFeatureNotAllowed(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+		String featureId = "newPicUpload";
+		String productId = "picUpload";
+
+		String jsonResponse = """
+				{
+					"featureAllowed" : false,
+					"errorCause" : "INVALID_SUBSCRIPTION"
+				}
+				""";
+
+		stubFor(get(endpoint + "/subscription-check/picUpload/newPicUpload")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withBody(jsonResponse).withStatus(200)));
+
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		var featureRef = new FeatureRef(productId, featureId);
+		var verifDetail = pmitzHttpClient.verifySubscription(featureRef, userGrouping);
+
+		assertThat(verifDetail).isNotNull();
+		assertThat(verifDetail.isFeatureAllowed()).isFalse();
+		assertThat(verifDetail.getErrorCause()).isEqualTo(SubscriptionVerifDetail.ErrorCause.INVALID_SUBSCRIPTION);
+	}
+
+	@ParameterizedTest
+	@MethodSource({"userGroupingsProvider"})
+	void verifySubscriptionShouldThrowExceptionWhenResponse4xx(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+		stubFor(get(endpoint + "/subscription-check/picUpload/newPicUpload")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withStatus(400)));
+
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		var featureRef = new FeatureRef("picUpload", "newPicUpload");
+		assertThatThrownBy(() -> pmitzHttpClient.verifySubscription(featureRef, userGrouping))
+				.isInstanceOf(FeatureNotFoundException.class);
+	}
+
+	@ParameterizedTest
+	@MethodSource({"userGroupingsProvider"})
+	void verifySubscriptionShouldThrowExceptionWhenResponse5xx(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+		stubFor(get(endpoint + "/subscription-check/picUpload/newPicUpload")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withStatus(500)));
+
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		var featureRef = new FeatureRef("picUpload", "newPicUpload");
+		assertThatThrownBy(() -> pmitzHttpClient.verifySubscription(featureRef, userGrouping))
+				.isInstanceOf(RemoteCallException.class);
+	}
+
+	@ParameterizedTest
+	@MethodSource({"userGroupingsProvider"})
+	void verifySubscriptionShouldThrowAuthExceptionWhenResponse401(UserGrouping userGrouping, String endpoint, WireMockRuntimeInfo wmRuntimeInfo) {
+		stubFor(get(endpoint + "/subscription-check/picUpload/newPicUpload")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withStatus(401)));
+
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		var featureRef = new FeatureRef("picUpload", "newPicUpload");
+		assertThatThrownBy(() -> pmitzHttpClient.verifySubscription(featureRef, userGrouping))
+				.isInstanceOf(AuthenticationException.class);
+	}
+
+	@Test
+	void createSubscriptionShouldSendPostRequest(WireMockRuntimeInfo wmRuntimeInfo) {
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		stubFor(post("/subscriptions")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withStatus(201)));
+
+		var subscription = new Subscription("sub001");
+		subscription.setStatus(SubscriptionStatus.ACTIVE);
+
+		assertThatCode(() -> pmitzHttpClient.createSubscription(subscription))
+				.doesNotThrowAnyException();
+	}
+
+	@Test
+	void createSubscriptionShouldThrowExceptionWhenSubscriptionExists(WireMockRuntimeInfo wmRuntimeInfo) {
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		stubFor(post("/subscriptions")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withStatus(409)));
+
+		var subscription = new Subscription("sub001");
+
+		assertThatThrownBy(() -> pmitzHttpClient.createSubscription(subscription))
+				.isInstanceOf(RepositoryException.class)
+				.hasMessage("Subscription already exists");
+	}
+
+	@Test
+	void createSubscriptionShouldThrowAuthExceptionWhenResponse401(WireMockRuntimeInfo wmRuntimeInfo) {
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		stubFor(post("/subscriptions")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withStatus(401)));
+
+		var subscription = new Subscription("sub001");
+
+		assertThatThrownBy(() -> pmitzHttpClient.createSubscription(subscription))
+				.isInstanceOf(AuthenticationException.class);
+	}
+
+	@Test
+	void createSubscriptionShouldThrowRemoteCallExceptionWhenResponse4xx(WireMockRuntimeInfo wmRuntimeInfo) {
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		stubFor(post("/subscriptions")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withStatus(400)));
+
+		var subscription = new Subscription("sub001");
+
+		assertThatThrownBy(() -> pmitzHttpClient.createSubscription(subscription))
+				.isInstanceOf(RemoteCallException.class);
+	}
+
+	@Test
+	void findSubscriptionShouldReturnSubscriptionWhenFound(WireMockRuntimeInfo wmRuntimeInfo) {
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		String jsonResponse = """
+				{
+					"subscriptionId" : "sub001",
+					"status" : "ACTIVE"
+				}
+				""";
+
+		stubFor(get("/subscriptions/sub001")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withBody(jsonResponse).withStatus(200)));
+
+		var result = pmitzHttpClient.findSubscription("sub001");
+
+		assertThat(result).isPresent();
+		assertThat(result.get().getSubscriptionId()).isEqualTo("sub001");
+		assertThat(result.get().getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
+	}
+
+	@Test
+	void findSubscriptionShouldReturnEmptyWhenNotFound(WireMockRuntimeInfo wmRuntimeInfo) {
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		stubFor(get("/subscriptions/sub001")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withStatus(404)));
+
+		var result = pmitzHttpClient.findSubscription("sub001");
+
+		assertThat(result).isEmpty();
+	}
+
+	@Test
+	void findSubscriptionShouldThrowAuthExceptionWhenResponse401(WireMockRuntimeInfo wmRuntimeInfo) {
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		stubFor(get("/subscriptions/sub001")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withStatus(401)));
+
+		assertThatThrownBy(() -> pmitzHttpClient.findSubscription("sub001"))
+				.isInstanceOf(AuthenticationException.class);
+	}
+
+	@Test
+	void findSubscriptionShouldThrowRemoteCallExceptionWhenResponse4xx(WireMockRuntimeInfo wmRuntimeInfo) {
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		stubFor(get("/subscriptions/sub001")
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withStatus(400)));
+
+		assertThatThrownBy(() -> pmitzHttpClient.findSubscription("sub001"))
+				.isInstanceOf(RemoteCallException.class);
+	}
+
+	@Test
+	void updateSubscriptionStatusShouldSendPatchRequest(WireMockRuntimeInfo wmRuntimeInfo) {
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		String expectedRequestBody = """
+				{
+					"status" : "SUSPENDED"
+				}
+				""";
+
+		stubFor(patch(urlEqualTo("/subscriptions/sub001/status"))
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.withRequestBody(equalToJson(expectedRequestBody))
+				.willReturn(aResponse().withStatus(200)));
+
+		assertThatCode(() -> pmitzHttpClient.updateSubscriptionStatus("sub001", SubscriptionStatus.SUSPENDED))
+				.doesNotThrowAnyException();
+	}
+
+	@Test
+	void updateSubscriptionStatusShouldThrowExceptionWhenNotFound(WireMockRuntimeInfo wmRuntimeInfo) {
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		stubFor(patch(urlEqualTo("/subscriptions/sub001/status"))
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withStatus(404)));
+
+		assertThatThrownBy(() -> pmitzHttpClient.updateSubscriptionStatus("sub001", SubscriptionStatus.SUSPENDED))
+				.isInstanceOf(RepositoryException.class)
+				.hasMessage("Subscription not found with id sub001");
+	}
+
+	@Test
+	void updateSubscriptionStatusShouldThrowAuthExceptionWhenResponse401(WireMockRuntimeInfo wmRuntimeInfo) {
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		stubFor(patch(urlEqualTo("/subscriptions/sub001/status"))
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withStatus(401)));
+
+		assertThatThrownBy(() -> pmitzHttpClient.updateSubscriptionStatus("sub001", SubscriptionStatus.SUSPENDED))
+				.isInstanceOf(AuthenticationException.class);
+	}
+
+	@Test
+	void updateSubscriptionStatusShouldThrowRemoteCallExceptionWhenResponse4xx(WireMockRuntimeInfo wmRuntimeInfo) {
+		var pmitzHttpClient = new PmitzHttpClient(wmRuntimeInfo.getHttpBaseUrl(), httpAuthProviderMock);
+
+		stubFor(patch(urlEqualTo("/subscriptions/sub001/status"))
+				.withHeader(AUTH_HEADER_NAME, equalTo(authHeaderValue))
+				.willReturn(aResponse().withStatus(400)));
+
+		assertThatThrownBy(() -> pmitzHttpClient.updateSubscriptionStatus("sub001", SubscriptionStatus.SUSPENDED))
+				.isInstanceOf(RemoteCallException.class);
 	}
 }

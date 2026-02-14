@@ -18,14 +18,23 @@ package io.terpomo.pmitz.core;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class Product implements Serializable {
 
 	private String productId;
 
 	private List<Feature> features = new ArrayList<>();
+
+	private Map<String, Feature> featuresById = new HashMap<>();
+
+	private List<Plan> plans = new ArrayList<>();
 
 	public Product(String productId) {
 
@@ -38,6 +47,23 @@ public class Product implements Serializable {
 
 	public List<Feature> getFeatures() {
 		return features;
+	}
+
+	public Optional<Feature> getFeature(String featureId) {
+		return Optional.ofNullable(featuresById.get(featureId));
+	}
+
+	public List<Plan> getPlans() {
+		return plans;
+	}
+
+	public void setFeatures(List<Feature> features) {
+		this.features = features;
+		featuresById = features.stream().collect(Collectors.toMap(Feature::getFeatureId, Function.identity()));
+	}
+
+	public void setPlans(List<Plan> plans) {
+		this.plans = plans;
 	}
 
 	@Override

@@ -11,5 +11,16 @@
         }
       ]
     }
+  ],
+  "plans": [
+    {"planId" :  "basic",
+      "description": "Basic plan",
+      "includedFeatures": ["reserve"]
+    },
+    {"planId" :  "standard",
+      "description": "Standard plan",
+      "includedFeatures": ["reserve"]
+    }
   ]
+
 }

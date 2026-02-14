@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,21 @@
 
 package io.terpomo.pmitz.limits.impl;
 
+import java.util.Collections;
 import java.util.Optional;
 
-import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Plan;
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.LimitRuleResolver;
 import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 
 public class LimitRuleResolverImpl implements LimitRuleResolver {
 
-	private ProductRepository productRepository;
-	private UserLimitRepository userLimitRepository;
+	private final ProductRepository productRepository;
+	private final UserLimitRepository userLimitRepository;
 
 	public LimitRuleResolverImpl(ProductRepository productRepository) {
 		this(productRepository, new NoOpUserLimitRepository());
@@ -40,31 +42,44 @@ public class LimitRuleResolverImpl implements LimitRuleResolver {
 	}
 
 	@Override
-	public Optional<LimitRule> resolveLimitRule(Feature feature, String limitRuleId, UserGrouping userGrouping) {
-		//TODO verify interfaces' specs
-		// 1- find limit specific to userGrouping
-		// 2- find limit for plan --> 2.1 find plan, 2.2 find limit for plan
-		// 3- find global limit
+	public Optional<LimitRule> resolveLimitRule(FeatureRef featureRef, String limitRuleId, UserGrouping userGrouping) {
+		var optUserLimitRule = userLimitRepository.findLimitRule(featureRef, limitRuleId, userGrouping);
+		if (optUserLimitRule.isPresent()) {
+			return optUserLimitRule;
+		}
 
-		return userLimitRepository.findLimitRule(feature, limitRuleId, userGrouping)
-				.or(() -> productRepository.getGlobalLimit(feature, limitRuleId));
+		var optProduct = productRepository.getProductById(featureRef.productId());
+		if (optProduct.isEmpty()) {
+			return Optional.empty();
+		}
+		var product = optProduct.get();
 
+		var optPlanId = userGrouping.getPlan(product.getProductId());
+
+		Optional<LimitRule> planLimitRule = optPlanId.flatMap(id -> productRepository.getPlan(product, id))
+					.map(Plan::getLimitsOverride)
+					.orElseGet(Collections::emptyList)
+					.stream().filter(rule -> limitRuleId.equals(rule.getId()))
+					.findFirst();
+
+		var optFeature = productRepository.getFeature(product, featureRef.featureId());
+		return planLimitRule.or(() -> optFeature.flatMap(feature -> productRepository.getGlobalLimit(feature, limitRuleId)));
 	}
 
 	public static class NoOpUserLimitRepository implements UserLimitRepository {
 
 		@Override
-		public Optional<LimitRule> findLimitRule(Feature feature, String limitRuleId, UserGrouping userGrouping) {
+		public Optional<LimitRule> findLimitRule(FeatureRef featureRef, String limitRuleId, UserGrouping userGrouping) {
 			return Optional.empty();
 		}
 
 		@Override
-		public void updateLimitRule(Feature feature, LimitRule limitRule, UserGrouping userGrouping) {
+		public void updateLimitRule(FeatureRef featureRef, LimitRule limitRule, UserGrouping userGrouping) {
 			// No action
 		}
 
 		@Override
-		public void deleteLimitRule(Feature feature, String limitRuleId, UserGrouping userGrouping) {
+		public void deleteLimitRule(FeatureRef featureRef, String limitRuleId, UserGrouping userGrouping) {
 			// No action
 		}
 	}

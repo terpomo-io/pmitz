@@ -46,3 +46,25 @@ BEGIN
     );
     ALTER TABLE your_schema.user_usage_limit ADD CONSTRAINT c_limit UNIQUE (limit_id,feature_id, user_group_id);
 END
+
+-- Subscription Tables
+IF OBJECT_ID(N'your_schema.subscription', N'U') IS NULL
+BEGIN
+    CREATE TABLE your_schema.subscription (
+        subscription_id VARCHAR(255) PRIMARY KEY,
+        status VARCHAR(50) NOT NULL,
+        expiration_date DATETIME2 NULL
+    );
+END
+
+IF OBJECT_ID(N'your_schema.subscription_plan', N'U') IS NULL
+BEGIN
+    CREATE TABLE your_schema.subscription_plan (
+        subscription_id VARCHAR(255) NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
+        plan_id VARCHAR(255) NOT NULL,
+        CONSTRAINT pk_subscription_plan PRIMARY KEY (subscription_id, product_id),
+        CONSTRAINT fk_subscription_plan_subscription FOREIGN KEY (subscription_id)
+            REFERENCES your_schema.subscription(subscription_id) ON DELETE CASCADE
+    );
+END

@@ -16,19 +16,27 @@
 
 package io.terpomo.pmitz.core.repository.product.inmemory;
 
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.terpomo.pmitz.core.Product;
+import io.terpomo.pmitz.core.limits.LimitRule;
 
 @ExcludeFromJacocoGeneratedReport
 public class FeatureMixIn {
 
 	@JsonProperty("featureId")
 	String featureId;
-	@JsonIgnore
+
+	@JsonBackReference
 	Product product;
+
+	@JsonProperty("limits")
+	List<LimitRule> limits;
 
 	@JsonCreator
 	public FeatureMixIn(
@@ -41,8 +49,4 @@ public class FeatureMixIn {
 		// Method added to ignore attribute by json library
 	}
 
-	@JsonIgnore
-	public Product getProduct() {
-		return null;
-	}
 }

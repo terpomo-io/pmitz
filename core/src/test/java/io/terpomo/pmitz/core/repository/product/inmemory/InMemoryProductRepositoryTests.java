@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Plan;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.limits.LimitRule;
@@ -507,7 +508,7 @@ class InMemoryProductRepositoryTests {
 
 		DocumentContext dc = JsonPath.parse(baos.toString());
 
-		assertThat((int) dc.read("$[0].length()")).isEqualTo(2);
+		assertThat((int) dc.read("$[0].length()")).isEqualTo(3);
 
 		assertThat((String) dc.read("$[0].productId")).isEqualTo("Library");
 		assertThat((int) dc.read("$[0].features.length()")).isEqualTo(1);
@@ -609,7 +610,7 @@ class InMemoryProductRepositoryTests {
 			ioStream.close();
 		}
 
-		Product pictureHostingService = new Product("Picture hosting service");
+		Product pictureHostingService = repository.getProductById("Picture hosting service").orElseThrow();
 
 		Optional<Feature> uploadingPicture = this.repository.getFeature(pictureHostingService, "Uploading pictures");
 		assertThat(uploadingPicture).isPresent();
@@ -633,6 +634,331 @@ class InMemoryProductRepositoryTests {
 		assertThat(maximumPicturesInCalendarMonth.getId()).isEqualTo("Maximum of pictures downloaded by calendar month");
 		assertThat(maximumPicturesInCalendarMonth.getValue()).isEqualTo(10);
 		assertThat(maximumPicturesInCalendarMonth.getPeriodicity()).isEqualTo(CalendarPeriodRateLimit.Periodicity.MONTH);
+	}
+
+	@Test
+	@Order(12)
+	void load_plans_from_json() throws IOException {
+
+		InputStream ioStream = this.getClass()
+				.getClassLoader()
+				.getResourceAsStream("products_repository.json");
+		this.repository.load(ioStream);
+		if (ioStream != null) {
+			ioStream.close();
+		}
+
+		Product pictureHostingProduct = repository.getProductById("Picture hosting service").orElseThrow();
+
+		var plans = pictureHostingProduct.getPlans();
+
+		assertThat(plans).hasSize(3)
+				.anyMatch(plan -> plan.getPlanId().equals("basic") && plan.getDescription().equals("Basic plan"))
+				.anyMatch(plan -> plan.getPlanId().equals("standard") && plan.getDescription().equals("Standard plan"))
+				.anyMatch(plan -> plan.getPlanId().equals("premium") && plan.getDescription().equals("Premium plan"));
+
+
+		var basicPlan = plans.stream().filter(plan -> plan.getPlanId().equals("basic")).findFirst();
+		assertThat(basicPlan).isPresent();
+		assertThat(basicPlan.get().getIncludedFeatures())
+				.hasSize(2)
+				.containsAll(List.of(pictureHostingProduct.getFeature("Downloading pictures").orElseThrow(), pictureHostingProduct.getFeature("Uploading pictures").orElseThrow()));
+
+		var premiumPlan = plans.stream().filter(plan -> plan.getPlanId().equals("premium")).findFirst();
+		assertThat(premiumPlan).isPresent();
+		assertThat(premiumPlan.get().getIncludedFeatures())
+				.hasSize(2)
+				.containsAll(List.of(pictureHostingProduct.getFeature("Downloading pictures").orElseThrow(), pictureHostingProduct.getFeature("Uploading pictures").orElseThrow()));
+
+		assertThat(premiumPlan.get().getLimitsOverride())
+				.hasSize(1)
+				.anyMatch(CalendarPeriodRateLimit.class::isInstance);
+
+		var calendarLimitRuleoverride = (CalendarPeriodRateLimit) premiumPlan.get().getLimitsOverride().get(0);
+
+		assertThat(calendarLimitRuleoverride.getPeriodicity()).isEqualTo((CalendarPeriodRateLimit.Periodicity.MONTH));
+		assertThat(calendarLimitRuleoverride.getId()).isEqualTo(("dwnl-num-pics-month"));
+		assertThat(calendarLimitRuleoverride.getValue()).isEqualTo(50);
+
+	}
+
+	// Plan tests
+
+	@Test
+	void addPlan_planNull() {
+
+		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
+				this.repository.addPlan(null))
+				.withMessage("Plan must not be 'null'");
+	}
+
+	@Test
+	void addPlan_invalidPlanId() {
+
+		Product p1 = new Product("p1");
+		this.repository.addProduct(p1);
+		Feature f1 = new Feature(p1, "f1");
+		this.repository.addFeature(f1);
+		Plan plan = new Plan(p1, null, List.of("f1"));
+
+		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
+				this.repository.addPlan(plan))
+				.withMessage("PlanId must not be 'null'");
+	}
+
+	@Test
+	void addPlan_invalidProductId() {
+
+		Product p1 = new Product(null);
+		Plan plan = new Plan(p1, "plan1", List.of());
+
+		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
+				this.repository.addPlan(plan))
+				.withMessage("ProductId must not be 'null'");
+	}
+
+	@Test
+	void addPlan_productNotFound() {
+
+		Product p1 = new Product("p1");
+		Plan plan = new Plan(p1, "plan1", List.of());
+
+		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
+				this.repository.addPlan(plan))
+				.withMessage("Product 'p1' not found");
+	}
+
+	@Test
+	void addPlan_validPlan() {
+
+		Product p1 = new Product("p1");
+		this.repository.addProduct(p1);
+		Feature f1 = new Feature(p1, "f1");
+		this.repository.addFeature(f1);
+		Plan plan = new Plan(p1, "plan1", List.of("f1"));
+
+		this.repository.addPlan(plan);
+
+		Optional<Plan> retrievedPlan = this.repository.getPlan(p1, "plan1");
+
+		assertThat(retrievedPlan).isPresent();
+		assertThat(retrievedPlan.get().getPlanId()).isEqualTo("plan1");
+	}
+
+	@Test
+	void addPlan_existingPlan() {
+
+		Product p1 = new Product("p1");
+		this.repository.addProduct(p1);
+		Feature f1 = new Feature(p1, "f1");
+		this.repository.addFeature(f1);
+		Plan plan = new Plan(p1, "plan1", List.of("f1"));
+
+		this.repository.addPlan(plan);
+
+		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
+				this.repository.addPlan(plan))
+				.withMessage("Plan 'plan1' already exists");
+	}
+
+	@Test
+	void updatePlan_planNull() {
+
+		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
+				this.repository.updatePlan(null))
+				.withMessage("Plan must not be 'null'");
+	}
+
+	@Test
+	void updatePlan_productNotFound() {
+
+		Product p1 = new Product("p1");
+		Plan plan = new Plan(p1, "plan1", List.of());
+
+		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
+				this.repository.updatePlan(plan))
+				.withMessage("Product 'p1' not found");
+	}
+
+	@Test
+	void updatePlan_planNotFound() {
+
+		Product p1 = new Product("p1");
+		this.repository.addProduct(p1);
+		Plan plan = new Plan(p1, "plan1", List.of());
+
+		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
+				this.repository.updatePlan(plan))
+				.withMessage("Plan 'plan1' not found for product 'p1'");
+	}
+
+	@Test
+	void updatePlan_planExists() {
+
+		Product p1 = new Product("p1");
+		this.repository.addProduct(p1);
+		Feature f1 = new Feature(p1, "f1");
+		this.repository.addFeature(f1);
+		Feature f2 = new Feature(p1, "f2");
+		this.repository.addFeature(f2);
+
+		Plan plan = new Plan(p1, "plan1", List.of("f1"));
+		this.repository.addPlan(plan);
+
+		Plan updatedPlan = new Plan(p1, "plan1", List.of("f1", "f2"));
+		updatedPlan.setDescription("Updated description");
+
+		this.repository.updatePlan(updatedPlan);
+
+		Optional<Plan> retrievedPlan = this.repository.getPlan(p1, "plan1");
+
+		assertThat(retrievedPlan).isPresent();
+		assertThat(retrievedPlan.get().getDescription()).isEqualTo("Updated description");
+		assertThat(retrievedPlan.get().getIncludedFeatures()).hasSize(2);
+	}
+
+	@Test
+	void removePlan_planNull() {
+
+		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
+				this.repository.removePlan(null))
+				.withMessage("Plan must not be 'null'");
+	}
+
+	@Test
+	void removePlan_productNotFound() {
+
+		Product p1 = new Product("p1");
+		Plan plan = new Plan(p1, "plan1", List.of());
+
+		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
+				this.repository.removePlan(plan))
+				.withMessage("Product 'p1' not found");
+	}
+
+	@Test
+	void removePlan_planNotFound() {
+
+		Product p1 = new Product("p1");
+		this.repository.addProduct(p1);
+		Plan plan = new Plan(p1, "plan1", List.of());
+
+		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
+				this.repository.removePlan(plan))
+				.withMessage("Plan 'plan1' not found for product 'p1'");
+	}
+
+	@Test
+	void removePlan_planExists() {
+
+		Product p1 = new Product("p1");
+		this.repository.addProduct(p1);
+		Feature f1 = new Feature(p1, "f1");
+		this.repository.addFeature(f1);
+		Plan plan1 = new Plan(p1, "plan1", List.of("f1"));
+		this.repository.addPlan(plan1);
+		Plan plan2 = new Plan(p1, "plan2", List.of("f1"));
+		this.repository.addPlan(plan2);
+
+		this.repository.removePlan(plan1);
+
+		Optional<Plan> removedPlan = this.repository.getPlan(p1, "plan1");
+		assertThat(removedPlan).isEmpty();
+
+		List<Plan> remainingPlans = this.repository.getPlans(p1);
+		assertThat(remainingPlans).hasSize(1);
+		assertThat(remainingPlans.get(0).getPlanId()).isEqualTo("plan2");
+	}
+
+	@Test
+	void getPlans_emptyPlansList() {
+
+		Product p1 = new Product("p1");
+		this.repository.addProduct(p1);
+
+		List<Plan> plans = this.repository.getPlans(p1);
+
+		assertThat(plans).isNotNull().isEmpty();
+	}
+
+	@Test
+	void getPlans_existingPlansList() {
+
+		Product p1 = new Product("p1");
+		this.repository.addProduct(p1);
+		Feature f1 = new Feature(p1, "f1");
+		this.repository.addFeature(f1);
+		Plan plan1 = new Plan(p1, "plan1", List.of("f1"));
+		this.repository.addPlan(plan1);
+		Plan plan2 = new Plan(p1, "plan2", List.of("f1"));
+		this.repository.addPlan(plan2);
+
+		List<Plan> plans = this.repository.getPlans(p1);
+
+		assertThat(plans).isNotNull().hasSize(2);
+	}
+
+	@Test
+	void getPlan_planNotFound() {
+
+		Product p1 = new Product("p1");
+		this.repository.addProduct(p1);
+
+		Optional<Plan> plan = this.repository.getPlan(p1, "plan1");
+
+		assertThat(plan).isEmpty();
+	}
+
+	@Test
+	void getPlan_planFound() {
+
+		Product p1 = new Product("p1");
+		this.repository.addProduct(p1);
+		Feature f1 = new Feature(p1, "f1");
+		this.repository.addFeature(f1);
+		Plan plan = new Plan(p1, "plan1", List.of("f1"));
+		plan.setDescription("Test plan");
+		this.repository.addPlan(plan);
+
+		Optional<Plan> retrievedPlan = this.repository.getPlan(p1, "plan1");
+
+		assertThat(retrievedPlan).isPresent();
+		assertThat(retrievedPlan.get().getPlanId()).isEqualTo("plan1");
+		assertThat(retrievedPlan.get().getDescription()).isEqualTo("Test plan");
+	}
+
+	@Test
+	void isFeatureIncluded_featureIncluded() {
+
+		Product p1 = new Product("p1");
+		this.repository.addProduct(p1);
+		Feature f1 = new Feature(p1, "f1");
+		this.repository.addFeature(f1);
+		Feature f2 = new Feature(p1, "f2");
+		this.repository.addFeature(f2);
+		Plan plan = new Plan(p1, "plan1", List.of("f1"));
+		this.repository.addPlan(plan);
+
+		boolean result = this.repository.isFeatureIncluded(plan, f1);
+
+		assertThat(result).isTrue();
+	}
+
+	@Test
+	void isFeatureIncluded_featureNotIncluded() {
+
+		Product p1 = new Product("p1");
+		this.repository.addProduct(p1);
+		Feature f1 = new Feature(p1, "f1");
+		this.repository.addFeature(f1);
+		Feature f2 = new Feature(p1, "f2");
+		this.repository.addFeature(f2);
+		Plan plan = new Plan(p1, "plan1", List.of("f1"));
+		this.repository.addPlan(plan);
+
+		boolean result = this.repository.isFeatureIncluded(plan, f2);
+
+		assertThat(result).isFalse();
 	}
 
 	private void populateRepository() {

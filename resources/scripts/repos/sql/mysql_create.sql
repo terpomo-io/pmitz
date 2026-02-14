@@ -38,3 +38,20 @@ CREATE TABLE IF NOT EXISTS your_schema.user_usage_limit (
     limit_duration INT
 ) ENGINE=InnoDB;
 ALTER TABLE your_schema.user_usage_limit ADD CONSTRAINT c_limit UNIQUE (limit_id,feature_id,user_group_id);
+
+-- Subscription Tables
+
+CREATE TABLE IF NOT EXISTS your_schema.subscription (
+    subscription_id VARCHAR(255) PRIMARY KEY,
+    status VARCHAR(50) NOT NULL,
+    expiration_date TIMESTAMP NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS your_schema.subscription_plan (
+    subscription_id VARCHAR(255) NOT NULL,
+    product_id VARCHAR(255) NOT NULL,
+    plan_id VARCHAR(255) NOT NULL,
+    PRIMARY KEY (subscription_id, product_id),
+    CONSTRAINT fk_subscription_plan_subscription FOREIGN KEY (subscription_id)
+        REFERENCES your_schema.subscription(subscription_id) ON DELETE CASCADE
+) ENGINE=InnoDB;

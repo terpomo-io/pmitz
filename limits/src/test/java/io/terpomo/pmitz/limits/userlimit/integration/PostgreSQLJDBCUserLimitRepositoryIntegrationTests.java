@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,11 @@ import org.apache.commons.dbcp2.BasicDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 import io.terpomo.pmitz.utils.JDBCTestUtils;
 
@@ -75,18 +75,18 @@ public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJ
 
 		CountLimit countLimit = new CountLimit("Maximum picture size", 10);
 		countLimit.setUnit("Go");
-		insertLimitRuleRecord(this.feature, this.user, countLimit);
+		insertLimitRuleRecord(this.featureRef, this.user, countLimit);
 
 		countLimit = new CountLimit("Maximum number of picture", 50);
-		insertLimitRuleRecord(this.feature, this.user, countLimit);
+		insertLimitRuleRecord(this.featureRef, this.user, countLimit);
 
 		CalendarPeriodRateLimit calendarPeriodRateLimit = new CalendarPeriodRateLimit(
 				"Maximum number of picture uploaded in calendar month", 1000, CalendarPeriodRateLimit.Periodicity.MONTH
 		);
-		insertLimitRuleRecord(this.feature, this.user, calendarPeriodRateLimit);
+		insertLimitRuleRecord(this.featureRef, this.user, calendarPeriodRateLimit);
 	}
 
-	private void insertLimitRuleRecord(Feature feature, UserGrouping userGroup,
+	private void insertLimitRuleRecord(FeatureRef featureRef, UserGrouping userGroup,
 			LimitRule limitRule) throws SQLException {
 
 		String query = String.format(
@@ -108,7 +108,7 @@ public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJ
 				limitDuration = calendarPeriodRateLimit.getDuration();
 			}
 			stmt.setString(1, limitRule.getId());
-			stmt.setString(2, feature.getFeatureId());
+			stmt.setString(2, featureRef.featureId());
 			stmt.setString(3, userGroup.getId());
 			stmt.setString(4, limitRule.getClass().getSimpleName());
 			stmt.setLong(5, limitRule.getValue());

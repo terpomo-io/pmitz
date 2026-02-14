@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import io.terpomo.pmitz.all.usage.tracker.FeatureUsageTracker;
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureStatus;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.exception.FeatureNotAllowedException;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.limits.LimitVerifier;
 
@@ -44,25 +44,25 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 	}
 
 	@Override
-	public void recordFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> requestedUnits) {
-		if (!subscriptionVerifier.isFeatureAllowed(feature, userGrouping)) {
-			throw new FeatureNotAllowedException("Feature not allowed for userGrouping", feature, userGrouping);
+	public void recordFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> requestedUnits) {
+		if (!subscriptionVerifier.verifyEntitlement(featureRef, userGrouping).isFeatureAllowed()) {
+			throw new FeatureNotAllowedException("Feature not allowed for userGrouping", featureRef, userGrouping);
 		}
-		limitVerifier.recordFeatureUsage(feature, userGrouping, requestedUnits);
+		limitVerifier.recordFeatureUsage(featureRef, userGrouping, requestedUnits);
 	}
 
 	@Override
-	public void reduceFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> reducedUnits) {
-		limitVerifier.reduceFeatureUsage(feature, userGrouping, reducedUnits);
+	public void reduceFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> reducedUnits) {
+		limitVerifier.reduceFeatureUsage(featureRef, userGrouping, reducedUnits);
 	}
 
 	@Override
-	public FeatureUsageInfo verifyLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
-		if (!subscriptionVerifier.isFeatureAllowed(feature, userGrouping)) {
+	public FeatureUsageInfo verifyLimits(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
+		if (!subscriptionVerifier.verifyEntitlement(featureRef, userGrouping).isFeatureAllowed()) {
 			return new FeatureUsageInfo(FeatureStatus.NOT_ALLOWED, Collections.emptyMap());
 		}
 
-		var remainingUnits = limitVerifier.getLimitsRemainingUnits(feature, userGrouping);
+		var remainingUnits = limitVerifier.getLimitsRemainingUnits(featureRef, userGrouping);
 
 		BiFunction<String, Long, Long> remainingUnitsCalculator = (key, value) -> value - additionalUnits.getOrDefault(key, DEFAULT_ADDITIONAL_UNIT);
 
@@ -75,12 +75,12 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 	}
 
 	@Override
-	public FeatureUsageInfo getUsageInfo(Feature feature, UserGrouping userGrouping) {
-		if (!subscriptionVerifier.isFeatureAllowed(feature, userGrouping)) {
+	public FeatureUsageInfo getUsageInfo(FeatureRef featureRef, UserGrouping userGrouping) {
+		if (!subscriptionVerifier.verifyEntitlement(featureRef, userGrouping).isFeatureAllowed()) {
 			return new FeatureUsageInfo(FeatureStatus.NOT_ALLOWED, Collections.emptyMap());
 		}
 
-		var remainingUnits = limitVerifier.getLimitsRemainingUnits(feature, userGrouping);
+		var remainingUnits = limitVerifier.getLimitsRemainingUnits(featureRef, userGrouping);
 
 		var anyLimitExceeded = remainingUnits.entrySet().stream().anyMatch(mapEntry -> mapEntry.getValue() < 0);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,9 +41,8 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.UsageRecord;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
@@ -200,12 +199,11 @@ class JDBCUsageRepositoryTimeZoneIntegrationTests {
 	}
 
 	private List<UsageRecord> loadRecords(JDBCUsageRepository repository, ZonedDateTime from, ZonedDateTime to) {
-		Product product = new Product(PRODUCT_ID);
-		Feature feature = new Feature(product, FEATURE_ID);
+		FeatureRef featureRef = new FeatureRef(PRODUCT_ID, FEATURE_ID);
 		IndividualUser user = new IndividualUser(USER_ID);
 
 		RecordSearchCriteria criteria = new RecordSearchCriteria(LIMIT_ID, from, to);
-		LimitTrackingContext context = new LimitTrackingContext(feature, user, List.of(criteria));
+		LimitTrackingContext context = new LimitTrackingContext(featureRef, user, List.of(criteria));
 		repository.loadUsageData(context);
 		return context.getCurrentUsageRecords();
 	}
@@ -225,11 +223,10 @@ class JDBCUsageRepositoryTimeZoneIntegrationTests {
 			updatedRecords.add(updatedRecord);
 		}
 
-		Product product = new Product(PRODUCT_ID);
-		Feature feature = new Feature(product, FEATURE_ID);
+		FeatureRef featureRef = new FeatureRef(PRODUCT_ID, FEATURE_ID);
 		IndividualUser user = new IndividualUser(USER_ID);
 
-		LimitTrackingContext context = new LimitTrackingContext(feature, user, List.of());
+		LimitTrackingContext context = new LimitTrackingContext(featureRef, user, List.of());
 		context.addUpdatedUsageRecords(updatedRecords);
 		repository.updateUsageRecords(context);
 	}

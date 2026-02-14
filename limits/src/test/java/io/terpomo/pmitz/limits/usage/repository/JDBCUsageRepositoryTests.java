@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.UsageRecord;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRecordRepoMetadata;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
@@ -89,17 +88,16 @@ class JDBCUsageRepositoryTests {
 		UsageRecord newRecord = new UsageRecord(null, "limit2", fixedTime.minusDays(15),
 				fixedTime.minusDays(5), 200L, fixedTime.plusMonths(2));
 
-		Product product = new Product("product2");
-		Feature feature = new Feature(product, "feature2");
+		FeatureRef featureRef = new FeatureRef("product2", "feature2");
 		IndividualUser user = new IndividualUser("user2");
 
 		RecordSearchCriteria criteria = new RecordSearchCriteria("limit2",
 				fixedTime.minusDays(15), fixedTime.minusDays(5));
-		LimitTrackingContext context = new LimitTrackingContext(feature, user, List.of(criteria));
+		LimitTrackingContext context = new LimitTrackingContext(featureRef, user, List.of(criteria));
 		context.addUpdatedUsageRecords(List.of(newRecord));
 		repository.updateUsageRecords(context);
 
-		context = new LimitTrackingContext(feature, user, List.of(criteria));
+		context = new LimitTrackingContext(featureRef, user, List.of(criteria));
 		repository.loadUsageData(context);
 
 		List<UsageRecord> records = context.getCurrentUsageRecords();
@@ -117,13 +115,12 @@ class JDBCUsageRepositoryTests {
 		UsageRecord newRecord = new UsageRecord(null, "limit3", now.minusDays(40),
 				now.minusDays(20), 300L, now.plusMonths(4));
 
-		Product product = new Product("product3");
-		Feature feature = new Feature(product, "feature3");
+		FeatureRef featureRef = new FeatureRef("product3", "feature3");
 		IndividualUser user = new IndividualUser("user3");
 
 		RecordSearchCriteria criteria = new RecordSearchCriteria("limit3",
 				now.minusDays(40), now.minusDays(20));
-		LimitTrackingContext context = new LimitTrackingContext(feature, user, List.of(criteria));
+		LimitTrackingContext context = new LimitTrackingContext(featureRef, user, List.of(criteria));
 		context.addUpdatedUsageRecords(List.of(newRecord));
 
 		repository.updateUsageRecords(context);
@@ -133,7 +130,7 @@ class JDBCUsageRepositoryTests {
 		UsageRecord updatedRecord = new UsageRecord(new JDBCUsageRecordRepoMetadata(1L, now),
 				"limit3", now.minusDays(35), now.minusDays(15), 350L, now.plusMonths(4));
 
-		context = new LimitTrackingContext(feature, user, List.of(criteria));
+		context = new LimitTrackingContext(featureRef, user, List.of(criteria));
 		context.addUpdatedUsageRecords(List.of(updatedRecord));
 		repository.updateUsageRecords(context);
 
@@ -154,12 +151,11 @@ class JDBCUsageRepositoryTests {
 	void testLoadUsageDataWithEmptyResultSet() {
 		ZonedDateTime time = ZonedDateTime.now().minusYears(1);
 
-		Product product = new Product("product2");
-		Feature feature = new Feature(product, "feature2");
+		FeatureRef featureRef = new FeatureRef("product2", "feature2");
 		IndividualUser user = new IndividualUser("user2");
 
 		RecordSearchCriteria criteria = new RecordSearchCriteria("nonExistingLimit", time, time);
-		LimitTrackingContext context = new LimitTrackingContext(feature, user, List.of(criteria));
+		LimitTrackingContext context = new LimitTrackingContext(featureRef, user, List.of(criteria));
 
 		repository.loadUsageData(context);
 
@@ -169,20 +165,19 @@ class JDBCUsageRepositoryTests {
 
 	@Test
 	void testLoadUsageDataWithMultipleRecords() throws Exception {
-		ZonedDateTime time = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+		ZonedDateTime time = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
 
 		UsageRecord newRecord1 = new UsageRecord(null, "limit4", time.minusDays(60),
 				time.minusDays(40), 200L, time.plusMonths(6));
 		UsageRecord newRecord2 = new UsageRecord(null, "limit4", time.minusDays(30),
 				time.minusDays(10), 100L, time.plusMonths(3));
 
-		Product product = new Product("product4");
-		Feature feature = new Feature(product, "feature4");
+		FeatureRef featureRef = new FeatureRef("product4", "feature4");
 		IndividualUser user = new IndividualUser("user4");
 
 		RecordSearchCriteria criteria = new RecordSearchCriteria("limit4",
 				time.minusDays(60), time.minusDays(10));
-		LimitTrackingContext context = new LimitTrackingContext(feature, user, List.of(criteria));
+		LimitTrackingContext context = new LimitTrackingContext(featureRef, user, List.of(criteria));
 		context.addUpdatedUsageRecords(List.of(newRecord1, newRecord2));
 
 		repository.updateUsageRecords(context);
@@ -197,13 +192,12 @@ class JDBCUsageRepositoryTests {
 		ZonedDateTime normalizedStartDate = startDate.isBefore(endDate) ? startDate : endDate;
 		ZonedDateTime normalizedEndDate = startDate.isBefore(endDate) ? endDate : startDate;
 
-		Product product = new Product("product4");
-		Feature feature = new Feature(product, "feature4");
+		FeatureRef featureRef = new FeatureRef("product4", "feature4");
 		IndividualUser user = new IndividualUser("user4");
 
 		RecordSearchCriteria criteria = new RecordSearchCriteria("limit4",
 				normalizedStartDate, normalizedEndDate);
-		LimitTrackingContext context = new LimitTrackingContext(feature, user, List.of(criteria));
+		LimitTrackingContext context = new LimitTrackingContext(featureRef, user, List.of(criteria));
 		repository.loadUsageData(context);
 
 		List<UsageRecord> records = context.getCurrentUsageRecords();
@@ -240,17 +234,16 @@ class JDBCUsageRepositoryTests {
 		UsageRecord newRecord = new UsageRecord(null, "limit5", windowStartVancouver,
 				windowEndVancouver, 200L, windowEndVancouver.plusDays(1));
 
-		Product product = new Product("product5");
-		Feature feature = new Feature(product, "feature5");
+		FeatureRef featureRef = new FeatureRef("product5", "feature5");
 		IndividualUser user = new IndividualUser("user5");
 
 		RecordSearchCriteria criteria = new RecordSearchCriteria("limit5",
 				windowStartVancouver, windowEndVancouver);
-		LimitTrackingContext context = new LimitTrackingContext(feature, user, List.of(criteria));
+		LimitTrackingContext context = new LimitTrackingContext(featureRef, user, List.of(criteria));
 		context.addUpdatedUsageRecords(List.of(newRecord));
 		repository.updateUsageRecords(context);
 
-		context = new LimitTrackingContext(feature, user, List.of(criteria));
+		context = new LimitTrackingContext(featureRef, user, List.of(criteria));
 		repository.loadUsageData(context);
 
 		List<UsageRecord> records = context.getCurrentUsageRecords();

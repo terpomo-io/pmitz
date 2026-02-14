@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,27 +19,28 @@ package io.terpomo.pmitz.all.usage.tracker;
 import java.util.Map;
 
 import io.terpomo.pmitz.all.usage.tracker.impl.FeatureUsageTrackerImpl;
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.limits.LimitVerifier;
 
 public interface FeatureUsageTracker {
 
-	void recordFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> requestedUnits);
+	void recordFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> requestedUnits);
 
-	void reduceFeatureUsage(Feature feature, UserGrouping userGrouping, Map<String, Long> reducedUnits);
+	void reduceFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> reducedUnits);
 
-	FeatureUsageInfo verifyLimits(Feature feature, UserGrouping userGrouping, Map<String, Long> additionalUnits);
+	FeatureUsageInfo verifyLimits(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> additionalUnits);
 
-	FeatureUsageInfo getUsageInfo(Feature feature, UserGrouping userGrouping);
+	FeatureUsageInfo getUsageInfo(FeatureRef featureRef, UserGrouping userGrouping);
 
 	class Builder {
 		private Builder() {
 			// disable instantiation of class
 		}
-		public static FeatureUsageTracker build(LimitVerifier limitVerifier) {
-			return new FeatureUsageTrackerImpl(limitVerifier, null);
+		public static FeatureUsageTracker build(LimitVerifier limitVerifier, SubscriptionVerifier subscriptionVerifier) {
+			return new FeatureUsageTrackerImpl(limitVerifier, subscriptionVerifier);
 		}
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,23 +23,21 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.UsageRecord;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class LimitTrackingContextTests {
 
-	Product product = new Product("photo-sharing");
-	Feature feature = new Feature(product, "upload-photo");
+	FeatureRef featureRef = new FeatureRef("photo-sharing", "upload-photo");
 
 	String limitId = "number-of-photos";
 
 	@Test
 	void addUsageRecordsShouldAddRecordsToUpdatedList() {
-		LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList());
+		LimitTrackingContext context = new LimitTrackingContext(featureRef, new IndividualUser("user002"), Collections.emptyList());
 
 		UsageRecord usageRecord = new UsageRecord(limitId, null, null, 3L, null);
 		context.addUpdatedUsageRecords(Collections.singletonList(usageRecord));
@@ -55,7 +53,7 @@ class LimitTrackingContextTests {
 
 		var usageRecords = getCurrentUsageRecords(startTime, endTime);
 
-		LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList());
+		LimitTrackingContext context = new LimitTrackingContext(featureRef, new IndividualUser("user002"), Collections.emptyList());
 		context.addCurrentUsageRecords(usageRecords);
 
 		var filteredRecords = context.findUsageRecords(limitId, startTime, endTime);
@@ -70,7 +68,7 @@ class LimitTrackingContextTests {
 
 		var usageRecords = getCurrentUsageRecords(startTime, endTime);
 
-		LimitTrackingContext context = new LimitTrackingContext(feature, new IndividualUser("user002"), Collections.emptyList());
+		LimitTrackingContext context = new LimitTrackingContext(featureRef, new IndividualUser("user002"), Collections.emptyList());
 		context.addCurrentUsageRecords(usageRecords);
 
 		var filteredRecords = context.findUsageRecords(limitId, null, null);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.UsageRecord;
 
 public class LimitTrackingContext {
 
-	private final Feature feature;
+	private final FeatureRef featureRef;
 
 	private final UserGrouping userGrouping;
 	private final List<RecordSearchCriteria> searchCriteria;
@@ -36,16 +36,16 @@ public class LimitTrackingContext {
 
 	private final List<UsageRecord> updatedUsageRecords;
 
-	public LimitTrackingContext(Feature feature, UserGrouping userGrouping, List<RecordSearchCriteria> searchCriteria) {
-		this.feature = feature;
+	public LimitTrackingContext(FeatureRef featureRef, UserGrouping userGrouping, List<RecordSearchCriteria> searchCriteria) {
+		this.featureRef = featureRef;
 		this.userGrouping = userGrouping;
 		this.searchCriteria = searchCriteria;
 		this.currentUsageRecords = new ArrayList<>();
 		this.updatedUsageRecords = new ArrayList<>();
 	}
 
-	public Feature getFeature() {
-		return feature;
+	public FeatureRef getFeatureRef() {
+		return featureRef;
 	}
 
 	public UserGrouping getUserGrouping() {

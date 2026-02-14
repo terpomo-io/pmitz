@@ -14,20 +14,9 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.subscriptions;
+package io.terpomo.pmitz.remote.server.controller;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.PlanRepository;
-import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
 
-public class SubscriptionFeatureManagerImpl implements SubscriptionFeatureManager {
-
-	private PlanRepository planRepository;
-
-	@Override
-	public boolean isFeatureIncluded(Subscription subscription, Feature feature) {
-		var plan = subscription.getPlan();
-
-		return planRepository.isIncluded(plan, feature);
-	}
+public record SubscriptionStatusUpdateRequest(SubscriptionStatus status) {
 }

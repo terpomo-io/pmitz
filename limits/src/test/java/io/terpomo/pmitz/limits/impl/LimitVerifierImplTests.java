@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,10 @@ import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
+import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.LimitRuleResolver;
 import io.terpomo.pmitz.limits.LimitVerificationStrategy;
 import io.terpomo.pmitz.limits.LimitVerificationStrategyResolver;
@@ -64,6 +66,9 @@ class LimitVerifierImplTests {
 	@Mock
 	LimitVerificationStrategyResolver limitVerificationStrategyResolver;
 
+	@Mock
+	ProductRepository productRepository;
+
 	@Captor
 	ArgumentCaptor<LimitTrackingContext> contextArgCaptor;
 
@@ -71,6 +76,8 @@ class LimitVerifierImplTests {
 	ArgumentCaptor<LimitRule> limitRuleArgCaptor;
 
 	Feature feature;
+	FeatureRef featureRef;
+	Product product;
 
 	UserGrouping userGrouping = new IndividualUser("user001");
 
@@ -82,11 +89,15 @@ class LimitVerifierImplTests {
 
 	@BeforeEach
 	void init() {
-		Product product = new Product("FILE_SHARING");
+		product = new Product("FILE_SHARING");
 		feature = new Feature(product, "ADD_FILE");
 		feature.getLimits().add(limitRule);
+		featureRef = new FeatureRef("FILE_SHARING", "ADD_FILE");
 
-		limitVerifier = new LimitVerifierImpl(limitRuleResolver, limitVerificationStrategyResolver, usageRepo);
+		lenient().when(productRepository.getProductById("FILE_SHARING")).thenReturn(Optional.of(product));
+		lenient().when(productRepository.getFeature(product, "ADD_FILE")).thenReturn(Optional.of(feature));
+
+		limitVerifier = new LimitVerifierImpl(limitRuleResolver, limitVerificationStrategyResolver, usageRepo, productRepository);
 	}
 
 	@Test
@@ -96,7 +107,7 @@ class LimitVerifierImplTests {
 		try (MockedStatic<ZonedDateTime> mockedLocalDateTime = mockStatic(ZonedDateTime.class)) {
 			mockedLocalDateTime.when(ZonedDateTime::now).thenReturn(zonedDateTime);
 
-			limitVerifier.recordFeatureUsage(feature, userGrouping, Collections.singletonMap("MAX_FILES", 2L));
+			limitVerifier.recordFeatureUsage(featureRef, userGrouping, Collections.singletonMap("MAX_FILES", 2L));
 		}
 
 		verify(limitVerificationStrategy).recordFeatureUsage(contextArgCaptor.capture(), limitRuleArgCaptor.capture(), eq(2L));
@@ -113,7 +124,7 @@ class LimitVerifierImplTests {
 		assertThat(searchCriteria.windowStart()).isNull();
 		assertThat(searchCriteria.windowEnd()).isNull();
 
-		assertThat(capturedContext.getFeature()).isEqualTo(feature);
+		assertThat(capturedContext.getFeatureRef()).isEqualTo(featureRef);
 		assertThat(capturedContext.getUserGrouping()).isEqualTo(userGrouping);
 
 		verify(usageRepo).updateUsageRecords(capturedContext);
@@ -126,7 +137,7 @@ class LimitVerifierImplTests {
 		try (MockedStatic<ZonedDateTime> mockedLocalDateTime = mockStatic(ZonedDateTime.class)) {
 			mockedLocalDateTime.when(ZonedDateTime::now).thenReturn(zonedDateTime);
 
-			limitVerifier.reduceFeatureUsage(feature, userGrouping, Collections.singletonMap("MAX_FILES", 2L));
+			limitVerifier.reduceFeatureUsage(featureRef, userGrouping, Collections.singletonMap("MAX_FILES", 2L));
 		}
 		verify(limitVerificationStrategy).reduceFeatureUsage(contextArgCaptor.capture(), limitRuleArgCaptor.capture(), eq(2L));
 
@@ -142,7 +153,7 @@ class LimitVerifierImplTests {
 		assertThat(searchCriteria.windowStart()).isNull();
 		assertThat(searchCriteria.windowEnd()).isNull();
 
-		assertThat(capturedContext.getFeature()).isEqualTo(feature);
+		assertThat(capturedContext.getFeatureRef()).isEqualTo(featureRef);
 		assertThat(capturedContext.getUserGrouping()).isEqualTo(userGrouping);
 
 		verify(usageRepo).updateUsageRecords(capturedContext);
@@ -156,7 +167,7 @@ class LimitVerifierImplTests {
 		try (MockedStatic<ZonedDateTime> mockedLocalDateTime = mockStatic(ZonedDateTime.class)) {
 			mockedLocalDateTime.when(ZonedDateTime::now).thenReturn(zonedDateTime);
 
-			var remainingUnitsMap = limitVerifier.getLimitsRemainingUnits(feature, userGrouping);
+			var remainingUnitsMap = limitVerifier.getLimitsRemainingUnits(featureRef, userGrouping);
 			assertThat(remainingUnitsMap).hasSize(1);
 			assertThat(remainingUnitsMap).containsEntry(limitRule.getId(), 2L);
 		}
@@ -177,7 +188,7 @@ class LimitVerifierImplTests {
 		try (MockedStatic<ZonedDateTime> mockedLocalDateTime = mockStatic(ZonedDateTime.class)) {
 			mockedLocalDateTime.when(ZonedDateTime::now).thenReturn(zonedDateTime);
 
-			var isWithinLimits = limitVerifier.isWithinLimits(feature, userGrouping, Collections.singletonMap(limitRule.getId(), requiredAdditionalUnits));
+			var isWithinLimits = limitVerifier.isWithinLimits(featureRef, userGrouping, Collections.singletonMap(limitRule.getId(), requiredAdditionalUnits));
 			assertThat(isWithinLimits).isEqualTo(expectedResult);
 		}
 		verify(usageRepo).loadUsageData(contextArgCaptor.capture());
@@ -191,7 +202,7 @@ class LimitVerifierImplTests {
 	@NullAndEmptySource
 	void recordUsageWhenAdditionalUnitsEmptyShouldThrowException(Map<String, Long> additionalUnits) {
 
-		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> limitVerifier.recordFeatureUsage(feature, userGrouping, additionalUnits));
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> limitVerifier.recordFeatureUsage(featureRef, userGrouping, additionalUnits));
 
 	}
 
@@ -199,7 +210,7 @@ class LimitVerifierImplTests {
 	void recordUsageWhenAdditionalUnitsNegativeShouldThrowException() {
 
 		var additionalUnits = Collections.singletonMap("MAX_FILES", -1L);
-		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> limitVerifier.recordFeatureUsage(feature, userGrouping, additionalUnits));
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> limitVerifier.recordFeatureUsage(featureRef, userGrouping, additionalUnits));
 
 	}
 
@@ -207,7 +218,7 @@ class LimitVerifierImplTests {
 	@NullAndEmptySource
 	void reduceUsageWhenReducedUnitsEmptyShouldThrowException(Map<String, Long> additionalUnits) {
 
-		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> limitVerifier.reduceFeatureUsage(feature, userGrouping, additionalUnits));
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> limitVerifier.reduceFeatureUsage(featureRef, userGrouping, additionalUnits));
 
 	}
 
@@ -215,12 +226,12 @@ class LimitVerifierImplTests {
 	void reduceUsageWhenReducedlUnitsNegativeShouldThrowException() {
 
 		var additionalUnits = Collections.singletonMap("MAX_FILES", -1L);
-		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> limitVerifier.reduceFeatureUsage(feature, userGrouping, additionalUnits));
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> limitVerifier.reduceFeatureUsage(featureRef, userGrouping, additionalUnits));
 
 	}
 
 	private void initMocks() {
-		when(limitRuleResolver.resolveLimitRule(feature, "MAX_FILES", userGrouping))
+		when(limitRuleResolver.resolveLimitRule(featureRef, "MAX_FILES", userGrouping))
 				.thenReturn(Optional.of(limitRule));
 
 		when(limitVerificationStrategyResolver.resolveLimitVerificationStrategy(limitRule))

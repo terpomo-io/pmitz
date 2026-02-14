@@ -17,9 +17,10 @@
 package io.terpomo.pmitz.core.subscriptions;
 
 import java.time.ZonedDateTime;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
-import io.terpomo.pmitz.core.Plan;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 
 public class Subscription extends UserGrouping {
@@ -28,8 +29,12 @@ public class Subscription extends UserGrouping {
 	private SubscriptionStatus status;
 	private ZonedDateTime expirationDate;
 
+	private Map<String, String> plansByProduct;
 
-	private Plan plan;
+	@SuppressWarnings("unused")
+	private Subscription() {
+		// Default constructor for Jackson deserialization
+	}
 
 	public Subscription(String subscriptionId) {
 		this.subscriptionId = subscriptionId;
@@ -40,16 +45,16 @@ public class Subscription extends UserGrouping {
 	}
 
 	public boolean isExpired() {
-		return SubscriptionStatus.EXPIRED == status;
+		return status == null || !status.isValid() || (status.isValid() && isExpirationDatePassed());
+	}
+
+	public boolean isValid() {
+		return status != null && status.isValid() && !isExpirationDatePassed();
 	}
 
 	@Override
 	public String getId() {
 		return subscriptionId;
-	}
-
-	public Plan getPlan() {
-		return plan;
 	}
 
 	public String getSubscriptionId() {
@@ -60,8 +65,38 @@ public class Subscription extends UserGrouping {
 		return status;
 	}
 
+	public void setStatus(SubscriptionStatus status) {
+		this.status = status;
+	}
+
 	public ZonedDateTime getExpirationDate() {
 		return expirationDate;
+	}
+
+	public void setExpirationDate(ZonedDateTime expirationDate) {
+		this.expirationDate = expirationDate;
+	}
+
+	public Map<String, String> getPlansByProduct() {
+		return plansByProduct;
+	}
+
+	@Override
+	public boolean isProductAllowed(String productId) {
+		return plansByProduct != null && plansByProduct.containsKey(productId);
+	}
+
+	@Override
+	public Optional<String> getPlan(String productId) {
+		return Optional.ofNullable(plansByProduct.get(productId));
+	}
+
+	public void setPlans(Map<String, String> plansByProduct) {
+		this.plansByProduct = plansByProduct;
+	}
+
+	private boolean isExpirationDatePassed() {
+		return expirationDate != null && expirationDate.isBefore(ZonedDateTime.now());
 	}
 
 	@Override

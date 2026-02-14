@@ -8,20 +8,22 @@ dependencies {
     implementation project(path: ':all')
     implementation project(path: ':core')
     implementation project(path: ':limits')
+    implementation project(path: ':subscriptions')
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
-    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
     implementation 'org.flywaydb:flyway-database-postgresql'
 
     implementation 'com.h2database:h2'
     implementation libs.postgresql
 
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

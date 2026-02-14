@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,21 @@
 
 package io.terpomo.pmitz.core.exception;
 
-import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 
 public class FeatureNotAllowedException extends RuntimeException {
-	private final Feature feature;
+	private final FeatureRef featureRef;
 	private final UserGrouping userGrouping;
 
-	public FeatureNotAllowedException(String message, Feature feature, UserGrouping userGrouping) {
+	public FeatureNotAllowedException(String message, FeatureRef featureRef, UserGrouping userGrouping) {
 		super(message);
-		this.feature = feature;
+		this.featureRef = featureRef;
 		this.userGrouping = userGrouping;
 	}
 
-	public Feature getFeature() {
-		return feature;
+	public FeatureRef getFeatureRef() {
+		return featureRef;
 	}
 
 	public UserGrouping getUserGrouping() {

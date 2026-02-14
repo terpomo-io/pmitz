@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,12 @@ import java.security.SecureRandom;
 import java.util.Map;
 import java.util.Random;
 
-import io.terpomo.pmitz.core.Feature;
-import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.FeatureNotFoundException;
 import io.terpomo.pmitz.core.exception.LimitExceededException;
 import io.terpomo.pmitz.core.exception.RepositoryException;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
+import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.LimitVerifier;
 import io.terpomo.pmitz.remote.client.LimitVerifierRemoteClient;
 import io.terpomo.pmitz.remote.client.RemoteCallException;
@@ -45,22 +44,21 @@ public class RemoteClientSample {
 
 		var limitVerifier = remoteClientSample.initRemoteLimitVerifier(remoteServerUrl, "/product-library.json");
 
-		var product = new Product("library");
-		var feature = new Feature(product, "reserve");
+		var featureRef = new FeatureRef("library", "reserve");
 		try {
 			UserGrouping user = new IndividualUser("user00" + random.nextInt(10_000));
-			var withinLimits = limitVerifier.isWithinLimits(feature, user, Map.of("maxborrowed", 7L));
+			var withinLimits = limitVerifier.isWithinLimits(featureRef, user, Map.of("maxborrowed", 7L));
 
 			System.out.println("Can user borrow 7 books? " + withinLimits);
 
-			withinLimits = limitVerifier.isWithinLimits(feature, user, Map.of("maxborrowed", 5L));
+			withinLimits = limitVerifier.isWithinLimits(featureRef, user, Map.of("maxborrowed", 5L));
 
 			System.out.println("Can user borrow 5 books? " + withinLimits);
 
-			limitVerifier.recordFeatureUsage(feature, user, Map.of("maxborrowed", 5L));
+			limitVerifier.recordFeatureUsage(featureRef, user, Map.of("maxborrowed", 5L));
 			System.out.println("Books reserved!");
 
-			Map<String, Long> remainingUnits = limitVerifier.getLimitsRemainingUnits(feature, user);
+			Map<String, Long> remainingUnits = limitVerifier.getLimitsRemainingUnits(featureRef, user);
 			System.out.println("Remaining units " + remainingUnits);
 		}
 		catch (FeatureNotFoundException ex) {

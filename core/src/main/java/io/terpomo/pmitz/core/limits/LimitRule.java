@@ -16,10 +16,11 @@
 
 package io.terpomo.pmitz.core.limits;
 
+import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
-public abstract class LimitRule {
+public abstract class LimitRule implements Serializable {
 
 	private String unit;
 	private String id;
