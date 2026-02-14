@@ -25,6 +25,7 @@ import java.sql.Statement;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
@@ -34,6 +35,7 @@ import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 import io.terpomo.pmitz.utils.JDBCTestUtils;
 
+@Testcontainers
 public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUserLimitRepositoryIntegrationTests {
 
 	@Container
@@ -43,7 +45,6 @@ public class PostgreSQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJ
 
 	@Override
 	protected void setupDataSource() {
-		postgresContainer.start();
 		dataSource = new BasicDataSource();
 		dataSource.setUrl(postgresContainer.getJdbcUrl());
 		dataSource.setUsername(postgresContainer.getUsername());

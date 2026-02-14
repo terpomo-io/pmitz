@@ -25,6 +25,7 @@ import java.sql.Statement;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
@@ -34,6 +35,7 @@ import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 import io.terpomo.pmitz.utils.JDBCTestUtils;
 
+@Testcontainers
 public class MySQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUserLimitRepositoryIntegrationTests {
 
 	@Container
@@ -44,8 +46,6 @@ public class MySQLJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUs
 
 	@Override
 	protected void setupDataSource() {
-		mysqlContainer.withLogConsumer(outputFrame -> System.out.println(outputFrame.getUtf8String()));
-		mysqlContainer.start();
 		dataSource = new BasicDataSource();
 		dataSource.setUrl(mysqlContainer.getJdbcUrl());
 		dataSource.setUsername(mysqlContainer.getUsername());
