@@ -1,7 +1,10 @@
-name: Build Snapshot
-on: [push, pull_request]
+name: Docker Compose Integration
+
+on:
+  pull_request:
+
 jobs:
-  build:
+  docker-compose-integration:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -10,5 +13,6 @@ jobs:
         with:
           java-version: 17
           distribution: 'temurin'
-      - name: Build with Gradle
-        run: ./gradlew build
+      - name: Run docker compose integration tests
+        run: ./gradlew :remoteserver:dockerComposeIntegrationTest
+
