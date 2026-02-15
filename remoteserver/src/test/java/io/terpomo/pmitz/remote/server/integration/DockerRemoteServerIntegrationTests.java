@@ -23,8 +23,14 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.ComposeContainer;
@@ -42,6 +48,8 @@ import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 import io.terpomo.pmitz.remote.client.http.PmitzApiKeyAuthenticationProvider;
 import io.terpomo.pmitz.remote.client.http.PmitzHttpClient;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -53,6 +61,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @Testcontainers
 @Tag("docker")
+@Execution(ExecutionMode.SAME_THREAD)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DockerRemoteServerIntegrationTests {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DockerRemoteServerIntegrationTests.class);
@@ -70,6 +80,11 @@ public class DockerRemoteServerIntegrationTests {
 	private static final String DIRECTORY_GROUP_ID = "group1";
 	private static final String SUBSCRIPTION_ID = "sub1";
 
+	private static String baseUrl;
+	private static PmitzHttpClient pmitzClient;
+	private static HttpClient rawHttpClient;
+	private static FeatureRef featureRef;
+
 	static {
 		buildDockerImage();
 	}
@@ -85,16 +100,22 @@ public class DockerRemoteServerIntegrationTests {
 			.withExposedService(PMITZ_SERVICE, PMITZ_PORT,
 					Wait.forHttp("/actuator/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(5)));
 
-	@Test
-	void dockerComposeRemoteServerShouldSupportEndToEndFlow() throws Exception {
+	@BeforeAll
+	static void initClients() {
 		String host = compose.getServiceHost(PMITZ_SERVICE, PMITZ_PORT);
 		int port = compose.getServicePort(PMITZ_SERVICE, PMITZ_PORT);
-		String baseUrl = "http://" + host + ":" + port;
+		baseUrl = "http://" + host + ":" + port;
+
 		System.setProperty("pmitz.api.key", API_KEY);
+		pmitzClient = new PmitzHttpClient(baseUrl, new PmitzApiKeyAuthenticationProvider());
+		rawHttpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+		featureRef = new FeatureRef(PRODUCT_ID, FEATURE_ID);
+	}
 
-		var pmitzClient = new PmitzHttpClient(baseUrl, new PmitzApiKeyAuthenticationProvider());
-		HttpClient rawHttpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
-
+	@Test
+	@Order(1)
+	void healthEndpointShouldBeReachableWithoutAuth() throws Exception {
+		assertNotNull(baseUrl);
 		// Health should be reachable without auth.
 		HttpRequest healthReq = HttpRequest.newBuilder()
 				.uri(URI.create(baseUrl + "/actuator/health"))
@@ -103,7 +124,11 @@ public class DockerRemoteServerIntegrationTests {
 				.build();
 		HttpResponse<String> healthResp = rawHttpClient.send(healthReq, HttpResponse.BodyHandlers.ofString());
 		assertTrue(healthResp.statusCode() == 200, "Expected 200 from /actuator/health, got " + healthResp.statusCode());
+	}
 
+	@Test
+	@Order(2)
+	void protectedEndpointShouldRejectMissingApiKey() throws Exception {
 		// Protected endpoint should reject missing API key.
 		HttpRequest unauthReq = HttpRequest.newBuilder()
 				.uri(URI.create(baseUrl + "/subscriptions/nonexistent"))
@@ -113,7 +138,11 @@ public class DockerRemoteServerIntegrationTests {
 		HttpResponse<Void> unauthResp = rawHttpClient.send(unauthReq, HttpResponse.BodyHandlers.discarding());
 		int unauthCode = unauthResp.statusCode();
 		assertTrue(unauthCode == 401 || unauthCode == 403, "Expected 401/403 without API key, got " + unauthCode);
+	}
 
+	@Test
+	@Order(3)
+	void shouldUploadProduct() {
 		// Upload product (includes plans, needed for subscription-check to return OK)
 		String productJson = """
 				{
@@ -133,21 +162,31 @@ public class DockerRemoteServerIntegrationTests {
 				}
 				""".formatted(PRODUCT_ID, FEATURE_ID, LIMIT_ID, PLAN_ID, FEATURE_ID);
 		pmitzClient.uploadProduct(new java.io.ByteArrayInputStream(productJson.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+	}
 
-		var featureRef = new FeatureRef(PRODUCT_ID, FEATURE_ID);
-
+	@Test
+	@Order(4)
+	void shouldRecordAndVerifyUserUsage() {
 		var user = new IndividualUser(USER_ID);
 		FeatureUsageInfo initialUserUsage = pmitzClient.getLimitsRemainingUnits(featureRef, user);
 		assertTrue(initialUserUsage != null, "Expected FeatureUsageInfo for user usage endpoint");
 		pmitzClient.recordOrReduce(featureRef, user, Map.of(LIMIT_ID, 2L), false);
 		pmitzClient.verifyLimits(featureRef, user, Map.of(LIMIT_ID, 1L));
+	}
 
+	@Test
+	@Order(5)
+	void shouldRecordAndVerifyDirectoryGroupUsage() {
 		var group = new DirectoryGroup(DIRECTORY_GROUP_ID);
 		FeatureUsageInfo initialGroupUsage = pmitzClient.getLimitsRemainingUnits(featureRef, group);
 		assertTrue(initialGroupUsage != null, "Expected FeatureUsageInfo for directory-group usage endpoint");
 		pmitzClient.recordOrReduce(featureRef, group, Map.of(LIMIT_ID, 1L), false);
 		pmitzClient.verifyLimits(featureRef, group, Map.of(LIMIT_ID, 1L));
+	}
 
+	@Test
+	@Order(6)
+	void shouldCreateAndVerifySubscription() throws Exception {
 		// Create subscription via raw HTTP to ensure JSON property is "plans" (server expects setPlans()).
 		String subscriptionJson = """
 				{
@@ -177,17 +216,21 @@ public class DockerRemoteServerIntegrationTests {
 		SubscriptionVerifDetail verif = pmitzClient.verifySubscription(featureRef, new Subscription(SUBSCRIPTION_ID));
 		assertTrue(verif != null, "Expected subscription-check response");
 		assertTrue(verif.isFeatureAllowed(), "Expected featureAllowed=true for valid subscription + plan + included feature");
+	}
 
+	@Test
+	@Order(7)
+	void shouldReturnLimitExceededWhenOverLimit() {
 		// Verify limit exceeded path returns 422 (remote client throws LimitExceededException).
-		boolean limitExceededThrown = false;
-		try {
-			pmitzClient.recordOrReduce(featureRef, user, Map.of(LIMIT_ID, 10L), false);
-		}
-		catch (io.terpomo.pmitz.core.exception.LimitExceededException ex) {
-			limitExceededThrown = true;
-		}
-		assertTrue(limitExceededThrown, "Expected LimitExceededException when exceeding CountLimit");
+		var user = new IndividualUser(USER_ID);
+		assertThrows(io.terpomo.pmitz.core.exception.LimitExceededException.class,
+				() -> pmitzClient.recordOrReduce(featureRef, user, Map.of(LIMIT_ID, 10L), false),
+				"Expected LimitExceededException when exceeding CountLimit");
+	}
 
+	@Test
+	@Order(8)
+	void shouldRemoveProduct() {
 		pmitzClient.removeProduct(PRODUCT_ID);
 	}
 
