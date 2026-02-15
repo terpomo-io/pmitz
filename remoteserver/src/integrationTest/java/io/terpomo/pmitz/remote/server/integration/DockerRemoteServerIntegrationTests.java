@@ -24,6 +24,8 @@ import java.time.Duration;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
@@ -51,6 +53,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Testcontainers
 public class DockerRemoteServerIntegrationTests {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(DockerRemoteServerIntegrationTests.class);
+
 	private static final String API_KEY = "test-api-key";
 	private static final String DOCKER_IMAGE = "pmitz-local:integration-test";
 	private static final String PMITZ_SERVICE = "pmitz";
@@ -70,11 +74,11 @@ public class DockerRemoteServerIntegrationTests {
 
 	@Container
 	private static final ComposeContainer compose = new ComposeContainer(
-			new java.io.File("../docker-compose.integration-test.yml"))
+			new java.io.File("src/integrationTest/docker-compose.integration-test.yml"))
 			.withLocalCompose(false)
 			.withTailChildContainers(true)
-			.withLogConsumer("pmitz", frame -> System.out.print(frame.getUtf8String()))
-			.withLogConsumer("postgres", frame -> System.out.print(frame.getUtf8String()))
+			.withLogConsumer(PMITZ_SERVICE, frame -> LOGGER.info("{}", frame.getUtf8String()))
+			.withLogConsumer("postgres", frame -> LOGGER.info("{}", frame.getUtf8String()))
 			.withEnv("PMITZ_API_KEY", API_KEY)
 			.withExposedService(PMITZ_SERVICE, PMITZ_PORT,
 					Wait.forHttp("/actuator/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(5)));
