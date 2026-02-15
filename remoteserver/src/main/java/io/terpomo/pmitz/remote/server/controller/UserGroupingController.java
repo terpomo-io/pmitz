@@ -33,6 +33,7 @@ import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionRepository;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.limits.impl.LimitsValidationUtil;
@@ -42,11 +43,14 @@ public class UserGroupingController {
 
 	private final FeatureUsageTracker featureUsageTracker;
 	private final SubscriptionVerifier subscriptionVerifier;
+	private final SubscriptionRepository subscriptionRepository;
 
 	public UserGroupingController(FeatureUsageTracker featureUsageTracker,
-			SubscriptionVerifier subscriptionVerifier) {
+			SubscriptionVerifier subscriptionVerifier,
+			SubscriptionRepository subscriptionRepository) {
 		this.featureUsageTracker = featureUsageTracker;
 		this.subscriptionVerifier = subscriptionVerifier;
+		this.subscriptionRepository = subscriptionRepository;
 	}
 
 	@GetMapping("/{userGroupingType}/{userGroupingId}/usage/{productId}/{featureId}")
@@ -116,7 +120,7 @@ public class UserGroupingController {
 	private UserGrouping resolveUserGrouping(String userGroupingType, String userGroupingId) {
 		UserGrouping userGrouping = switch (userGroupingType) {
 			case "users" -> new IndividualUser(userGroupingId);
-			case "subscriptions" -> new Subscription(userGroupingId);
+			case "subscriptions" -> subscriptionRepository.find(userGroupingId).orElseGet(() -> new Subscription(userGroupingId));
 			case "directory-groups" -> new DirectoryGroup(userGroupingId);
 			default -> null;
 		};
