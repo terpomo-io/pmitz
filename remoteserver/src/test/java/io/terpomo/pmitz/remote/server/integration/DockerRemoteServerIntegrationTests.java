@@ -23,6 +23,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Terpomo Software
  */
 @Testcontainers
+@Tag("docker")
 public class DockerRemoteServerIntegrationTests {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DockerRemoteServerIntegrationTests.class);
@@ -74,7 +76,7 @@ public class DockerRemoteServerIntegrationTests {
 
 	@Container
 	private static final ComposeContainer compose = new ComposeContainer(
-			new java.io.File("src/integrationTest/docker-compose.integration-test.yml"))
+			new java.io.File("src/test/resources/docker-compose.integration-test.yml"))
 			.withLocalCompose(false)
 			.withTailChildContainers(true)
 			.withLogConsumer(PMITZ_SERVICE, frame -> LOGGER.info("{}", frame.getUtf8String()))
