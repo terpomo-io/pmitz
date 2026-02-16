@@ -16,10 +16,13 @@
 
 package io.terpomo.pmitz.core.subscriptions;
 
+import java.util.Optional;
+
 public final class SubscriptionVerifDetail {
 
 	private boolean featureAllowed;
 	private ErrorCause errorCause;
+	private Subscription fetchedSubscription;
 
 	@SuppressWarnings("unused")
 	private SubscriptionVerifDetail() {
@@ -39,12 +42,21 @@ public final class SubscriptionVerifDetail {
 		return new SubscriptionVerifDetail(false, errorCause);
 	}
 
+	public SubscriptionVerifDetail withFetchedSubscription(Subscription fetchedSubscription) {
+		this.fetchedSubscription = fetchedSubscription;
+		return this;
+	}
+
 	public boolean isFeatureAllowed() {
 		return featureAllowed;
 	}
 
 	public ErrorCause getErrorCause() {
 		return errorCause;
+	}
+
+	public Optional<Subscription> getFetchedSubscription() {
+		return Optional.ofNullable(fetchedSubscription);
 	}
 
 	public enum ErrorCause {

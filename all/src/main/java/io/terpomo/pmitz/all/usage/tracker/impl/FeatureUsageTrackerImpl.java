@@ -27,6 +27,7 @@ import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.exception.FeatureNotAllowedException;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.FeatureRef;
+import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.limits.LimitVerifier;
 
@@ -58,11 +59,13 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 
 	@Override
 	public FeatureUsageInfo verifyLimits(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> additionalUnits) {
-		if (!subscriptionVerifier.verifyEntitlement(featureRef, userGrouping).isFeatureAllowed()) {
+		var subscriptionVerifDetail = subscriptionVerifier.verifyEntitlement(featureRef, userGrouping);
+		if (!subscriptionVerifDetail.isFeatureAllowed()) {
 			return new FeatureUsageInfo(FeatureStatus.NOT_ALLOWED, Collections.emptyMap());
 		}
 
-		var remainingUnits = limitVerifier.getLimitsRemainingUnits(featureRef, userGrouping);
+		Subscription fetchedSubscription = subscriptionVerifDetail.getFetchedSubscription().orElse(null);
+		var remainingUnits = limitVerifier.getLimitsRemainingUnits(featureRef, (fetchedSubscription != null) ? fetchedSubscription : userGrouping);
 
 		BiFunction<String, Long, Long> remainingUnitsCalculator = (key, value) -> value - additionalUnits.getOrDefault(key, DEFAULT_ADDITIONAL_UNIT);
 

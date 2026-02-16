@@ -30,6 +30,7 @@ import io.terpomo.pmitz.core.exception.FeatureNotAllowedException;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.FeatureRef;
+import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.limits.LimitVerifier;
@@ -116,6 +117,52 @@ class FeatureUsageTrackerImplTests {
 		FeatureUsageInfo featureUsageInfo = featureUsageTracker.getUsageInfo(featureRef, userGrouping);
 		assertThat(featureUsageInfo.featureStatus()).isEqualTo(FeatureStatus.NOT_ALLOWED);
 		assertThat(featureUsageInfo.remainingUsageUnits()).isEmpty();
+	}
+
+	@Test
+	void givenFetchedSubscriptionWhenVerifyLimitsThenUseFetchedSubscriptionForLimits() {
+		String limitId = "FILE_UPLOAD";
+		var fetchedSubscription = new Subscription("sub001");
+		var verifDetail = SubscriptionVerifDetail.verificationOk().withFetchedSubscription(fetchedSubscription);
+		when(subscriptionVerifier.verifyEntitlement(featureRef, userGrouping)).thenReturn(verifDetail);
+		when(limitVerifier.getLimitsRemainingUnits(featureRef, fetchedSubscription)).thenReturn(Collections.singletonMap(limitId, 5L));
+
+		var additionalUnits = Collections.singletonMap(limitId, 2L);
+		var featureInfo = featureUsageTracker.verifyLimits(featureRef, userGrouping, additionalUnits);
+
+		assertThat(featureInfo.featureStatus()).isEqualTo(FeatureStatus.AVAILABLE);
+		assertThat(featureInfo.remainingUsageUnits()).containsEntry(limitId, 3L);
+		verify(limitVerifier).getLimitsRemainingUnits(featureRef, fetchedSubscription);
+		verify(limitVerifier, never()).getLimitsRemainingUnits(featureRef, userGrouping);
+	}
+
+	@Test
+	void givenFetchedSubscriptionWithExceededLimitWhenVerifyLimitsThenReturnLimitExceeded() {
+		String limitId = "FILE_UPLOAD";
+		var fetchedSubscription = new Subscription("sub001");
+		var verifDetail = SubscriptionVerifDetail.verificationOk().withFetchedSubscription(fetchedSubscription);
+		when(subscriptionVerifier.verifyEntitlement(featureRef, userGrouping)).thenReturn(verifDetail);
+		when(limitVerifier.getLimitsRemainingUnits(featureRef, fetchedSubscription)).thenReturn(Collections.singletonMap(limitId, 1L));
+
+		var additionalUnits = Collections.singletonMap(limitId, 5L);
+		var featureInfo = featureUsageTracker.verifyLimits(featureRef, userGrouping, additionalUnits);
+
+		assertThat(featureInfo.featureStatus()).isEqualTo(FeatureStatus.LIMIT_EXCEEDED);
+		assertThat(featureInfo.remainingUsageUnits()).containsEntry(limitId, -4L);
+	}
+
+	@Test
+	void givenNoFetchedSubscriptionWhenVerifyLimitsThenUseOriginalUserGrouping() {
+		String limitId = "FILE_UPLOAD";
+		when(subscriptionVerifier.verifyEntitlement(featureRef, userGrouping)).thenReturn(SubscriptionVerifDetail.verificationOk());
+		when(limitVerifier.getLimitsRemainingUnits(featureRef, userGrouping)).thenReturn(Collections.singletonMap(limitId, 5L));
+
+		var additionalUnits = Collections.singletonMap(limitId, 2L);
+		var featureInfo = featureUsageTracker.verifyLimits(featureRef, userGrouping, additionalUnits);
+
+		assertThat(featureInfo.featureStatus()).isEqualTo(FeatureStatus.AVAILABLE);
+		assertThat(featureInfo.remainingUsageUnits()).containsEntry(limitId, 3L);
+		verify(limitVerifier).getLimitsRemainingUnits(featureRef, userGrouping);
 	}
 
 	@Test
