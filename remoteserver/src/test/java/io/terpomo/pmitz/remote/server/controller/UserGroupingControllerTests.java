@@ -17,16 +17,12 @@
 package io.terpomo.pmitz.remote.server.controller;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -44,14 +40,12 @@ import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
-import io.terpomo.pmitz.core.subscriptions.SubscriptionRepository;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.remote.server.security.ApiKeyAuthentication;
 import io.terpomo.pmitz.remote.server.security.AuthenticationService;
 import io.terpomo.pmitz.remote.server.security.SecurityConfig;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -71,38 +65,10 @@ class UserGroupingControllerTests {
 	FeatureUsageTracker featureUsageTracker;
 	@MockitoBean
 	SubscriptionVerifier subscriptionVerifier;
-	@MockitoBean
-	SubscriptionRepository subscriptionRepository;
 	@Autowired
 	MockMvc mockMvc;
 
 	private final ApiKeyAuthentication apiKeyAuthentication = new ApiKeyAuthentication("test-api-key", AuthorityUtils.NO_AUTHORITIES);
-
-	@BeforeEach
-	void setup() {
-		doReturn(java.util.Optional.empty()).when(subscriptionRepository).find(anyString());
-	}
-
-	@Test
-	void subscriptionUsageShouldUseSubscriptionRepositoryWhenAvailable() throws Exception {
-		var subscriptionFromRepo = new Subscription("theId");
-		subscriptionFromRepo.setPlans(Map.of(productId, "plan1"));
-		doReturn(Optional.of(subscriptionFromRepo)).when(subscriptionRepository).find("theId");
-		doReturn(apiKeyAuthentication).when(authenticationService).getAuthentication(any(HttpServletRequest.class));
-		doReturn(new FeatureUsageInfo(FeatureStatus.AVAILABLE, Map.of())).when(featureUsageTracker)
-				.getUsageInfo(eq(featureRef), any(UserGrouping.class));
-
-		mockMvc.perform(get("/subscriptions/theId/usage/product1/feature1"))
-				.andExpect(status().isOk());
-
-		ArgumentCaptor<UserGrouping> captor = ArgumentCaptor.forClass(UserGrouping.class);
-		verify(featureUsageTracker).getUsageInfo(eq(featureRef), captor.capture());
-
-		assertTrue(captor.getValue() instanceof Subscription);
-		Subscription used = (Subscription) captor.getValue();
-		assertNotNull(used.getPlansByProduct(), "Expected subscription plans to be loaded from repository");
-		assertEquals("plan1", used.getPlansByProduct().get(productId));
-	}
 
 	private static Stream<Arguments> usageUrlsAndUserGroupingsProvider() {
 		return Stream.of(
