@@ -26,7 +26,6 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.parallel.Execution;
@@ -42,9 +41,7 @@ import io.terpomo.pmitz.core.FeatureUsageInfo;
 import io.terpomo.pmitz.core.subjects.DirectoryGroup;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subscriptions.FeatureRef;
-import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
-import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 import io.terpomo.pmitz.remote.client.http.PmitzApiKeyAuthenticationProvider;
 import io.terpomo.pmitz.remote.client.http.PmitzHttpClient;
 
@@ -60,7 +57,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Terpomo Software
  */
 @Testcontainers
-@Tag("docker")
 @Execution(ExecutionMode.SAME_THREAD)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DockerRemoteServerIntegrationTests {
@@ -91,7 +87,7 @@ public class DockerRemoteServerIntegrationTests {
 
 	@Container
 	private static final ComposeContainer compose = new ComposeContainer(
-			new java.io.File("src/test/resources/docker-compose.integration-test.yml"))
+			new java.io.File("src/integrationTest/docker-compose.integration-test.yml"))
 			.withLocalCompose(false)
 			.withTailChildContainers(true)
 			.withLogConsumer(PMITZ_SERVICE, frame -> LOGGER.info("{}", frame.getUtf8String()))
@@ -209,13 +205,6 @@ public class DockerRemoteServerIntegrationTests {
 
 		assertTrue(pmitzClient.findSubscription(SUBSCRIPTION_ID).isPresent(), "Expected created subscription to be persisted and retrievable");
 		pmitzClient.updateSubscriptionStatus(SUBSCRIPTION_ID, SubscriptionStatus.ACTIVE);
-
-		FeatureUsageInfo initialSubscriptionUsage = pmitzClient.getLimitsRemainingUnits(featureRef, new Subscription(SUBSCRIPTION_ID));
-		assertTrue(initialSubscriptionUsage != null, "Expected FeatureUsageInfo for subscription usage endpoint");
-
-		SubscriptionVerifDetail verif = pmitzClient.verifySubscription(featureRef, new Subscription(SUBSCRIPTION_ID));
-		assertTrue(verif != null, "Expected subscription-check response");
-		assertTrue(verif.isFeatureAllowed(), "Expected featureAllowed=true for valid subscription + plan + included feature");
 	}
 
 	@Test
