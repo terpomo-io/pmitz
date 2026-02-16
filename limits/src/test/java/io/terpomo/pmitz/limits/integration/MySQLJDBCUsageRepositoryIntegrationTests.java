@@ -26,14 +26,14 @@ import java.sql.Timestamp;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.mysql.MySQLContainer;
 
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 import io.terpomo.pmitz.utils.JDBCTestUtils;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
 public class MySQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageRepositoryIntegrationTests {
@@ -41,7 +41,7 @@ public class MySQLJDBCUsageRepositoryIntegrationTests extends AbstractJDBCUsageR
 	private static final Logger logger = LoggerFactory.getLogger(MySQLJDBCUsageRepositoryIntegrationTests.class);
 
 	@Container
-	private static final MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:lts")
+	private static final MySQLContainer mysqlContainer = new MySQLContainer("mysql:lts")
 			.withDatabaseName(CUSTOM_SCHEMA);
 
 	@Override

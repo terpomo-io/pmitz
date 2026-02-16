@@ -34,12 +34,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.MSSQLServerContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.mssqlserver.MSSQLServerContainer;
+import org.testcontainers.mysql.MySQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subscriptions.FeatureRef;
@@ -49,8 +49,7 @@ import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRecordRepoMetadata;
 import io.terpomo.pmitz.limits.usage.repository.impl.JDBCUsageRepository;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 @Testcontainers
@@ -66,17 +65,17 @@ class JDBCUsageRepositoryTimeZoneIntegrationTests {
 	private static final long UNITS = 100L;
 
 	@Container
-	private final MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:8.0.30")
+	private final MySQLContainer mysqlContainer = new MySQLContainer("mysql:8.0.30")
 			.withDatabaseName("testdb").withUsername("root").withPassword("root")
 			.waitingFor(Wait.forListeningPort()).withStartupTimeout(Duration.ofMinutes(2));
 
 	@Container
-	private final PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:latest")
+	private final PostgreSQLContainer postgresContainer = new PostgreSQLContainer("postgres:latest")
 			.withDatabaseName("testdb").withUsername("test").withPassword("test")
 			.waitingFor(Wait.forListeningPort()).withStartupTimeout(Duration.ofMinutes(2));
 
 	@Container
-	private final MSSQLServerContainer<?> sqlServerContainer = new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:2019-latest")
+	private final MSSQLServerContainer sqlServerContainer = new MSSQLServerContainer("mcr.microsoft.com/mssql/server:2019-latest")
 			.acceptLicense().withPassword("yourStrong(!)Password")
 			.waitingFor(Wait.forListeningPort()).withStartupTimeout(Duration.ofMinutes(2));
 
@@ -233,7 +232,7 @@ class JDBCUsageRepositoryTimeZoneIntegrationTests {
 
 	@ParameterizedTest
 	@MethodSource("databaseContainers")
-	void testRepositoryOperations(String databaseType, JdbcDatabaseContainer<?> container) throws SQLException {
+	void testRepositoryOperations(String databaseType, JdbcDatabaseContainer container) throws SQLException {
 		BasicDataSource dataSource = new BasicDataSource();
 		dataSource.setUrl(container.getJdbcUrl());
 		dataSource.setUsername(container.getUsername());

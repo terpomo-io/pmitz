@@ -34,15 +34,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
-import io.terpomo.pmitz.remote.server.security.ApiKeyAuthentication;
-import io.terpomo.pmitz.remote.server.security.AuthenticationService;
-import io.terpomo.pmitz.remote.server.security.SecurityConfig;
+import io.terpomo.pmitz.remote.server.security.apikey.ApiKeyAuthentication;
+import io.terpomo.pmitz.remote.server.security.apikey.AuthenticationService;
+import io.terpomo.pmitz.remote.server.security.apikey.SecurityConfig;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = ProductController.class)
 @ContextConfiguration

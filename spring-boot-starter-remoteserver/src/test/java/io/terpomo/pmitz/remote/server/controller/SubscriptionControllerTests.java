@@ -32,9 +32,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionRepository;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionStatus;
-import io.terpomo.pmitz.remote.server.security.ApiKeyAuthentication;
-import io.terpomo.pmitz.remote.server.security.AuthenticationService;
-import io.terpomo.pmitz.remote.server.security.SecurityConfig;
+import io.terpomo.pmitz.remote.server.security.apikey.ApiKeyAuthentication;
+import io.terpomo.pmitz.remote.server.security.apikey.AuthenticationService;
+import io.terpomo.pmitz.remote.server.security.apikey.SecurityConfig;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;

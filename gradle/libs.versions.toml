@@ -16,7 +16,7 @@ postgresql-version = '42.7.8'
 slf4j-version = '2.0.17'
 springboot-version = '4.0.1'
 sqlserver-mssqlJdbc-version = '13.2.1.jre11'
-testcontainers-version = '1.21.3'
+testcontainers-version = '2.0.3'
 wiremock-version = '3.13.1'
 system-stubs-version='2.1.8'
 
@@ -44,10 +44,10 @@ sqlserver-mssqlJdbc = { group = 'com.microsoft.sqlserver', name = 'mssql-jdbc', 
 
 # Testcontainers libraries
 testcontainers = { group = 'org.testcontainers', name = 'testcontainers', version.ref = 'testcontainers-version' }
-testcontainers-junitJuniper = { group = 'org.testcontainers', name =  'junit-jupiter', version.ref = 'testcontainers-version' }
-testcontainers-mssqlserver = { group = 'org.testcontainers', name =  'mssqlserver', version.ref = 'testcontainers-version' }
-testcontainers-mysql = { group = 'org.testcontainers', name =  'mysql', version.ref = 'testcontainers-version' }
-testcontainers-postgresql = { group = 'org.testcontainers', name =  'postgresql', version.ref = 'testcontainers-version' }
+testcontainers-junitJuniper = { group = 'org.testcontainers', name =  'testcontainers-junit-jupiter', version.ref = 'testcontainers-version' }
+testcontainers-mssqlserver = { group = 'org.testcontainers', name =  'testcontainers-mssqlserver', version.ref = 'testcontainers-version' }
+testcontainers-mysql = { group = 'org.testcontainers', name =  'testcontainers-mysql', version.ref = 'testcontainers-version' }
+testcontainers-postgresql = { group = 'org.testcontainers', name =  'testcontainers-postgresql', version.ref = 'testcontainers-version' }
 
 # Library for CheckStyle
 springJavaformatCheckstyle = { group = 'io.spring.javaformat', name = 'spring-javaformat-checkstyle', version.ref = 'springJavaformatCheckstyle-version' }
