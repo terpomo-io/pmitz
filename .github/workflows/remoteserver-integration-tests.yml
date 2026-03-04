@@ -2,6 +2,9 @@ name: Remoteserver Integration Tests
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   remoteserver-integration-tests:
@@ -15,4 +18,3 @@ jobs:
           distribution: 'temurin'
       - name: Run remoteserver integration tests
         run: ./gradlew :remoteserver:integrationTest
-
