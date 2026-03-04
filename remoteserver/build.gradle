@@ -1,7 +1,34 @@
 plugins {
     id 'java'
+    id 'jvm-test-suite'
     alias libs.plugins.springboot
     alias libs.plugins.springDependencyManagement
+}
+
+testing {
+    suites {
+        integrationTest(JvmTestSuite) {
+            useJUnitJupiter()
+
+            sources {
+                java {
+                    setSrcDirs(['src/integrationTest/java'])
+                }
+                // Keep YAML alongside integrationTest without creating extra folders.
+                resources {
+                    setSrcDirs(['src/integrationTest'])
+                }
+            }
+
+            dependencies {
+                // Needed because this suite doesn't automatically inherit all main deps in this build.
+                implementation(project(':core'))
+                implementation(project(':remoteclient'))
+                implementation(libs.testcontainers)
+                implementation(libs.testcontainers.junitJuniper)
+            }
+        }
+    }
 }
 
 dependencies {

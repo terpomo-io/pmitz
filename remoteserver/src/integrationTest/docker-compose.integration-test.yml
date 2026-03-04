@@ -1,0 +1,20 @@
+services:
+  pmitz:
+    image: pmitz-local:integration-test
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,postgresql
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/pmitz
+      - SPRING_DATASOURCE_USERNAME=pmitz
+      - SPRING_DATASOURCE_PASSWORD=pmitz123
+      - PMITZ_API_KEY=${PMITZ_API_KEY:-}
+    depends_on:
+      - postgres
+    restart: "no"
+
+  postgres:
+    image: postgres:13-alpine
+    environment:
+      - POSTGRES_DB=pmitz
+      - POSTGRES_USER=pmitz
+      - POSTGRES_PASSWORD=pmitz123
+    restart: "no"
