@@ -23,8 +23,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.mssqlserver.MSSQLServerContainer;
 
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
@@ -34,16 +35,17 @@ import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.userlimit.jdbc.JDBCUserLimitRepository;
 import io.terpomo.pmitz.utils.JDBCTestUtils;
 
+@Testcontainers
 public class SQLServerJDBCUserLimitRepositoryIntegrationTests extends AbstractJDBCUserLimitRepositoryIntegrationTests {
 
 	@Container
-	private static final MSSQLServerContainer<?> sqlServerContainer =
-			new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:latest")
+	private static final MSSQLServerContainer sqlServerContainer =
+			new MSSQLServerContainer("mcr.microsoft.com/mssql/server:latest")
+					.acceptLicense()
 					.withEnv("TZ", "Europe/Berlin");
 
 	@Override
 	protected void setupDataSource() {
-		sqlServerContainer.start();
 		dataSource = new BasicDataSource();
 		dataSource.setUrl(sqlServerContainer.getJdbcUrl());
 		dataSource.setUsername(sqlServerContainer.getUsername());

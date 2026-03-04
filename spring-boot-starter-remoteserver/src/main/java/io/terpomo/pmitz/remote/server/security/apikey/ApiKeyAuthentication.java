@@ -14,16 +14,29 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.remote.server;
+package io.terpomo.pmitz.remote.server.security.apikey;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import java.util.Collection;
 
-@SpringBootApplication
-public class PmitzRemoteServer {
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 
-	public static void main(String[] args) {
-		SpringApplication.run(PmitzRemoteServer.class, args);
+public class ApiKeyAuthentication extends AbstractAuthenticationToken {
+	private final String apiKey;
+
+	public ApiKeyAuthentication(String apiKey, Collection<? extends GrantedAuthority> authorities) {
+		super(authorities);
+		this.apiKey = apiKey;
+		setAuthenticated(true);
 	}
 
+	@Override
+	public Object getCredentials() {
+		return null;
+	}
+
+	@Override
+	public Object getPrincipal() {
+		return apiKey;
+	}
 }

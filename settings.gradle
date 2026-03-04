@@ -4,5 +4,6 @@ include 'core',
         'subscriptions',
         'all',
         'remoteserver',
+        'spring-boot-starter-remoteserver',
         'remoteclient',
         'examples'

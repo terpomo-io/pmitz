@@ -42,9 +42,9 @@ import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
-import io.terpomo.pmitz.remote.server.security.ApiKeyAuthentication;
-import io.terpomo.pmitz.remote.server.security.AuthenticationService;
-import io.terpomo.pmitz.remote.server.security.SecurityConfig;
+import io.terpomo.pmitz.remote.server.security.apikey.ApiKeyAuthentication;
+import io.terpomo.pmitz.remote.server.security.apikey.AuthenticationService;
+import io.terpomo.pmitz.remote.server.security.apikey.SecurityConfig;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;

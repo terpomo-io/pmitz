@@ -1,0 +1,3 @@
+io.terpomo.pmitz.remote.server.config.EndpointAutoConfiguration
+io.terpomo.pmitz.remote.server.config.SecurityApiKeyAutoConfiguration
+io.terpomo.pmitz.remote.server.config.UsageTrackerAutoConfiguration

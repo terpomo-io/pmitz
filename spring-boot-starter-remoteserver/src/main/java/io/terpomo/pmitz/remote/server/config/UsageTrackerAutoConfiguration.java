@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package io.terpomo.pmitz.remote.server.service;
+package io.terpomo.pmitz.remote.server.config;
 
 import javax.sql.DataSource;
 
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import io.terpomo.pmitz.all.usage.tracker.FeatureUsageTracker;
 import io.terpomo.pmitz.all.usage.tracker.impl.FeatureUsageTrackerImpl;
@@ -35,33 +36,29 @@ import io.terpomo.pmitz.subscriptions.SubscriptionFeatureManager;
 import io.terpomo.pmitz.subscriptions.SubscriptionVerifierImpl;
 import io.terpomo.pmitz.subscriptions.jdbc.JDBCSubscriptionRepository;
 
-@Configuration
-public class UsageTrackerConfig {
-
-	private static final String DB_SCHEMA_NAME = "dbo";
-	private static final String DB_USER_USAGE_TABLE_NAME = "usage";
-	private static final String DB_USER_LIMIT_TABLE_NAME = "user_limit";
-	private static final String DB_SUBSCRIPTION_TABLE_NAME = "subscription";
-	private static final String DB_SUBSCRIPTION_PLAN_TABLE_NAME = "subscription_plan";
+@AutoConfiguration
+@EnableConfigurationProperties(RelationalDBConfigProperties.class)
+public class UsageTrackerAutoConfiguration {
 
 	@Bean
 	ProductRepository productRepository() {
-		InMemoryProductRepository productRepo = new InMemoryProductRepository();
-		return productRepo;
+		return new InMemoryProductRepository();
 	}
 
 	@Bean
-	LimitVerifier limitVerifier(ProductRepository productRepo, DataSource dataSource) {
-		var userLimitRepository = UserLimitRepository.builder().jdbcRepository(dataSource, DB_SCHEMA_NAME, DB_USER_LIMIT_TABLE_NAME);
+	LimitVerifier limitVerifier(ProductRepository productRepo, DataSource dataSource,
+			RelationalDBConfigProperties dbConfig) {
+		var userLimitRepository = UserLimitRepository.builder().jdbcRepository(dataSource, dbConfig.schemaName(), dbConfig.userLimitTableName());
 		return LimitVerifierBuilder.of(productRepo)
 				.withUserLimitRepository(userLimitRepository)
-				.withJdbcUsageRepository(dataSource, DB_SCHEMA_NAME, DB_USER_USAGE_TABLE_NAME)
+				.withJdbcUsageRepository(dataSource, dbConfig.schemaName(), dbConfig.userUsageTableName())
 				.build();
 	}
 
 	@Bean
-	SubscriptionRepository subscriptionRepository(DataSource dataSource) {
-		return new JDBCSubscriptionRepository(dataSource, DB_SCHEMA_NAME, DB_SUBSCRIPTION_TABLE_NAME, DB_SUBSCRIPTION_PLAN_TABLE_NAME);
+	SubscriptionRepository subscriptionRepository(DataSource dataSource,
+			RelationalDBConfigProperties dbConfig) {
+		return new JDBCSubscriptionRepository(dataSource, dbConfig.schemaName(), dbConfig.subscriptionTableName(), dbConfig.subscriptionPlanTableName());
 	}
 
 	@Bean

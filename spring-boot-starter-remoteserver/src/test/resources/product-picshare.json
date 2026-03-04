@@ -1,0 +1,33 @@
+{
+  "productId": "picshare",
+  "features": [
+    {
+      "featureId": "upload",
+      "limits": [
+        {
+          "type": "CountLimit",
+          "id": "Maximum picture size",
+          "count": 10,
+          "unit": "Go"
+        }
+      ]
+    },
+    {
+      "featureId": "Downloading pictures",
+      "limits": [
+        {
+          "type": "CountLimit",
+          "id": "Maximum picture size",
+          "count": 20,
+          "unit": "Go"
+        },
+        {
+          "type": "CalendarPeriodRateLimit",
+          "id": "Maximum of pictures downloaded by calendar month",
+          "quota": 10,
+          "periodicity": "MONTH"
+        }
+      ]
+    }
+  ]
+}

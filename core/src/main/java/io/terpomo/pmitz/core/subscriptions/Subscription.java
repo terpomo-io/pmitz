@@ -88,7 +88,7 @@ public class Subscription extends UserGrouping {
 
 	@Override
 	public Optional<String> getPlan(String productId) {
-		return Optional.ofNullable(plansByProduct.get(productId));
+		return (plansByProduct != null) ? Optional.ofNullable(plansByProduct.get(productId)) : Optional.empty();
 	}
 
 	public void setPlans(Map<String, String> plansByProduct) {

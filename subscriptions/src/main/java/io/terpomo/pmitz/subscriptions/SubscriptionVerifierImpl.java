@@ -27,8 +27,8 @@ import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 
 public class SubscriptionVerifierImpl implements SubscriptionVerifier {
 
-	private io.terpomo.pmitz.core.subscriptions.SubscriptionRepository subscriptionRepository;
-	private SubscriptionFeatureManager subscriptionFeatureManager;
+	private final SubscriptionRepository subscriptionRepository;
+	private final SubscriptionFeatureManager subscriptionFeatureManager;
 
 	public SubscriptionVerifierImpl(SubscriptionRepository subscriptionRepository, SubscriptionFeatureManager subscriptionFeatureManager) {
 		this.subscriptionRepository = subscriptionRepository;
@@ -56,8 +56,9 @@ public class SubscriptionVerifierImpl implements SubscriptionVerifier {
 			errorCause = SubscriptionVerifDetail.ErrorCause.FEATURE_NOT_ALLOWED;
 		}
 
-		return (errorCause != null) ? SubscriptionVerifDetail.verificationError(errorCause) : SubscriptionVerifDetail.verificationOk();
-
+		var subscription = optSubscription.orElse(null);
+		return (errorCause != null) ? SubscriptionVerifDetail.verificationError(errorCause).withFetchedSubscription(subscription) :
+				SubscriptionVerifDetail.verificationOk().withFetchedSubscription(subscription);
 	}
 
 }
