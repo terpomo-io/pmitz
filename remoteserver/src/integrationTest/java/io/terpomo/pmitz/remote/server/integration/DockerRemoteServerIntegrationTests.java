@@ -88,7 +88,6 @@ public class DockerRemoteServerIntegrationTests {
 	@Container
 	private static final ComposeContainer compose = new ComposeContainer(
 			new java.io.File("src/integrationTest/docker-compose.integration-test.yml"))
-			.withLocalCompose(false)
 			.withTailChildContainers(true)
 			.withLogConsumer(PMITZ_SERVICE, frame -> LOGGER.info("{}", frame.getUtf8String()))
 			.withLogConsumer("postgres", frame -> LOGGER.info("{}", frame.getUtf8String()))
@@ -245,4 +244,3 @@ public class DockerRemoteServerIntegrationTests {
 		}
 	}
 }
-
