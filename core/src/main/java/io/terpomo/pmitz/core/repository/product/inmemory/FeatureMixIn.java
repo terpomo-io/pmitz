@@ -32,7 +32,7 @@ public class FeatureMixIn {
 	@JsonProperty("featureId")
 	String featureId;
 
-	@JsonBackReference
+	@JsonBackReference("product-features")
 	Product product;
 
 	@JsonProperty("limits")

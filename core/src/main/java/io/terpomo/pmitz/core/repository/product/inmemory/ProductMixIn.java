@@ -31,10 +31,10 @@ public class ProductMixIn {
 	@JsonProperty("productId")
 	String productId;
 
-	@JsonManagedReference
+	@JsonManagedReference("product-plans")
 	List<Plan> plans;
 
-	@JsonManagedReference
+	@JsonManagedReference("product-features")
 	List<Feature> features;
 
 	@JsonCreator
