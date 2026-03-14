@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.terpomo.pmitz.core.Feature;
@@ -33,10 +32,9 @@ public class PlanMixIn {
 	@JsonProperty
 	List<LimitRule> limitOverride;
 
-	@JsonManagedReference
 	List<Feature> includedFeatures;
 
-	@JsonBackReference
+	@JsonBackReference("product-plans")
 	Product product;
 
 	@JsonCreator
