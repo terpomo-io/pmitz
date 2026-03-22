@@ -4,7 +4,7 @@
 
 **Pmitz** is a Java library for controlling user access to application features based on subscriptions and usage limits. It simplifies implementing subscription models and configurable usage quotas in your applications.
 
-- **Maven Coordinates:** `io.terpomo.pmitz:pmitz`
+- **Recommended Maven Coordinates:** `io.terpomo.pmitz:pmitz-all`
 - **Version:** 0.8.0
 - **Java Version:** 17+
 - **License:** Apache 2.0
