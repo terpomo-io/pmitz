@@ -5,7 +5,7 @@
 **Pmitz** is a Java library for controlling user access to application features based on subscriptions and usage limits. It simplifies implementing subscription models and configurable usage quotas in your applications.
 
 - **Recommended Maven Coordinates:** `io.terpomo.pmitz:pmitz-all`
-- **Version:** 0.8.0
+- **Version:** 0.9.0
 - **Java Version:** 17+
 - **License:** Apache 2.0
 
@@ -73,11 +73,11 @@ Product
 
 **Gradle:**
 ```groovy
-implementation 'io.terpomo.pmitz:pmitz-all:0.8.0'
+implementation 'io.terpomo.pmitz:pmitz-all:0.9.0'
 // Or specific modules:
-implementation 'io.terpomo.pmitz:pmitz-core:0.8.0'
-implementation 'io.terpomo.pmitz:pmitz-limits:0.8.0'
-implementation 'io.terpomo.pmitz:pmitz-subscriptions:0.8.0'
+implementation 'io.terpomo.pmitz:pmitz-core:0.9.0'
+implementation 'io.terpomo.pmitz:pmitz-limits:0.9.0'
+implementation 'io.terpomo.pmitz:pmitz-subscriptions:0.9.0'
 ```
 
 ### 2. Define Your Product (JSON)

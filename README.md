@@ -31,14 +31,14 @@ Clone the GitHub repository [https://github.com/terpomo-io/pmitz](https://github
 <dependency>
   <groupId>io.terpomo.pmitz</groupId>
   <artifactId>pmitz-all</artifactId>
-  <version>0.8.0</version>
+  <version>0.9.0</version>
 </dependency>
 ```
 
 ### How to use it from Gradle
 ```groovy
 dependencies {
-  implementation 'io.terpomo.pmitz:pmitz-all:0.8.0'
+  implementation 'io.terpomo.pmitz:pmitz-all:0.9.0'
 }
 ```
 
