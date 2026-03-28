@@ -39,7 +39,7 @@ subprojects {
     }
 
     checkstyle {
-        toolVersion = "12.1.1"
+        toolVersion = "13.3.0"
         ignoreFailures = false
         showViolations = true
         configFile = rootProject.file('./checkstyle/config/pmitz-checkstyle.xml')
