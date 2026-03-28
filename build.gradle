@@ -80,7 +80,7 @@ subprojects {
 
                 pom {
                     name.set("pmitz-${project.name}")
-                    description.set("Library to manage usage limits in Java programs")
+                    description.set("Java library for subscription management, feature entitlements, and usage limits in multi-tenant applications")
                     url.set("https://github.com/terpomo-io/pmitz")
                     licenses {
                         license {

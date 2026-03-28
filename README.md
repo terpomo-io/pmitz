@@ -1,40 +1,64 @@
-<meta name="google-site-verification" content="wJhSO9RTsMUSwpu-myIzdobIQFMsq3Ej-zbwxAl6blU" />
 # Pmitz
 
 [![Build Snapshot](https://github.com/terpomo-io/pmitz/actions/workflows/ci-workflow.yml/badge.svg)](https://github.com/terpomo-io/pmitz/actions)
 [![Licence](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
 
-Pmitz is a tool to control users' access to application features based on users' subscriptions and / or configured usage limits.
+Pmitz is a Java library for subscription management, feature entitlements, and usage limits in multi-tenant
+applications.
 
-Pmitz encapsulates the complexity related to the management of subscriptions, plans and limits, allowing development teams to effectively implement a subscription model within their software solutions. Pmitz allows development teams to implement usage limits in a configurable and flexible (per user) way.
+Pmitz helps development teams decide whether a user can access a feature, enforce per-user or per-tenant quotas, and
+track usage across products, plans, and subscriptions. The project includes core domain modules, limit and
+subscription verification modules, a remote server/client pair, and a Spring Boot starter for remote enforcement.
+
+## What Pmitz Helps With
+
+* SaaS subscription management and feature gating
+* Feature entitlements based on product plans
+* Usage quotas and rate limits for individual users or groups
+* Multi-tenant applications that need configurable access control
+* Remote limit verification with Spring Boot and HTTP clients
 
 ## Installation
 
 ### How to download Pmitz
 
-Clone github directory [https://github.com/terpomo-io/pmitz](https://github.com/terpomo-io/pmitz).
+Clone the GitHub repository [https://github.com/terpomo-io/pmitz](https://github.com/terpomo-io/pmitz).
 
-### How to use it from Maven.
+### How to use it from Maven
 
 ```xml
 <dependency>
   <groupId>io.terpomo.pmitz</groupId>
-  <artifactId>pmitz</artifactId>
-  <version>0.8.0</version>
+  <artifactId>pmitz-all</artifactId>
+  <version>0.9.0</version>
 </dependency>
 ```
 
-### How to use it from Gradle.
+### How to use it from Gradle
 ```groovy
 dependencies {
-  implementation 'io.terpomo.pmitz:pmitz:0.8.0'
+  implementation 'io.terpomo.pmitz:pmitz-all:0.9.0'
 }
 ```
 
+### Available Artifacts
+
+| Artifact | Purpose |
+| --- | --- |
+| `pmitz-all` | Aggregated core and limits modules |
+| `pmitz-core` | Domain models and base abstractions |
+| `pmitz-limits` | Usage limit verification and tracking |
+| `pmitz-subscriptions` | Subscription management and entitlement verification |
+| `pmitz-remoteserver` | Spring Boot remote server |
+| `pmitz-remoteclient` | HTTP client for the remote server |
+| `pmitz-spring-boot-starter-remoteserver` | Spring Boot starter for remote enforcement |
+
 ## Usage
 
-To access examples of using Pmitz, refer to the [examples](examples) folder
+To access examples of using Pmitz, refer to the [examples](examples) folder.
+
+For a more complete walkthrough, see the [user guide](USERGUIDE.md).
 
 ## Requirements
 * Java 17
@@ -59,4 +83,3 @@ See our page explaining how to contribute ([CONTRIBUTING.md](CONTRIBUTING.md))
 Pmitz is Open Source software released under the [Apache 2.0 license](LICENSE)
 
 ![Licence](https://img.shields.io/badge/License-Apache%202.0-green.svg)
-
