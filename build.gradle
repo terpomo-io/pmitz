@@ -1,9 +1,9 @@
 plugins {
     id 'java'
+    id 'maven-publish'
+    alias(libs.plugins.jreleaser)
     alias(libs.plugins.owaspDependencyCheck)
     alias(libs.plugins.benManesVersions)
-    id 'maven-publish'
-    id 'org.jreleaser' version '1.21.0'
 }
 
 group = 'io.terpomo.pmitz'
