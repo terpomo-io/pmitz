@@ -6,12 +6,12 @@ Pmitz supports two operational modes for subscription and limit verification: **
 
 | Aspect | Local Mode | Remote Mode |
 |--------|-----------|-------------|
-| **Deployment** | Embedded in application | Centralized Spring Boot server |
+| **Deployment** | Embedded in application | Centralized Spring Boot server or starter-backed app |
 | **Database Access** | Direct JDBC connection | Server manages database |
 | **Network** | None (in-process) | HTTP/HTTPS required |
 | **Latency** | Minimal (same JVM) | Network dependent |
 | **Scalability** | Per-application instance | Shared across applications |
-| **Best For** | Monolithic apps, single instance | Microservices, multi-tenant |
+| **Best For** | Monolithic apps, single instance | Multi-application systems, multi-tenant services |
 
 ## Local Mode
 
@@ -104,6 +104,9 @@ SubscriptionVerifier subscriptionVerifier = SubscriptionVerifierBuilder
 
 In Remote Mode, verification is delegated to a centralized Pmitz server via HTTP/HTTPS REST API.
 
+The reusable server-side implementation lives in `pmitz-spring-boot-starter-remoteserver`. The `remoteserver`
+module packages that starter as the standalone Pmitz server, which is also the Docker deployment target.
+
 ### Architecture
 
 ```mermaid
@@ -166,23 +169,34 @@ sequenceDiagram
 **Client Side:**
 
 ```java
-// Create remote client pointing to Pmitz server
-LimitVerifier limitVerifier = new LimitVerifierRemoteClient("http://localhost:8080");
+// PMITZ_API_KEY or -Dpmitz.api.key must be set before creating the client.
+LimitVerifierRemoteClient remoteVerifier = new LimitVerifierRemoteClient("http://localhost:8080");
 
 // Upload product definitions to server
-limitVerifier.uploadProduct(getClass().getResourceAsStream("/products.json"));
+remoteVerifier.uploadProduct(getClass().getResourceAsStream("/products.json"));
 ```
 
 **Server Side (Environment Variables):**
 
 ```bash
 # Database configuration
+SPRING_PROFILES_ACTIVE=postgresql
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/pmitz
 SPRING_DATASOURCE_USERNAME=pmitz
 SPRING_DATASOURCE_PASSWORD=secret
 
 # API authentication
 PMITZ_API_KEY=your-api-key
+```
+
+Optional table overrides:
+
+```properties
+pmitz.remoteserver.repository.rdb.schema-name=dbo
+pmitz.remoteserver.repository.rdb.user-usage-table-name=usage
+pmitz.remoteserver.repository.rdb.user-limit-table-name=user_limit
+pmitz.remoteserver.repository.rdb.subscription-table-name=subscription
+pmitz.remoteserver.repository.rdb.subscription-plan-table-name=subscription_plan
 ```
 
 ### REST API Endpoints
@@ -192,8 +206,12 @@ PMITZ_API_KEY=your-api-key
 | `GET` | `/{userGroupingType}/{id}/usage/{productId}/{featureId}` | Get current usage |
 | `POST` | `/{userGroupingType}/{id}/usage/{productId}/{featureId}` | Record usage |
 | `POST` | `/{userGroupingType}/{id}/limits-check/{productId}/{featureId}` | Check if within limits |
+| `GET` | `/{userGroupingType}/{id}/subscription-check/{productId}/{featureId}` | Check subscription entitlement |
 | `POST` | `/products` | Upload product definition |
 | `DELETE` | `/products/{productId}` | Remove product |
+| `POST` | `/subscriptions` | Create a subscription |
+| `GET` | `/subscriptions/{subscriptionId}` | Load a subscription |
+| `PATCH` | `/subscriptions/{subscriptionId}/status` | Update subscription status |
 
 **User Grouping Types:**
 - `users` - Individual users
@@ -205,8 +223,8 @@ PMITZ_API_KEY=your-api-key
 - Microservices architecture
 - Multiple applications sharing usage data
 - Centralized usage tracking across services
-- Multi-tenant SaaS applications
-- Need for shared rate limiting
+- Multi-tenant applications
+- Need centralized usage and entitlement decisions
 
 ## Multi-Application Architecture (Remote Mode)
 
@@ -253,7 +271,7 @@ flowchart TD
     Q1 -->|Yes| Remote[Use Remote Mode]
     Q1 -->|No| Q2{Microservices<br/>architecture?}
     Q2 -->|Yes| Remote
-    Q2 -->|No| Q3{Need centralized<br/>rate limiting?}
+    Q2 -->|No| Q3{Need centralized<br/>usage enforcement?}
     Q3 -->|Yes| Remote
     Q3 -->|No| Q4{Low latency<br/>critical?}
     Q4 -->|Yes| Local[Use Local Mode]

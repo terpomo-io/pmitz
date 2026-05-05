@@ -1,68 +1,36 @@
-# pmitz Docker Setup
+# Pmitz Docker Setup
 
-## Scenario 1: Development (Build from Source)
+Docker support in this repository targets the standalone `pmitz-remoteserver` application. The reusable
+server-side remote-mode implementation lives in `pmitz-spring-boot-starter-remoteserver`; the Docker image packages
+the standalone server built on top of that starter.
 
-**What happens:** Builds pmitz from your local source code + includes PostgreSQL
+## Quick Start: Standalone Remote Server with PostgreSQL
 
-**Use when:** You're developing pmitz or want to test local changes
+The root [docker-compose.yml](docker-compose.yml) is the default Docker path for running the published Pmitz remote
+server image with PostgreSQL.
 
 ```bash
-# Uses existing docker-compose.yml which contains:
-#   pmitz:
-#     build: .    # This builds from Dockerfile in current directory
 docker compose up -d
 
-# Get API key
+# If PMITZ_API_KEY was not set, the container generates one at startup.
 docker compose logs pmitz | grep "Generated API Key"
 ```
 
-## Scenario 2: Production (Docker Hub Image + Database)
+This compose file:
 
-**What happens:** Downloads pre-built pmitz image + includes PostgreSQL
+- pulls `pmitz/pmitz:latest`
+- starts PostgreSQL alongside the server
+- activates the `postgresql` Spring profile
+- reads `PMITZ_API_KEY`, `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` from your shell or `.env` file
 
-**Use when:** You want the official pmitz release with included database
+## Run Against an Existing PostgreSQL Database
 
-Create new `docker-compose.yml`:
-```yaml
-services:
-  pmitz:
-    image: pmitz/pmitz:latest  # Downloads from Docker Hub
-    ports:
-      - "8080:8080"
-    environment:
-      - PMITZ_API_KEY=my-secure-api-key
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/pmitz
-      - SPRING_DATASOURCE_USERNAME=pmitz
-      - SPRING_DATASOURCE_PASSWORD=my-secure-password
-    depends_on:
-      - postgres
-
-  postgres:
-    image: postgres:13-alpine
-    environment:
-      - POSTGRES_DB=pmitz
-      - POSTGRES_USER=pmitz
-      - POSTGRES_PASSWORD=my-secure-password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
-```
+Use this when PostgreSQL is already managed outside Docker:
 
 ```bash
-docker compose up -d
-```
-
-## Scenario 3: Enterprise (Docker Hub Image Only)
-
-**What happens:** Downloads pre-built pmitz image only
-
-**Use when:** You have your own PostgreSQL database
-```bash
-# Run pmitz container only
 docker run -d \
   -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=postgresql \
   -e PMITZ_API_KEY=my-secure-api-key \
   -e SPRING_DATASOURCE_URL=jdbc:postgresql://your-db-host:5432/pmitz \
   -e SPRING_DATASOURCE_USERNAME=pmitz \
@@ -70,11 +38,63 @@ docker run -d \
   pmitz/pmitz:latest
 ```
 
+## Build a Local Image from Source
+
+Use this when you are changing the standalone server or Docker packaging locally:
+
+```bash
+docker build -t pmitz-local:dev .
+
+docker run -d \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=postgresql \
+  -e PMITZ_API_KEY=my-secure-api-key \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://your-db-host:5432/pmitz \
+  -e SPRING_DATASOURCE_USERNAME=pmitz \
+  -e SPRING_DATASOURCE_PASSWORD=your-db-password \
+  pmitz-local:dev
+```
+
+## Configuration
+
+Required environment variables for the standalone server:
+
+- `SPRING_DATASOURCE_URL`
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+
+Recommended environment variables:
+
+- `SPRING_PROFILES_ACTIVE=postgresql`
+- `PMITZ_API_KEY`
+
+Optional repository table overrides:
+
+- `PMITZ_REMOTESERVER_REPOSITORY_RDB_SCHEMA_NAME`
+- `PMITZ_REMOTESERVER_REPOSITORY_RDB_USER_USAGE_TABLE_NAME`
+- `PMITZ_REMOTESERVER_REPOSITORY_RDB_USER_LIMIT_TABLE_NAME`
+- `PMITZ_REMOTESERVER_REPOSITORY_RDB_SUBSCRIPTION_TABLE_NAME`
+- `PMITZ_REMOTESERVER_REPOSITORY_RDB_SUBSCRIPTION_PLAN_TABLE_NAME`
+
+Example `.env` file for the root compose setup:
+
+```bash
+cat > .env <<'EOF'
+PMITZ_API_KEY=my-secure-api-key
+POSTGRES_DB=pmitz
+POSTGRES_USER=pmitz
+POSTGRES_PASSWORD=my-secure-db-password
+EOF
+
+docker compose up -d
+```
+
 ## API Examples
 
-Replace `YOUR_API_KEY` with the key from the logs.
+Replace `YOUR_API_KEY` with the configured value or the generated key from the container logs.
 
 ### Add Product
+
 ```bash
 curl -X POST http://localhost:8080/products \
   -H "Content-Type: application/json" \
@@ -94,21 +114,23 @@ curl -X POST http://localhost:8080/products \
 ```
 
 ### Check Usage
+
 ```bash
 # Users
 curl -H "X-Api-Key: YOUR_API_KEY" \
   "http://localhost:8080/users/user1/usage/Library/Books"
 
-# Subscriptions  
+# Subscriptions
 curl -H "X-Api-Key: YOUR_API_KEY" \
   "http://localhost:8080/subscriptions/sub1/usage/Library/Books"
 
-# Directory Groups
+# Directory groups
 curl -H "X-Api-Key: YOUR_API_KEY" \
   "http://localhost:8080/directory-groups/group1/usage/Library/Books"
 ```
 
 ### Record Usage
+
 ```bash
 curl -X POST "http://localhost:8080/users/user1/usage/Library/Books" \
   -H "Content-Type: application/json" \
@@ -116,52 +138,11 @@ curl -X POST "http://localhost:8080/users/user1/usage/Library/Books" \
   -d '{"units": {"Max books": 2}, "reduceUnits": false}'
 ```
 
-## Custom API Key
-
-```bash
-PMITZ_API_KEY=my-key docker compose up -d
-```
-
-## Custom Configuration
-
-Set environment variables to customize the setup:
-
-```bash
-# Custom API key and database password
-PMITZ_API_KEY=my-secure-api-key \
-POSTGRES_PASSWORD=my-secure-db-password \
-docker compose up -d
-```
-
-Or use `.env` file:
-```bash
-cat > .env << EOF
-PMITZ_API_KEY=my-secure-api-key
-POSTGRES_PASSWORD=my-secure-db-password
-POSTGRES_USER=pmitz
-POSTGRES_DB=pmitz
-EOF
-
-docker compose up -d
-```
-
-**For Docker Hub image usage:**
-```bash
-# Run pmitz container with custom settings
-docker run -d \
-  -p 8080:8080 \
-  -e PMITZ_API_KEY=my-secure-api-key \
-  -e SPRING_DATASOURCE_URL=jdbc:postgresql://your-db-host:5432/pmitz \
-  -e SPRING_DATASOURCE_USERNAME=pmitz \
-  -e SPRING_DATASOURCE_PASSWORD=your-db-password \
-  pmitz/pmitz:latest
-```
-
 ## Database Access
 
 ```bash
-# Connect to database
-docker compose exec postgres psql -U pmitz -d pmitz
+# Connect to PostgreSQL started by docker compose
+docker compose exec postgres psql -U "${POSTGRES_USER:-pmitz}" -d "${POSTGRES_DB:-pmitz}"
 
 # View tables
 \dt dbo.*
