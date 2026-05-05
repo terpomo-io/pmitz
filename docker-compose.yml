@@ -4,10 +4,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker,postgresql
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/pmitz
-      - SPRING_DATASOURCE_USERNAME=pmitz
-      - SPRING_DATASOURCE_PASSWORD=pmitz123
+      - SPRING_PROFILES_ACTIVE=postgresql
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pmitz}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-pmitz}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-pmitz123}
       - PMITZ_API_KEY=${PMITZ_API_KEY:-}
     depends_on:
       - postgres
@@ -22,16 +22,16 @@ services:
   postgres:
     image: postgres:13-alpine
     environment:
-      - POSTGRES_DB=pmitz
-      - POSTGRES_USER=pmitz
-      - POSTGRES_PASSWORD=pmitz123
+      - POSTGRES_DB=${POSTGRES_DB:-pmitz}
+      - POSTGRES_USER=${POSTGRES_USER:-pmitz}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pmitz123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pmitz -d pmitz"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pmitz} -d ${POSTGRES_DB:-pmitz}"]
       interval: 10s
       timeout: 5s
       retries: 5

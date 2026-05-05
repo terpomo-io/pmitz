@@ -13,11 +13,11 @@ subscription verification modules, a remote server/client pair, and a Spring Boo
 
 ## What Pmitz Helps With
 
-* SaaS subscription management and feature gating
+* Subscription management and feature gating
 * Feature entitlements based on product plans
-* Usage quotas and rate limits for individual users or groups
+* Usage quotas and limits for individual users, groups, and subscriptions
 * Multi-tenant applications that need configurable access control
-* Remote limit verification with Spring Boot and HTTP clients
+* Remote verification with a standalone Spring Boot server or an embeddable starter
 
 ## Installation
 
@@ -50,15 +50,16 @@ dependencies {
 | `pmitz-core` | Domain models and base abstractions |
 | `pmitz-limits` | Usage limit verification and tracking |
 | `pmitz-subscriptions` | Subscription management and entitlement verification |
-| `pmitz-remoteserver` | Spring Boot remote server |
+| `pmitz-remoteserver` | Standalone Spring Boot remote server |
 | `pmitz-remoteclient` | HTTP client for the remote server |
-| `pmitz-spring-boot-starter-remoteserver` | Spring Boot starter for remote enforcement |
+| `pmitz-spring-boot-starter-remoteserver` | Embeddable Spring Boot starter for remote mode |
 
 ## Usage
 
 To access examples of using Pmitz, refer to the [examples](examples) folder.
 
 For a more complete walkthrough, see the [user guide](USERGUIDE.md).
+For deployment details, see [DOCKER.md](DOCKER.md) and [Local vs Remote Modes](docs/local-vs-remote-modes.md).
 
 ## Requirements
 * Java 17

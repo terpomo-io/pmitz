@@ -19,7 +19,8 @@
 | `limits` | Usage limit verification and tracking |
 | `subscriptions` | Subscription management and verification |
 | `all` | Aggregates core + limits modules |
-| `remoteserver` | Spring Boot REST API server |
+| `remoteserver` | Standalone Spring Boot REST API server |
+| `spring-boot-starter-remoteserver` | Embeddable Spring Boot starter for remote mode |
 | `remoteclient` | HTTP client for remote server |
 | `examples` | Sample applications |
 
@@ -227,17 +228,24 @@ subscriptionRepo.terminate(subscriptionId);
 
 ## Remote Server
 
-### Deployment
+### Architecture
 
-The `remoteserver` module provides a Spring Boot REST API:
+Remote mode is available in two server-side forms:
+
+- `spring-boot-starter-remoteserver` embeds the remote REST endpoints, API-key security, and JDBC-backed usage and subscription repositories into your own Spring Boot application.
+- `remoteserver` packages that starter as the standalone Pmitz server. This is the Docker deployment target documented in [DOCKER.md](DOCKER.md).
+
+### Standalone Deployment
+
+The standalone `remoteserver` module provides a Spring Boot REST API:
 
 ```bash
-# Using Docker
-docker run -e PMITZ_API_KEY=your-api-key \
+docker run -e SPRING_PROFILES_ACTIVE=postgresql \
+           -e PMITZ_API_KEY=your-api-key \
            -e SPRING_DATASOURCE_URL=jdbc:postgresql://host:5432/db \
            -e SPRING_DATASOURCE_USERNAME=user \
            -e SPRING_DATASOURCE_PASSWORD=pass \
-           terpomo/pmitz-server
+           pmitz/pmitz:latest
 ```
 
 ### API Endpoints
@@ -248,12 +256,37 @@ docker run -e PMITZ_API_KEY=your-api-key \
 | DELETE | `/products/{productId}` | Remove product |
 | GET | `/users/{userId}/usage/{productId}/{featureId}` | Get remaining units |
 | POST | `/users/{userId}/usage/{productId}/{featureId}` | Record usage |
+| POST | `/users/{userId}/limits-check/{productId}/{featureId}` | Check whether usage would remain within limits |
+| GET | `/users/{userId}/subscription-check/{productId}/{featureId}` | Check subscription entitlement |
 | GET | `/directory-groups/{groupId}/usage/...` | Group usage queries |
 | POST | `/directory-groups/{groupId}/usage/...` | Record group usage |
+| POST | `/subscriptions` | Create a subscription |
+| GET | `/subscriptions/{subscriptionId}` | Load a subscription |
+| PATCH | `/subscriptions/{subscriptionId}/status` | Update subscription status |
 
 ### Authentication
 
-All requests require the `X-Api-Key` header matching the configured `PMITZ_API_KEY`.
+All requests require the `X-Api-Key` header matching the configured `PMITZ_API_KEY`. API-key security is the
+currently supported remote-server security mode.
+
+### Remote Server Properties
+
+Default repository objects are stored in the `dbo` schema with these table names:
+
+- `usage`
+- `user_limit`
+- `subscription`
+- `subscription_plan`
+
+Override them with Spring configuration properties if needed:
+
+```properties
+pmitz.remoteserver.repository.rdb.schema-name=dbo
+pmitz.remoteserver.repository.rdb.user-usage-table-name=usage
+pmitz.remoteserver.repository.rdb.user-limit-table-name=user_limit
+pmitz.remoteserver.repository.rdb.subscription-table-name=subscription
+pmitz.remoteserver.repository.rdb.subscription-plan-table-name=subscription_plan
+```
 
 ---
 
@@ -262,7 +295,7 @@ All requests require the `X-Api-Key` header matching the configured `PMITZ_API_K
 ### Using LimitVerifierRemoteClient
 
 ```java
-// Create client pointing to remote server
+// PMITZ_API_KEY or -Dpmitz.api.key must be set before creating the client.
 LimitVerifierRemoteClient remoteVerifier = new LimitVerifierRemoteClient("http://localhost:8080");
 
 // Upload product definition
@@ -282,10 +315,16 @@ Map<String, Long> remaining = remoteVerifier.getLimitsRemainingUnits(feature, us
 ### Low-Level Client
 
 ```java
-PmitzHttpAuthProvider authProvider = new PmitzApiKeyAuthenticationProvider("your-api-key");
-PmitzClient client = new PmitzHttpClient("http://localhost:8080", authProvider);
+System.setProperty("pmitz.api.key", "your-api-key");
 
-FeatureUsageInfo info = client.verifyLimits(productId, featureId, userId, units);
+PmitzClient client = new PmitzHttpClient(
+    "http://localhost:8080",
+    new PmitzApiKeyAuthenticationProvider());
+
+FeatureUsageInfo info = client.verifyLimits(
+    new FeatureRef("Library", "Reserving books"),
+    new IndividualUser("user123"),
+    Map.of("Maximum books reserved", 1L));
 ```
 
 ---
