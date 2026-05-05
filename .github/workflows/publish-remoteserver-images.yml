@@ -1,0 +1,111 @@
+name: Publish Remoteserver Images
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git tag to publish, for example v0.8.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish-remoteserver-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve release ref and image names
+        id: release
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ref='${{ inputs.ref }}'
+          else
+            ref='${{ github.ref_name }}'
+          fi
+
+          if [[ ! "$ref" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Expected a git tag like v0.8.0 or v0.8.0-rc1, got: $ref" >&2
+            exit 1
+          fi
+
+          version="${ref#v}"
+          {
+            echo "ref=$ref"
+            echo "version=$version"
+            echo "ghcr_image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/pmitz-remoteserver"
+            echo "dockerhub_image=terpomo/pmitz-remoteserver"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout requested ref
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          git fetch --tags --force origin
+          git checkout "${{ steps.release.outputs.ref }}"
+
+      - name: Capture checkout revision
+        id: git-info
+        shell: bash
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Prepare image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ steps.release.outputs.ghcr_image }}
+            ${{ steps.release.outputs.dockerhub_image }}
+          tags: |
+            type=raw,value=${{ steps.release.outputs.version }}
+          flavor: |
+            latest=false
+          labels: |
+            org.opencontainers.image.title=Pmitz Remote Server
+            org.opencontainers.image.description=Official standalone remote server image for Pmitz
+            org.opencontainers.image.licenses=Apache-2.0
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.url=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.release.outputs.version }}
+            org.opencontainers.image.revision=${{ steps.git-info.outputs.sha }}
+
+      - name: Build and push multi-arch image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
