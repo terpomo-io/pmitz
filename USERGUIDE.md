@@ -245,7 +245,7 @@ docker run -e SPRING_PROFILES_ACTIVE=postgresql \
            -e SPRING_DATASOURCE_URL=jdbc:postgresql://host:5432/db \
            -e SPRING_DATASOURCE_USERNAME=user \
            -e SPRING_DATASOURCE_PASSWORD=pass \
-           pmitz/pmitz:latest
+           terpomo/pmitz-remoteserver:0.9.0
 ```
 
 ### API Endpoints
