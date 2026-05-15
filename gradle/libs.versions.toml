@@ -10,6 +10,7 @@ json-path-version = '3.0.0'
 junitJuniper-version = '6.0.3'
 junitPlatformLauncher-version = '6.0.3'
 logback-version = '1.5.32'
+mcp-java-sdk-version = '1.1.2'
 mockito-junitJuniper-version = '5.23.0'
 mysqlConnectorJava-version = '8.0.33'
 postgresql-version = '42.7.10'
@@ -34,6 +35,8 @@ commons-dbcp2 = { group = 'org.apache.commons', name = 'commons-dbcp2', version.
 httpcomponents-client5-httpclient5 = { group = 'org.apache.httpcomponents.client5', name = 'httpclient5', version.ref ='httpcomponents-client5-httpclient5-version' }
 jackson-databind = { group = 'tools.jackson.core', name = 'jackson-databind', version.ref = 'jackson-databind-version' }
 json-path = { group = 'com.jayway.jsonpath', name = 'json-path', version.ref = 'json-path-version' }
+mcp-bom = { group = 'io.modelcontextprotocol.sdk', name = 'mcp-bom', version.ref = 'mcp-java-sdk-version' }
+mcp = { group = 'io.modelcontextprotocol.sdk', name = 'mcp' }
 slf4jApi = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j-version' }
 
 # Database drivers
@@ -67,4 +70,3 @@ springboot = { id = 'org.springframework.boot', version.ref = 'springboot-versio
 springDependencyManagement = { id = 'io.spring.dependency-management', version.ref = 'springDependencyManagement-version' }
 owaspDependencyCheck = { id = 'org.owasp.dependencycheck', version.ref = 'owaspDependencyCheck-version' }
 benManesVersions = { id = 'com.github.ben-manes.versions', version.ref = 'benManesVersions-version' }
-

@@ -6,4 +6,5 @@ include 'core',
         'remoteserver',
         'spring-boot-starter-remoteserver',
         'remoteclient',
+        'mcpserver',
         'examples'

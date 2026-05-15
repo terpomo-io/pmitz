@@ -1,0 +1,35 @@
+plugins {
+    id 'application'
+}
+
+dependencies {
+    implementation project(':all')
+    implementation project(':core')
+    implementation project(':limits')
+    implementation project(':remoteclient')
+    implementation project(':subscriptions')
+
+    implementation platform(libs.mcp.bom)
+    implementation libs.mcp
+
+    implementation libs.commons.dbcp2
+    implementation libs.jackson.databind
+    implementation libs.slf4jApi
+
+    runtimeOnly libs.h2database.h2
+    runtimeOnly libs.logbackClassic
+    runtimeOnly libs.postgresql
+
+    testImplementation libs.junitJuniper
+    testRuntimeOnly libs.junitPlatformLauncher
+
+    testImplementation libs.assertj.core
+}
+
+application {
+    mainClass = 'io.terpomo.pmitz.mcpserver.PmitzMcpServerApplication'
+}
+
+test {
+    useJUnitPlatform()
+}
