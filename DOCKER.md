@@ -18,7 +18,7 @@ docker compose logs pmitz | grep "Generated API Key"
 
 This compose file:
 
-- pulls `pmitz/pmitz:latest`
+- pulls `terpomo/pmitz-remoteserver:0.9.0`
 - starts PostgreSQL alongside the server
 - activates the `postgresql` Spring profile
 - reads `PMITZ_API_KEY`, `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` from your shell or `.env` file
@@ -35,8 +35,10 @@ docker run -d \
   -e SPRING_DATASOURCE_URL=jdbc:postgresql://your-db-host:5432/pmitz \
   -e SPRING_DATASOURCE_USERNAME=pmitz \
   -e SPRING_DATASOURCE_PASSWORD=your-db-password \
-  pmitz/pmitz:latest
+  terpomo/pmitz-remoteserver:0.9.0
 ```
+
+The same release is also available from GHCR as `ghcr.io/terpomo-io/pmitz-remoteserver:0.9.0`.
 
 ## Build a Local Image from Source
 
