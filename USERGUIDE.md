@@ -4,10 +4,119 @@
 
 **Pmitz** is a Java library for controlling user access to application features based on subscriptions and usage limits. It simplifies implementing subscription models and configurable usage quotas in your applications.
 
-- **Recommended Maven Coordinates:** `io.terpomo.pmitz:pmitz-all`
+- **Recommended Maven Coordinates:** `io.terpomo.pmitz:pmitz-all` — this pulls in `core` + `limits` (and the combined `FeatureUsageTracker` API described below). It does **not** include `subscriptions`: add `io.terpomo.pmitz:pmitz-subscriptions` alongside it if you need subscription entitlement checks, which most applications do.
 - **Version:** 0.9.0
 - **Java Version:** 17+
 - **License:** Apache 2.0
+
+---
+
+## Introduction
+
+Pmitz answers one question for you, over and over, cheaply and consistently:
+
+> **"Is this user allowed to do *this* right now?"**
+
+That question actually has two independent parts, and most of the friction in access-control code comes from tangling them together. Pmitz keeps them separate on purpose:
+
+| Question | Concept | Answered by |
+|---|---|---|
+| *Is the user's plan entitled to this feature at all?* | **Subscription** | `SubscriptionVerifier` |
+| *Has the user used up their quota for this feature?* | **Limit** | `LimitVerifier` |
+
+A feature is usable only when **both** answers are yes. Neither check knows about the other — which is what lets you use one without the other, swap out how either is stored, or run either locally or over the network, without touching your application code.
+
+```mermaid
+flowchart LR
+    A["App: can user U\ndo feature F?"] --> B{"SubscriptionVerifier\nEntitled to F?"}
+    B -- "no" --> D["NOT_ALLOWED"]
+    B -- "yes" --> C{"LimitVerifier\nWithin quota for F?"}
+    C -- "no" --> E["LIMIT_EXCEEDED"]
+    C -- "yes" --> F["AVAILABLE\n→ perform action\n→ recordFeatureUsage()"]
+```
+
+This is the shape of nearly every integration: check entitlement, check quota, act, record. You can call `SubscriptionVerifier` and `LimitVerifier` separately and combine the results yourself (see the [Complete Example](#complete-example)), or use `FeatureUsageTracker` (from the `all` module) to run both checks in one call — see [Feature Status](#feature-status) below.
+
+### The data model
+
+Three things describe *what can be limited*, and one thing describes *who is checking*:
+
+```mermaid
+erDiagram
+    PRODUCT ||--o{ FEATURE : has
+    FEATURE ||--o{ LIMIT : constrained_by
+    PRODUCT ||--o{ PLAN : offers
+    PLAN ||--o{ FEATURE : includes
+    SUBSCRIPTION }o--|| PLAN : "is on"
+    USER ||--o| SUBSCRIPTION : holds
+
+    PRODUCT {
+        string productId
+    }
+    FEATURE {
+        string featureId
+    }
+    LIMIT {
+        string type "CountLimit, CalendarPeriodRateLimit, ..."
+    }
+    PLAN {
+        string planId
+    }
+    SUBSCRIPTION {
+        string status
+        date expiration
+    }
+```
+
+- A **Product** is what you sell (e.g. `"Library"`).
+- It exposes one or more **Features** (e.g. `"Reserving books"`, `"API calls"`).
+- Each Feature can carry one or more **Limits** — the quota rules (`CountLimit`, `CalendarPeriodRateLimit`, ...).
+- A Product also defines **Plans**, each of which includes a subset of the Product's Features — this is the entitlement side.
+- A **Subscription** is a user (or `DirectoryGroup`) sitting on a Plan, with a status and expiration.
+- **Usage** is the running record Pmitz keeps, per user per Feature, of how much of each Limit has been consumed — it's what `recordFeatureUsage` / `reduceFeatureUsage` write to, and what `getLimitsRemainingUnits` reads back.
+
+Limits and Subscriptions are configured independently and stored independently (their own repositories, their own tables) — the data model has no foreign key forcing them together. The two-gate flow above is an application-level convention, not a database constraint.
+
+### Local mode vs. Remote mode
+
+Everything above — `LimitVerifier`, `SubscriptionVerifier`, the repositories — runs as **Local mode** by default: plain Java objects, in-process, talking directly to your JDBC `DataSource`. That's the whole story for a single application.
+
+**Remote mode** puts the same logic behind an HTTP API instead, so several applications (including non-Java ones) can share one source of truth for usage and entitlement:
+
+```mermaid
+flowchart TB
+    subgraph Local["Local mode — in one JVM"]
+        direction LR
+        App1["Your App"] -->|"method call"| LV1["LimitVerifier\nSubscriptionVerifier"]
+        LV1 -->|JDBC| DB1[("Database")]
+    end
+
+    subgraph Remote["Remote mode — shared service"]
+        direction LR
+        App2["App A (Java)"] -->|"HTTPS + X-Api-Key"| RS["remoteserver\n(Spring Boot)"]
+        App3["App B (any language)"] -->|"HTTPS + X-Api-Key"| RS
+        RS -->|JDBC| DB2[("Database")]
+    end
+```
+
+The client-side API is deliberately similar: `LimitVerifierRemoteClient` exposes the same `recordFeatureUsage` / `getLimitsRemainingUnits` methods as the local `LimitVerifier`, and the low-level `PmitzClient` mirrors `FeatureUsageTracker`'s combined `verifyLimits` call (see [Feature Status](#feature-status)). Switching modes later is a construction-time decision, not a rewrite.
+
+| | **Local** | **Remote** |
+|---|---|---|
+| What runs | `pmitz-core` / `pmitz-limits` / `pmitz-subscriptions` in your process | `remoteserver` (standalone or embedded via `spring-boot-starter-remoteserver`) + `remoteclient` in each caller |
+| Best for | A single application, or a monolith where the whole product lives in one JVM | Multiple services (or polyglot clients) that must share one consistent view of usage and entitlement |
+| Network hop | None | Yes — HTTPS, authenticated with `X-Api-Key` |
+| Failure mode to handle | `RepositoryException` | `RemoteCallException`, `AuthenticationException` |
+
+**Rule of thumb:** start Local. Move to Remote only once more than one process needs to agree on the same usage counters or subscription state.
+
+### How this guide is organized
+
+1. **Core Concepts** — the classes above, in detail.
+2. **Quick Start** — define a Product, wire up a `LimitVerifier`, Local mode.
+3. **Limit Verification** / **Subscription Verification** — the two checks, each in depth.
+4. **Remote Server** / **Remote Client** — the same checks, over HTTP.
+5. **Database Setup**, **Exception Handling**, **Complete Example**, **Builder Reference** — reference material.
 
 ---
 
@@ -60,11 +169,20 @@ Product
 
 ### Feature Status
 
+`FeatureStatus` is the combined result of both gates from the [Introduction](#introduction) — subscription entitlement *and* limit usage — in a single value:
+
 | Status | Meaning |
 |--------|---------|
-| `AVAILABLE` | Feature available within limits |
-| `LIMIT_EXCEEDED` | Feature available but usage limit reached |
-| `NOT_ALLOWED` | User not entitled to this feature |
+| `NOT_ALLOWED` | `SubscriptionVerifier` rejected the feature; limits are not checked |
+| `LIMIT_EXCEEDED` | Entitled, but a `LimitVerifier` quota is exhausted |
+| `AVAILABLE` | Entitled and within all limits |
+
+You won't see `FeatureStatus` if you call `LimitVerifier` and `SubscriptionVerifier` separately, as in [Limit Verification](#limit-verification) and [Subscription Verification](#subscription-verification) — those expose booleans (`isWithinLimits`, `isFeatureAllowed`), exceptions (`LimitExceededException`), and, for subscription failures specifically, a `SubscriptionVerifDetail` with its own `errorCause` (`INVALID_SUBSCRIPTION`, `PRODUCT_NOT_ALLOWED`, `FEATURE_NOT_ALLOWED`). `FeatureStatus` is what you get back instead when you run both checks through one call:
+
+- **`FeatureUsageTracker`** (`all` module) — build one with `FeatureUsageTracker.Builder.build(limitVerifier, subscriptionVerifier)`, then call `verifyLimits(...)` or `getUsageInfo(...)`; each returns a `FeatureUsageInfo(FeatureStatus, remainingUsageUnits)`.
+- **`PmitzClient`** (remote, low-level) — `verifyLimits(...)` returns the same `FeatureUsageInfo`, computed server-side the same way (see [Low-Level Client](#low-level-client)).
+
+Prefer `FeatureUsageTracker` / `PmitzClient.verifyLimits` when you want one call and one status; call `LimitVerifier` / `SubscriptionVerifier` directly when you need their distinct error detail (e.g. to tell a user *why* they were denied).
 
 ---
 
