@@ -70,7 +70,7 @@ Verification is delegated over HTTP/HTTPS to a centralized Pmitz server (`remote
 flowchart TB
     subgraph ClientApp["Client Application"]
         App[Application Code]
-        RC[LimitVerifierRemoteClient]
+        RC[PmitzClient]
     end
 
     subgraph PmitzServer["Pmitz Server"]
