@@ -7,13 +7,15 @@ This is the architecture deep-dive behind the [Local mode vs. Remote mode](../US
 | Aspect | Local Mode | Remote Mode |
 |--------|-----------|-------------|
 | **Deployment** | Embedded in your application | Centralized `remoteserver`, standalone or starter-embedded |
-| **Database access** | Direct JDBC connection | Server manages the database |
+| **Data access** | Your app talks to the stores directly | Server owns the stores on your app's behalf |
 | **Network** | None (in-process) | HTTP/HTTPS |
 | **Best for** | A single application or monolith | Multiple applications sharing usage and entitlement data |
 
+Pmitz persists through two stores: the **UsageRecord Store** (limit consumption) and the **Subscription Store** (entitlement state). They're independent — neither mode requires them to be the same database, or even the same kind of store.
+
 ## Local Mode
 
-Verification runs in-process, reading and writing the database directly.
+Verification runs in-process, reading and writing the stores directly.
 
 ```mermaid
 flowchart TB
@@ -24,17 +26,17 @@ flowchart TB
         PR[ProductRepository]
     end
 
-    subgraph Database["Database"]
-        UD[("Usage & limit tables")]
-        SD[("Subscription tables")]
+    subgraph Stores["Data Stores"]
+        US[("UsageRecord Store")]
+        SS[("Subscription Store")]
     end
 
     App --> LV
     App --> SV
     LV --> PR
     SV --> PR
-    LV -->|JDBC| UD
-    SV -->|JDBC| SD
+    LV --> US
+    SV --> SS
 ```
 
 ```mermaid
@@ -42,20 +44,16 @@ sequenceDiagram
     participant App as Application
     participant LV as LimitVerifier
     participant LRR as LimitRuleResolver
-    participant UR as UsageRepository
-    participant DB as Database
+    participant US as UsageRecord Store
 
     App->>LV: recordFeatureUsage(feature, user, limits)
     LV->>LRR: resolveLimits(feature, user)
     LRR-->>LV: resolved limits
-    LV->>UR: getCurrentUsage(feature, user)
-    UR->>DB: SELECT usage
-    DB-->>UR: usage data
-    UR-->>LV: current usage
+    LV->>US: getCurrentUsage(feature, user)
+    US-->>LV: current usage
     LV->>LV: verify limits not exceeded
     alt Within limits
-        LV->>UR: incrementUsage(feature, user)
-        UR->>DB: UPDATE usage
+        LV->>US: incrementUsage(feature, user)
         LV-->>App: success
     else Limit exceeded
         LV-->>App: LimitExceededException
@@ -82,9 +80,9 @@ flowchart TB
         SV[SubscriptionVerifier]
     end
 
-    subgraph Database["Database"]
-        UD[("Usage tables")]
-        SD[("Subscription tables")]
+    subgraph Stores["Data Stores"]
+        US[("UsageRecord Store")]
+        SS[("Subscription Store")]
     end
 
     App --> RC
@@ -92,8 +90,8 @@ flowchart TB
     API --> FUT
     FUT --> LV
     FUT --> SV
-    LV -->|JDBC| UD
-    SV -->|JDBC| SD
+    LV --> US
+    SV --> SS
 ```
 
 ```mermaid
@@ -102,15 +100,15 @@ sequenceDiagram
     participant RC as RemoteClient
     participant API as Pmitz Server API
     participant LV as LimitVerifier
-    participant DB as Database
+    participant US as UsageRecord Store
 
     App->>RC: recordFeatureUsage(feature, user, limits)
     RC->>API: POST /{userGroupingType}/{id}/usage/{productId}/{featureId}
     Note over RC,API: X-Api-Key header for auth
     API->>LV: recordFeatureUsage(feature, user, limits)
-    LV->>DB: Check and update usage
+    LV->>US: Check and update usage
     alt Within limits
-        DB-->>LV: success
+        US-->>LV: success
         LV-->>API: success
         API-->>RC: HTTP 200 OK
         RC-->>App: success
@@ -127,4 +125,4 @@ Endpoints, authentication, server configuration, and client code: [Remote Server
 
 Use the **Best for** row in the [Overview](#overview) table above as a quick check. **Rule of thumb:** start Local; move to Remote only once more than one process needs to agree on the same usage counters or subscription state.
 
-Both modes implement the same `LimitVerifier` / `SubscriptionVerifier` contracts and the same database schema ([Database Setup](../USERGUIDE.md#database-setup)), so switching later is a construction-time decision, not a rewrite.
+Both modes implement the same `LimitVerifier` / `SubscriptionVerifier` contracts and read and write the same UsageRecord Store and Subscription Store ([Database Setup](../USERGUIDE.md#database-setup) covers the supported store backends), so switching later is a construction-time decision, not a rewrite.
