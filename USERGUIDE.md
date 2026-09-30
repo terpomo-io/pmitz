@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Pmitz** is a Java library for controlling user access to application features based on subscriptions and usage limits. It simplifies implementing subscription models and configurable usage quotas in your applications.
+**Pmitz** is a subscription- and usage-limit-enforcement solution for multi-tenant applications: it decides whether a user can access a feature and tracks how much of it they've used. It runs as a standalone service behind a language-agnostic REST API, or embedded directly in your application process. **Java is Pmitz's first official client implementation** — its SDK and embeddable library — with support for other languages planned.
 
 - **Recommended Maven Coordinates:** `io.terpomo.pmitz:pmitz-all` — this pulls in `core` + `limits` + `subscriptions`, plus the combined `FeatureUsageTracker` API described below. It's the right starting point for a Local-mode, single-application setup.
 - **Version:** 0.9.0
@@ -62,7 +62,7 @@ Limits and Subscriptions are stored independently, in their own repositories and
 
 ### Local mode vs. Remote mode
 
-`LimitVerifier` and `SubscriptionVerifier` run **Local** by default: in-process, backed directly by your JDBC `DataSource`. **Remote** mode puts the same logic behind an HTTP API instead, so several applications — including non-Java ones — can share one source of truth:
+`LimitVerifier` and `SubscriptionVerifier` — from Pmitz's Java client — run **Local** by default: in-process, backed directly by your JDBC `DataSource`. **Remote** mode puts the same logic behind a language-agnostic HTTP API instead, so any application, Java or otherwise, can share one source of truth; a future client in another language would offer the same choice:
 
 ```mermaid
 flowchart TB
@@ -96,6 +96,8 @@ The rest of this guide expands on the above in order: **Core Concepts**, **Quick
 ---
 
 ## Module Structure
+
+These are the modules of Pmitz's Java client — the first official implementation of the Pmitz solution:
 
 | Module | Purpose |
 |--------|---------|
