@@ -4,7 +4,7 @@
 
 **Pmitz** is a Java library for controlling user access to application features based on subscriptions and usage limits. It simplifies implementing subscription models and configurable usage quotas in your applications.
 
-- **Recommended Maven Coordinates:** `io.terpomo.pmitz:pmitz-all` — this pulls in `core` + `limits` (and the combined `FeatureUsageTracker` API described below). It does **not** include `subscriptions`: add `io.terpomo.pmitz:pmitz-subscriptions` alongside it if you need subscription entitlement checks, which most applications do.
+- **Recommended Maven Coordinates:** `io.terpomo.pmitz:pmitz-all` — this pulls in `core` + `limits` + `subscriptions`, plus the combined `FeatureUsageTracker` API described below. It's the right starting point for a Local-mode, single-application setup.
 - **Version:** 0.9.0
 - **Java Version:** 17+
 - **License:** Apache 2.0
@@ -84,7 +84,7 @@ The remote API mirrors the local one method-for-method (`LimitVerifierRemoteClie
 
 | | **Local** | **Remote** |
 |---|---|---|
-| What runs | `pmitz-core` / `pmitz-limits` / `pmitz-subscriptions` in your process | `remoteserver` (standalone or embedded via `spring-boot-starter-remoteserver`) + `remoteclient` in each caller |
+| What runs | `pmitz-all` (or `core`/`limits`/`subscriptions` individually) in your process | `remoteserver` (standalone or embedded via `spring-boot-starter-remoteserver`) + `remoteclient` in each caller |
 | Best for | A single application, or a monolith where the whole product lives in one JVM | Multiple services (or polyglot clients) sharing one view of usage and entitlement |
 | Network hop | None | HTTPS, authenticated with `X-Api-Key` |
 | Failure mode to handle | `RepositoryException` | `RemoteCallException`, `AuthenticationException` |
@@ -102,7 +102,7 @@ The rest of this guide expands on the above in order: **Core Concepts**, **Quick
 | `core` | Domain models, interfaces, and base abstractions |
 | `limits` | Usage limit verification and tracking |
 | `subscriptions` | Subscription management and verification |
-| `all` | Aggregates core + limits modules |
+| `all` | Aggregates core + limits + subscriptions modules |
 | `remoteserver` | Standalone Spring Boot REST API server |
 | `spring-boot-starter-remoteserver` | Embeddable Spring Boot starter for remote mode |
 | `remoteclient` | HTTP client for remote server |

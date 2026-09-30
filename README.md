@@ -46,7 +46,7 @@ dependencies {
 
 | Artifact | Purpose |
 | --- | --- |
-| `pmitz-all` | Aggregated core and limits modules |
+| `pmitz-all` | Aggregated core, limits, and subscriptions modules |
 | `pmitz-core` | Domain models and base abstractions |
 | `pmitz-limits` | Usage limit verification and tracking |
 | `pmitz-subscriptions` | Subscription management and entitlement verification |
