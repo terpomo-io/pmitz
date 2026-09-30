@@ -13,18 +13,18 @@
 
 ## Introduction
 
-Pmitz answers one question for you, over and over, cheaply and consistently:
+Pmitz answers one question, over and over, cheaply and consistently:
 
 > **"Is this user allowed to do *this* right now?"**
 
-That question actually has two independent parts, and most of the friction in access-control code comes from tangling them together. Pmitz keeps them separate on purpose:
+### Two gates: subscription and limit
+
+That question splits into two independent checks, which Pmitz keeps separate on purpose:
 
 | Question | Concept | Answered by |
 |---|---|---|
 | *Is the user's plan entitled to this feature at all?* | **Subscription** | `SubscriptionVerifier` |
 | *Has the user used up their quota for this feature?* | **Limit** | `LimitVerifier` |
-
-A feature is usable only when **both** answers are yes. Neither check knows about the other — which is what lets you use one without the other, swap out how either is stored, or run either locally or over the network, without touching your application code.
 
 ```mermaid
 flowchart LR
@@ -35,11 +35,9 @@ flowchart LR
     C -- "yes" --> F["AVAILABLE\n→ perform action\n→ recordFeatureUsage()"]
 ```
 
-This is the shape of nearly every integration: check entitlement, check quota, act, record. You can call `SubscriptionVerifier` and `LimitVerifier` separately and combine the results yourself (see the [Complete Example](#complete-example)), or use `FeatureUsageTracker` (from the `all` module) to run both checks in one call — see [Feature Status](#feature-status) below.
+A feature is usable only when both answers are yes. Call the two verifiers separately and combine the results yourself (see [Complete Example](#complete-example)), or get both in one call with `FeatureUsageTracker` (see [Feature Status](#feature-status)).
 
 ### The data model
-
-Three things describe *what can be limited*, and one thing describes *who is checking*:
 
 ```mermaid
 erDiagram
@@ -49,39 +47,22 @@ erDiagram
     PLAN ||--o{ FEATURE : includes
     SUBSCRIPTION }o--|| PLAN : "is on"
     USER ||--o| SUBSCRIPTION : holds
-
-    PRODUCT {
-        string productId
-    }
-    FEATURE {
-        string featureId
-    }
-    LIMIT {
-        string type "CountLimit, CalendarPeriodRateLimit, ..."
-    }
-    PLAN {
-        string planId
-    }
-    SUBSCRIPTION {
-        string status
-        date expiration
-    }
 ```
 
-- A **Product** is what you sell (e.g. `"Library"`).
-- It exposes one or more **Features** (e.g. `"Reserving books"`, `"API calls"`).
-- Each Feature can carry one or more **Limits** — the quota rules (`CountLimit`, `CalendarPeriodRateLimit`, ...).
-- A Product also defines **Plans**, each of which includes a subset of the Product's Features — this is the entitlement side.
-- A **Subscription** is a user (or `DirectoryGroup`) sitting on a Plan, with a status and expiration.
-- **Usage** is the running record Pmitz keeps, per user per Feature, of how much of each Limit has been consumed — it's what `recordFeatureUsage` / `reduceFeatureUsage` write to, and what `getLimitsRemainingUnits` reads back.
+| Concept | What it is |
+|---|---|
+| **Product** | What you sell (e.g. `"Library"`) |
+| **Feature** | A capability of a Product (e.g. `"Reserving books"`) |
+| **Limit** | A quota rule on a Feature (`CountLimit`, `CalendarPeriodRateLimit`, ...) |
+| **Plan** | A subset of a Product's Features, offered to subscribers |
+| **Subscription** | A user (or `DirectoryGroup`) on a Plan, with a status and expiration |
+| **Usage** | The running per-user, per-Feature record of Limit consumption — written by `recordFeatureUsage`/`reduceFeatureUsage`, read by `getLimitsRemainingUnits` |
 
-Limits and Subscriptions are configured independently and stored independently (their own repositories, their own tables) — the data model has no foreign key forcing them together. The two-gate flow above is an application-level convention, not a database constraint.
+Limits and Subscriptions are stored independently, in their own repositories and tables — the two-gate flow above is an application-level convention, not a database constraint.
 
 ### Local mode vs. Remote mode
 
-Everything above — `LimitVerifier`, `SubscriptionVerifier`, the repositories — runs as **Local mode** by default: plain Java objects, in-process, talking directly to your JDBC `DataSource`. That's the whole story for a single application.
-
-**Remote mode** puts the same logic behind an HTTP API instead, so several applications (including non-Java ones) can share one source of truth for usage and entitlement:
+`LimitVerifier` and `SubscriptionVerifier` run **Local** by default: in-process, backed directly by your JDBC `DataSource`. **Remote** mode puts the same logic behind an HTTP API instead, so several applications — including non-Java ones — can share one source of truth:
 
 ```mermaid
 flowchart TB
@@ -99,24 +80,18 @@ flowchart TB
     end
 ```
 
-The client-side API is deliberately similar: `LimitVerifierRemoteClient` exposes the same `recordFeatureUsage` / `getLimitsRemainingUnits` methods as the local `LimitVerifier`, and the low-level `PmitzClient` mirrors `FeatureUsageTracker`'s combined `verifyLimits` call (see [Feature Status](#feature-status)). Switching modes later is a construction-time decision, not a rewrite.
+The remote API mirrors the local one method-for-method (`LimitVerifierRemoteClient` ~ `LimitVerifier`, low-level `PmitzClient` ~ `FeatureUsageTracker`), so switching modes later is a construction-time decision, not a rewrite.
 
 | | **Local** | **Remote** |
 |---|---|---|
 | What runs | `pmitz-core` / `pmitz-limits` / `pmitz-subscriptions` in your process | `remoteserver` (standalone or embedded via `spring-boot-starter-remoteserver`) + `remoteclient` in each caller |
-| Best for | A single application, or a monolith where the whole product lives in one JVM | Multiple services (or polyglot clients) that must share one consistent view of usage and entitlement |
-| Network hop | None | Yes — HTTPS, authenticated with `X-Api-Key` |
+| Best for | A single application, or a monolith where the whole product lives in one JVM | Multiple services (or polyglot clients) sharing one view of usage and entitlement |
+| Network hop | None | HTTPS, authenticated with `X-Api-Key` |
 | Failure mode to handle | `RepositoryException` | `RemoteCallException`, `AuthenticationException` |
 
-**Rule of thumb:** start Local. Move to Remote only once more than one process needs to agree on the same usage counters or subscription state.
+**Rule of thumb:** start Local; move to Remote only once more than one process must agree on the same usage counters or subscription state.
 
-### How this guide is organized
-
-1. **Core Concepts** — the classes above, in detail.
-2. **Quick Start** — define a Product, wire up a `LimitVerifier`, Local mode.
-3. **Limit Verification** / **Subscription Verification** — the two checks, each in depth.
-4. **Remote Server** / **Remote Client** — the same checks, over HTTP.
-5. **Database Setup**, **Exception Handling**, **Complete Example**, **Builder Reference** — reference material.
+The rest of this guide expands on the above in order: **Core Concepts**, **Quick Start**, **Limit**/**Subscription Verification**, **Remote Server**/**Client**, then reference material.
 
 ---
 
