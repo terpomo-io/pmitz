@@ -60,7 +60,7 @@ dependencies {
 To access examples of using Pmitz, refer to the [examples](examples) folder.
 
 For a more complete walkthrough, see the [user guide](USERGUIDE.md).
-For deployment details, see [DOCKER.md](DOCKER.md) and [Local vs Remote Modes](docs/local-vs-remote-modes.md).
+For the architecture behind Local and Remote mode, see [Local vs Remote Modes](docs/local-vs-remote-modes.md); for deployment, see [DOCKER.md](DOCKER.md).
 
 ## Requirements
 * Java 17

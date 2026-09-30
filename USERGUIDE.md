@@ -91,6 +91,8 @@ The remote API mirrors the local one method-for-method (`LimitVerifierRemoteClie
 
 **Rule of thumb:** start Local; move to Remote only once more than one process must agree on the same usage counters or subscription state.
 
+For internal architecture and sequence diagrams of each mode, see [Local vs Remote Modes](docs/local-vs-remote-modes.md).
+
 The rest of this guide expands on the above in order: **Core Concepts**, **Quick Start**, **Limit**/**Subscription Verification**, **Remote Server**/**Client**, then reference material.
 
 ---
@@ -349,15 +351,15 @@ docker run -e SPRING_PROFILES_ACTIVE=postgresql \
 |--------|----------|-------------|
 | POST | `/products` | Add product configuration |
 | DELETE | `/products/{productId}` | Remove product |
-| GET | `/users/{userId}/usage/{productId}/{featureId}` | Get remaining units |
-| POST | `/users/{userId}/usage/{productId}/{featureId}` | Record usage |
-| POST | `/users/{userId}/limits-check/{productId}/{featureId}` | Check whether usage would remain within limits |
-| GET | `/users/{userId}/subscription-check/{productId}/{featureId}` | Check subscription entitlement |
-| GET | `/directory-groups/{groupId}/usage/...` | Group usage queries |
-| POST | `/directory-groups/{groupId}/usage/...` | Record group usage |
+| GET | `/{userGroupingType}/{userGroupingId}/usage/{productId}/{featureId}` | Get current usage |
+| POST | `/{userGroupingType}/{userGroupingId}/usage/{productId}/{featureId}` | Record usage |
+| POST | `/{userGroupingType}/{userGroupingId}/limits-check/{productId}/{featureId}` | Check whether usage would remain within limits |
+| GET | `/{userGroupingType}/{userGroupingId}/subscription-check/{productId}/{featureId}` | Check subscription entitlement |
 | POST | `/subscriptions` | Create a subscription |
 | GET | `/subscriptions/{subscriptionId}` | Load a subscription |
 | PATCH | `/subscriptions/{subscriptionId}/status` | Update subscription status |
+
+`userGroupingType` is one of `users`, `subscriptions`, or `directory-groups`, matching the `UserGrouping` subtypes in [Core Concepts](#user-types).
 
 ### Authentication
 
@@ -596,6 +598,7 @@ SubscriptionVerifierBuilder
 ## Additional Resources
 
 - [README.md](README.md) - Project overview and quick start
+- [Local vs Remote Modes](docs/local-vs-remote-modes.md) - Architecture and sequence diagrams for each mode
 - [DOCKER.md](DOCKER.md) - Docker deployment instructions
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
 - [CODE_STYLE.md](CODE_STYLE.md) - Code style guidelines
