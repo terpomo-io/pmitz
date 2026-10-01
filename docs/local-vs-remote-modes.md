@@ -1,23 +1,21 @@
 # Local vs Remote Modes
 
-Pmitz supports two operational modes for subscription and limit verification: **Local Mode** and **Remote Mode**. This document explains the differences, use cases, and architecture of each approach.
+This is the architecture deep-dive behind the [Local mode vs. Remote mode](../USERGUIDE.md#local-mode-vs-remote-mode) section of the [User Guide](../USERGUIDE.md) — start there for the concepts (the subscription/limit two-gate check, the data model) this page assumes. This page shows what each mode looks like internally.
 
 ## Overview
 
 | Aspect | Local Mode | Remote Mode |
 |--------|-----------|-------------|
-| **Deployment** | Embedded in application | Centralized Spring Boot server or starter-backed app |
-| **Database Access** | Direct JDBC connection | Server manages database |
-| **Network** | None (in-process) | HTTP/HTTPS required |
-| **Latency** | Minimal (same JVM) | Network dependent |
-| **Scalability** | Per-application instance | Shared across applications |
-| **Best For** | Monolithic apps, single instance | Multi-application systems, multi-tenant services |
+| **Deployment** | Embedded in your application | Centralized `remoteserver`, standalone or starter-embedded |
+| **Data access** | Your app talks to the stores directly | Server owns the stores on your app's behalf |
+| **Network** | None (in-process) | HTTP/HTTPS |
+| **Best for** | A single application or monolith | Multiple applications sharing usage and entitlement data |
+
+Pmitz persists through two stores: the **UsageRecord Store** (limit consumption) and the **Subscription Store** (entitlement state). They're independent — neither mode requires them to be the same database, or even the same kind of store.
 
 ## Local Mode
 
-In Local Mode, verification runs directly within your application process using JDBC database connections.
-
-### Architecture
+Verification runs in-process, reading and writing the stores directly.
 
 ```mermaid
 flowchart TB
@@ -28,92 +26,51 @@ flowchart TB
         PR[ProductRepository]
     end
 
-    subgraph Database["Database"]
-        UT[usage table]
-        ULT[user_limit table]
-        ST[subscription table]
-        SPT[subscription_plan table]
+    subgraph Stores["Data Stores"]
+        US[("UsageRecord Store")]
+        SS[("Subscription Store")]
     end
 
     App --> LV
     App --> SV
     LV --> PR
     SV --> PR
-    LV -->|JDBC| UT
-    LV -->|JDBC| ULT
-    SV -->|JDBC| ST
-    SV -->|JDBC| SPT
+    LV --> US
+    SV --> SS
 ```
-
-### Verification Flow
 
 ```mermaid
 sequenceDiagram
     participant App as Application
     participant LV as LimitVerifier
     participant LRR as LimitRuleResolver
-    participant UR as UsageRepository
-    participant DB as Database
+    participant US as UsageRecord Store
 
     App->>LV: recordFeatureUsage(feature, user, limits)
     LV->>LRR: resolveLimits(feature, user)
     LRR-->>LV: resolved limits
-    LV->>UR: getCurrentUsage(feature, user)
-    UR->>DB: SELECT usage
-    DB-->>UR: usage data
-    UR-->>LV: current usage
+    LV->>US: getCurrentUsage(feature, user)
+    US-->>LV: current usage
     LV->>LV: verify limits not exceeded
-    alt Within Limits
-        LV->>UR: incrementUsage(feature, user)
-        UR->>DB: UPDATE usage
+    alt Within limits
+        LV->>US: incrementUsage(feature, user)
         LV-->>App: success
-    else Limit Exceeded
+    else Limit exceeded
         LV-->>App: LimitExceededException
     end
 ```
 
-### Configuration
-
-```java
-// Load product definitions
-ProductRepository productRepo = new InMemoryProductRepository();
-productRepo.load(getClass().getResourceAsStream("/products.json"));
-
-// Build LimitVerifier with local database
-LimitVerifier limitVerifier = LimitVerifierBuilder.of(productRepo)
-    .withDefaultLimitRuleResolver()
-    .withJdbcUsageRepository(dataSource, "dbo", "usage")
-    .build();
-
-// Build SubscriptionVerifier with local database
-SubscriptionVerifier subscriptionVerifier = SubscriptionVerifierBuilder
-    .withJdbcSubscriptionRepository(dataSource, "dbo", "subscription", "subscription_plan")
-    .withDefaultSubscriptionFeatureManager(productRepo)
-    .build();
-```
-
-### When to Use Local Mode
-
-- Single application instance
-- Monolithic architecture
-- Low latency requirements
-- Application already has database access
-- Simple deployment without additional services
+Setup code: [Quick Start](../USERGUIDE.md#quick-start), [Limit Verification](../USERGUIDE.md#limit-verification), [Subscription Verification](../USERGUIDE.md#subscription-verification).
 
 ## Remote Mode
 
-In Remote Mode, verification is delegated to a centralized Pmitz server via HTTP/HTTPS REST API.
-
-The reusable server-side implementation lives in `pmitz-spring-boot-starter-remoteserver`. The `remoteserver`
-module packages that starter as the standalone Pmitz server, which is also the Docker deployment target.
-
-### Architecture
+Verification is delegated over HTTP/HTTPS to a centralized Pmitz server (`remoteserver`, or an app embedding `spring-boot-starter-remoteserver`).
 
 ```mermaid
 flowchart TB
     subgraph ClientApp["Client Application"]
         App[Application Code]
-        RC[LimitVerifierRemoteClient]
+        RC[PmitzClient]
     end
 
     subgraph PmitzServer["Pmitz Server"]
@@ -123,9 +80,9 @@ flowchart TB
         SV[SubscriptionVerifier]
     end
 
-    subgraph Database["Database"]
-        UT[usage table]
-        ST[subscription table]
+    subgraph Stores["Data Stores"]
+        US[("UsageRecord Store")]
+        SS[("Subscription Store")]
     end
 
     App --> RC
@@ -133,11 +90,9 @@ flowchart TB
     API --> FUT
     FUT --> LV
     FUT --> SV
-    LV -->|JDBC| UT
-    SV -->|JDBC| ST
+    LV --> US
+    SV --> SS
 ```
-
-### Verification Flow
 
 ```mermaid
 sequenceDiagram
@@ -145,169 +100,29 @@ sequenceDiagram
     participant RC as RemoteClient
     participant API as Pmitz Server API
     participant LV as LimitVerifier
-    participant DB as Database
+    participant US as UsageRecord Store
 
     App->>RC: recordFeatureUsage(feature, user, limits)
-    RC->>API: POST /users/{userId}/usage/{productId}/{featureId}
+    RC->>API: POST /{userGroupingType}/{id}/usage/{productId}/{featureId}
     Note over RC,API: X-Api-Key header for auth
     API->>LV: recordFeatureUsage(feature, user, limits)
-    LV->>DB: Check and update usage
-    alt Within Limits
-        DB-->>LV: success
+    LV->>US: Check and update usage
+    alt Within limits
+        US-->>LV: success
         LV-->>API: success
         API-->>RC: HTTP 200 OK
         RC-->>App: success
-    else Limit Exceeded
+    else Limit exceeded
         LV-->>API: LimitExceededException
-        API-->>RC: HTTP 400 + error details
+        API-->>RC: HTTP 422 + error details
         RC-->>App: LimitExceededException
     end
 ```
 
-### Configuration
-
-**Client Side:**
-
-```java
-// PMITZ_API_KEY or -Dpmitz.api.key must be set before creating the client.
-LimitVerifierRemoteClient remoteVerifier = new LimitVerifierRemoteClient("http://localhost:8080");
-
-// Upload product definitions to server
-remoteVerifier.uploadProduct(getClass().getResourceAsStream("/products.json"));
-```
-
-**Server Side (Environment Variables):**
-
-```bash
-# Database configuration
-SPRING_PROFILES_ACTIVE=postgresql
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/pmitz
-SPRING_DATASOURCE_USERNAME=pmitz
-SPRING_DATASOURCE_PASSWORD=secret
-
-# API authentication
-PMITZ_API_KEY=your-api-key
-```
-
-Optional table overrides:
-
-```properties
-pmitz.remoteserver.repository.rdb.schema-name=dbo
-pmitz.remoteserver.repository.rdb.user-usage-table-name=usage
-pmitz.remoteserver.repository.rdb.user-limit-table-name=user_limit
-pmitz.remoteserver.repository.rdb.subscription-table-name=subscription
-pmitz.remoteserver.repository.rdb.subscription-plan-table-name=subscription_plan
-```
-
-### REST API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/{userGroupingType}/{id}/usage/{productId}/{featureId}` | Get current usage |
-| `POST` | `/{userGroupingType}/{id}/usage/{productId}/{featureId}` | Record usage |
-| `POST` | `/{userGroupingType}/{id}/limits-check/{productId}/{featureId}` | Check if within limits |
-| `GET` | `/{userGroupingType}/{id}/subscription-check/{productId}/{featureId}` | Check subscription entitlement |
-| `POST` | `/products` | Upload product definition |
-| `DELETE` | `/products/{productId}` | Remove product |
-| `POST` | `/subscriptions` | Create a subscription |
-| `GET` | `/subscriptions/{subscriptionId}` | Load a subscription |
-| `PATCH` | `/subscriptions/{subscriptionId}/status` | Update subscription status |
-
-**User Grouping Types:**
-- `users` - Individual users
-- `subscriptions` - Subscription-based grouping
-- `directory-groups` - Directory/team groups
-
-### When to Use Remote Mode
-
-- Microservices architecture
-- Multiple applications sharing usage data
-- Centralized usage tracking across services
-- Multi-tenant applications
-- Need centralized usage and entitlement decisions
-
-## Multi-Application Architecture (Remote Mode)
-
-```mermaid
-flowchart TB
-    subgraph Apps["Applications"]
-        A1[Web App]
-        A2[Mobile API]
-        A3[Background Jobs]
-    end
-
-    subgraph Clients["Remote Clients"]
-        C1[RemoteClient]
-        C2[RemoteClient]
-        C3[RemoteClient]
-    end
-
-    subgraph Server["Pmitz Server"]
-        API[REST API]
-        Core[Verification Core]
-    end
-
-    subgraph DB["Shared Database"]
-        Usage[(Usage Data)]
-        Subs[(Subscriptions)]
-    end
-
-    A1 --> C1
-    A2 --> C2
-    A3 --> C3
-    C1 --> API
-    C2 --> API
-    C3 --> API
-    API --> Core
-    Core --> Usage
-    Core --> Subs
-```
+Endpoints, authentication, server configuration, and client code: [Remote Server](../USERGUIDE.md#remote-server), [Remote Client](../USERGUIDE.md#remote-client).
 
 ## Choosing Between Modes
 
-```mermaid
-flowchart TD
-    Start([Start]) --> Q1{Multiple applications<br/>share usage data?}
-    Q1 -->|Yes| Remote[Use Remote Mode]
-    Q1 -->|No| Q2{Microservices<br/>architecture?}
-    Q2 -->|Yes| Remote
-    Q2 -->|No| Q3{Need centralized<br/>usage enforcement?}
-    Q3 -->|Yes| Remote
-    Q3 -->|No| Q4{Low latency<br/>critical?}
-    Q4 -->|Yes| Local[Use Local Mode]
-    Q4 -->|No| Q5{Simple single-app<br/>deployment?}
-    Q5 -->|Yes| Local
-    Q5 -->|No| Remote
-```
+Use the **Best for** row in the [Overview](#overview) table above as a quick check. **Rule of thumb:** start Local; move to Remote only once more than one process needs to agree on the same usage counters or subscription state.
 
-## Code Example Comparison
-
-Both modes implement the same `LimitVerifier` interface, making them interchangeable:
-
-```java
-// Same usage code works with both modes
-Feature feature = productRepo.getFeature("Library", "Reserving books");
-UserGrouping user = new IndividualUser("user123");
-
-// Record usage
-limitVerifier.recordFeatureUsage(feature, user, Map.of("Maximum books reserved", 5L));
-
-// Check remaining quota
-Map<String, Long> remaining = limitVerifier.getLimitsRemainingUnits(feature, user);
-
-// Check if within limits (without recording)
-boolean withinLimits = limitVerifier.isWithinLimits(feature, user, Map.of("Maximum books reserved", 1L));
-```
-
-## Database Requirements
-
-Both modes require the same database schema:
-
-| Table | Purpose |
-|-------|---------|
-| `usage` | Tracks usage counts per user/feature/limit |
-| `user_limit` | Per-user limit overrides (optional) |
-| `subscription` | Subscription records |
-| `subscription_plan` | Maps subscriptions to product plans |
-
-**Supported Databases:** PostgreSQL, MySQL, SQL Server, H2 (dev/test)
+Both modes implement the same `LimitVerifier` / `SubscriptionVerifier` contracts and read and write the same UsageRecord Store and Subscription Store ([Database Setup](../USERGUIDE.md#database-setup) covers the supported store backends), so switching later is a construction-time decision, not a rewrite.

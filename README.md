@@ -4,11 +4,12 @@
 [![Licence](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
 
-Pmitz is a Java library for subscription management, feature entitlements, and usage limits in multi-tenant
-applications.
+Pmitz is a subscription-management, feature-entitlement, and usage-limit solution for multi-tenant applications.
+**Java is Pmitz's first official client implementation**, with support for other languages planned.
 
 Pmitz helps development teams decide whether a user can access a feature, enforce per-user or per-tenant quotas, and
-track usage across products, plans, and subscriptions. The project includes core domain modules, limit and
+track usage across products, plans, and subscriptions. It runs as a standalone service behind a language-agnostic
+REST API, or embedded directly in your application. The Java client includes core domain modules, limit and
 subscription verification modules, a remote server/client pair, and a Spring Boot starter for remote enforcement.
 
 ## What Pmitz Helps With
@@ -46,7 +47,7 @@ dependencies {
 
 | Artifact | Purpose |
 | --- | --- |
-| `pmitz-all` | Aggregated core and limits modules |
+| `pmitz-all` | Aggregated core, limits, and subscriptions modules |
 | `pmitz-core` | Domain models and base abstractions |
 | `pmitz-limits` | Usage limit verification and tracking |
 | `pmitz-subscriptions` | Subscription management and entitlement verification |
@@ -59,7 +60,7 @@ dependencies {
 To access examples of using Pmitz, refer to the [examples](examples) folder.
 
 For a more complete walkthrough, see the [user guide](USERGUIDE.md).
-For deployment details, see [DOCKER.md](DOCKER.md) and [Local vs Remote Modes](docs/local-vs-remote-modes.md).
+For the architecture behind Local and Remote mode, see [Local vs Remote Modes](docs/local-vs-remote-modes.md); for deployment, see [DOCKER.md](DOCKER.md).
 
 ## Requirements
 * Java 17

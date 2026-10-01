@@ -3,6 +3,7 @@ apply plugin: 'java'
 dependencies {
     implementation project(':core')
     implementation project(':limits')
+    implementation project(':subscriptions')
 
     testImplementation libs.junitJuniper
     testRuntimeOnly libs.junitPlatformLauncher

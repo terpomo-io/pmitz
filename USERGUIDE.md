@@ -2,23 +2,111 @@
 
 ## Overview
 
-**Pmitz** is a Java library for controlling user access to application features based on subscriptions and usage limits. It simplifies implementing subscription models and configurable usage quotas in your applications.
+**Pmitz** is a subscription- and usage-limit-enforcement solution for multi-tenant applications: it decides whether a user can access a feature and tracks how much of it they've used. It runs as a standalone service behind a language-agnostic REST API, or embedded directly in your application process. **Java is Pmitz's first official client implementation** — its SDK and embeddable library — with support for other languages planned.
 
-- **Recommended Maven Coordinates:** `io.terpomo.pmitz:pmitz-all`
+- **Recommended Maven Coordinates:** `io.terpomo.pmitz:pmitz-all` — this pulls in `core` + `limits` + `subscriptions`, plus the combined `FeatureUsageTracker` API described below. It's the right starting point for a Local-mode, single-application setup.
 - **Version:** 0.9.0
 - **Java Version:** 17+
 - **License:** Apache 2.0
 
 ---
 
+## Introduction
+
+Pmitz answers one question, over and over, cheaply and consistently:
+
+> **"Is this user allowed to do *this* right now?"**
+
+### Two gates: subscription and limit
+
+That question splits into two independent checks, which Pmitz keeps separate on purpose:
+
+| Question | Concept | Answered by |
+|---|---|---|
+| *Is the user's plan entitled to this feature at all?* | **Subscription** | `SubscriptionVerifier` |
+| *Has the user used up their quota for this feature?* | **Limit** | `LimitVerifier` |
+
+```mermaid
+flowchart LR
+    A["App: can user U\ndo feature F?"] --> B{"SubscriptionVerifier\nEntitled to F?"}
+    B -- "no" --> D["NOT_ALLOWED"]
+    B -- "yes" --> C{"LimitVerifier\nWithin quota for F?"}
+    C -- "no" --> E["LIMIT_EXCEEDED"]
+    C -- "yes" --> F["AVAILABLE\n→ perform action\n→ recordFeatureUsage()"]
+```
+
+A feature is usable only when both answers are yes. Call the two verifiers separately and combine the results yourself (see [Complete Example](#complete-example)), or get both in one call with `FeatureUsageTracker` (see [Feature Status](#feature-status)).
+
+### The data model
+
+```mermaid
+erDiagram
+    PRODUCT ||--o{ FEATURE : has
+    FEATURE ||--o{ LIMIT : constrained_by
+    PRODUCT ||--o{ PLAN : offers
+    PLAN ||--o{ FEATURE : includes
+    SUBSCRIPTION }o--|| PLAN : "is on"
+    USER ||--o| SUBSCRIPTION : holds
+```
+
+| Concept | What it is |
+|---|---|
+| **Product** | What you sell (e.g. `"Library"`) |
+| **Feature** | A capability of a Product (e.g. `"Reserving books"`) |
+| **Limit** | A quota rule on a Feature (`CountLimit`, `CalendarPeriodRateLimit`, ...) |
+| **Plan** | A subset of a Product's Features, offered to subscribers |
+| **Subscription** | A user (or `DirectoryGroup`) on a Plan, with a status and expiration |
+| **Usage** | The running per-user, per-Feature record of Limit consumption — written by `recordFeatureUsage`/`reduceFeatureUsage`, read by `getLimitsRemainingUnits` |
+
+Limits and Subscriptions are stored independently, in their own repositories and tables — the two-gate flow above is an application-level convention, not a database constraint.
+
+### Local mode vs. Remote mode
+
+`LimitVerifier` and `SubscriptionVerifier` — from Pmitz's Java client — run **Local** by default: in-process, backed directly by your JDBC `DataSource`. **Remote** mode puts the same logic behind a language-agnostic HTTP API instead, so any application, Java or otherwise, can share one source of truth; a future client in another language would offer the same choice:
+
+```mermaid
+flowchart TB
+    subgraph Local["Local mode — in one JVM"]
+        direction LR
+        App1["Your App"] -->|"method call"| LV1["LimitVerifier\nSubscriptionVerifier"]
+        LV1 -->|JDBC| DB1[("Database")]
+    end
+
+    subgraph Remote["Remote mode — shared service"]
+        direction LR
+        App2["App A (Java)"] -->|"HTTPS + X-Api-Key"| RS["remoteserver\n(Spring Boot)"]
+        App3["App B (any language)"] -->|"HTTPS + X-Api-Key"| RS
+        RS -->|JDBC| DB2[("Database")]
+    end
+```
+
+The remote API mirrors the local one method-for-method (`LimitVerifierRemoteClient` ~ `LimitVerifier`, low-level `PmitzClient` ~ `FeatureUsageTracker`), so switching modes later is a construction-time decision, not a rewrite.
+
+| | **Local** | **Remote** |
+|---|---|---|
+| What runs | `pmitz-all` (or `core`/`limits`/`subscriptions` individually) in your process | `remoteserver` (standalone or embedded via `spring-boot-starter-remoteserver`) + `remoteclient` in each caller |
+| Best for | A single application, or a monolith where the whole product lives in one JVM | Multiple services (or polyglot clients) sharing one view of usage and entitlement |
+| Network hop | None | HTTPS, authenticated with `X-Api-Key` |
+| Failure mode to handle | `RepositoryException` | `RemoteCallException`, `AuthenticationException` |
+
+**Rule of thumb:** start Local; move to Remote only once more than one process must agree on the same usage counters or subscription state.
+
+For internal architecture and sequence diagrams of each mode, see [Local vs Remote Modes](docs/local-vs-remote-modes.md).
+
+The rest of this guide expands on the above in order: **Core Concepts**, **Quick Start**, **Limit**/**Subscription Verification**, **Remote Server**/**Client**, then reference material.
+
+---
+
 ## Module Structure
+
+These are the modules of Pmitz's Java client — the first official implementation of the Pmitz solution:
 
 | Module | Purpose |
 |--------|---------|
 | `core` | Domain models, interfaces, and base abstractions |
 | `limits` | Usage limit verification and tracking |
 | `subscriptions` | Subscription management and verification |
-| `all` | Aggregates core + limits modules |
+| `all` | Aggregates core + limits + subscriptions modules |
 | `remoteserver` | Standalone Spring Boot REST API server |
 | `spring-boot-starter-remoteserver` | Embeddable Spring Boot starter for remote mode |
 | `remoteclient` | HTTP client for remote server |
@@ -60,11 +148,20 @@ Product
 
 ### Feature Status
 
+`FeatureStatus` is the combined result of both gates from the [Introduction](#introduction) — subscription entitlement *and* limit usage — in a single value:
+
 | Status | Meaning |
 |--------|---------|
-| `AVAILABLE` | Feature available within limits |
-| `LIMIT_EXCEEDED` | Feature available but usage limit reached |
-| `NOT_ALLOWED` | User not entitled to this feature |
+| `NOT_ALLOWED` | `SubscriptionVerifier` rejected the feature; limits are not checked |
+| `LIMIT_EXCEEDED` | Entitled, but a `LimitVerifier` quota is exhausted |
+| `AVAILABLE` | Entitled and within all limits |
+
+You won't see `FeatureStatus` if you call `LimitVerifier` and `SubscriptionVerifier` separately, as in [Limit Verification](#limit-verification) and [Subscription Verification](#subscription-verification) — those expose booleans (`isWithinLimits`, `isFeatureAllowed`), exceptions (`LimitExceededException`), and, for subscription failures specifically, a `SubscriptionVerifDetail` with its own `errorCause` (`INVALID_SUBSCRIPTION`, `PRODUCT_NOT_ALLOWED`, `FEATURE_NOT_ALLOWED`). `FeatureStatus` is what you get back instead when you run both checks through one call:
+
+- **`FeatureUsageTracker`** (`all` module) — build one with `FeatureUsageTracker.Builder.build(limitVerifier, subscriptionVerifier)`, then call `verifyLimits(...)` or `getUsageInfo(...)`; each returns a `FeatureUsageInfo(FeatureStatus, remainingUsageUnits)`.
+- **`PmitzClient`** (remote, low-level) — `verifyLimits(...)` returns the same `FeatureUsageInfo`, computed server-side the same way (see [Low-Level Client](#low-level-client)).
+
+Prefer `FeatureUsageTracker` / `PmitzClient.verifyLimits` when you want one call and one status; call `LimitVerifier` / `SubscriptionVerifier` directly when you need their distinct error detail (e.g. to tell a user *why* they were denied).
 
 ---
 
@@ -254,15 +351,15 @@ docker run -e SPRING_PROFILES_ACTIVE=postgresql \
 |--------|----------|-------------|
 | POST | `/products` | Add product configuration |
 | DELETE | `/products/{productId}` | Remove product |
-| GET | `/users/{userId}/usage/{productId}/{featureId}` | Get remaining units |
-| POST | `/users/{userId}/usage/{productId}/{featureId}` | Record usage |
-| POST | `/users/{userId}/limits-check/{productId}/{featureId}` | Check whether usage would remain within limits |
-| GET | `/users/{userId}/subscription-check/{productId}/{featureId}` | Check subscription entitlement |
-| GET | `/directory-groups/{groupId}/usage/...` | Group usage queries |
-| POST | `/directory-groups/{groupId}/usage/...` | Record group usage |
+| GET | `/{userGroupingType}/{userGroupingId}/usage/{productId}/{featureId}` | Get current usage |
+| POST | `/{userGroupingType}/{userGroupingId}/usage/{productId}/{featureId}` | Record usage |
+| POST | `/{userGroupingType}/{userGroupingId}/limits-check/{productId}/{featureId}` | Check whether usage would remain within limits |
+| GET | `/{userGroupingType}/{userGroupingId}/subscription-check/{productId}/{featureId}` | Check subscription entitlement |
 | POST | `/subscriptions` | Create a subscription |
 | GET | `/subscriptions/{subscriptionId}` | Load a subscription |
 | PATCH | `/subscriptions/{subscriptionId}/status` | Update subscription status |
+
+`userGroupingType` is one of `users`, `subscriptions`, or `directory-groups`, matching the `UserGrouping` subtypes in [Core Concepts](#user-types).
 
 ### Authentication
 
@@ -501,6 +598,7 @@ SubscriptionVerifierBuilder
 ## Additional Resources
 
 - [README.md](README.md) - Project overview and quick start
+- [Local vs Remote Modes](docs/local-vs-remote-modes.md) - Architecture and sequence diagrams for each mode
 - [DOCKER.md](DOCKER.md) - Docker deployment instructions
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
 - [CODE_STYLE.md](CODE_STYLE.md) - Code style guidelines
