@@ -1,6 +1,6 @@
 # Pmitz
 
-<img src="assets/brand/pmitz-logo.png" alt="Pmitz - Subscriptions, Plans &amp; Limits" width="480">
+<img src="assets/brand/pmitz-logo.png" alt="Pmitz - Subscriptions, Entitlements, Monetization" width="480">
 
 [![Build Snapshot](https://github.com/terpomo-io/pmitz/actions/workflows/ci-workflow.yml/badge.svg)](https://github.com/terpomo-io/pmitz/actions)
 [![Licence](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
