@@ -20,8 +20,8 @@ import java.util.Collections;
 import java.util.Optional;
 
 import io.terpomo.pmitz.core.Plan;
+import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.limits.LimitRule;
-import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.limits.LimitRuleResolver;
@@ -29,41 +29,32 @@ import io.terpomo.pmitz.limits.userlimit.UserLimitRepository;
 
 public class LimitRuleResolverImpl implements LimitRuleResolver {
 
-	private final ProductRepository productRepository;
 	private final UserLimitRepository userLimitRepository;
 
-	public LimitRuleResolverImpl(ProductRepository productRepository) {
-		this(productRepository, new NoOpUserLimitRepository());
+	public LimitRuleResolverImpl() {
+		this(new NoOpUserLimitRepository());
 	}
 
-	public LimitRuleResolverImpl(ProductRepository productRepository, UserLimitRepository userLimitRepository) {
-		this.productRepository = productRepository;
+	public LimitRuleResolverImpl(UserLimitRepository userLimitRepository) {
 		this.userLimitRepository = userLimitRepository;
 	}
 
 	@Override
-	public Optional<LimitRule> resolveLimitRule(FeatureRef featureRef, String limitRuleId, UserGrouping userGrouping) {
+	public Optional<LimitRule> resolveLimitRule(Product product, FeatureRef featureRef, String limitRuleId, UserGrouping userGrouping) {
 		var optUserLimitRule = userLimitRepository.findLimitRule(featureRef, limitRuleId, userGrouping);
 		if (optUserLimitRule.isPresent()) {
 			return optUserLimitRule;
 		}
 
-		var optProduct = productRepository.getProductById(featureRef.productId());
-		if (optProduct.isEmpty()) {
-			return Optional.empty();
-		}
-		var product = optProduct.get();
-
 		var optPlanId = userGrouping.getPlan(product.getProductId());
 
-		Optional<LimitRule> planLimitRule = optPlanId.flatMap(id -> productRepository.getPlan(product, id))
+		Optional<LimitRule> planLimitRule = optPlanId.flatMap(product::getPlan)
 					.map(Plan::getLimitsOverride)
 					.orElseGet(Collections::emptyList)
 					.stream().filter(rule -> limitRuleId.equals(rule.getId()))
 					.findFirst();
 
-		var optFeature = productRepository.getFeature(product, featureRef.featureId());
-		return planLimitRule.or(() -> optFeature.flatMap(feature -> productRepository.getGlobalLimit(feature, limitRuleId)));
+		return planLimitRule.or(() -> product.getGlobalLimit(featureRef.featureId(), limitRuleId));
 	}
 
 	public static class NoOpUserLimitRepository implements UserLimitRepository {

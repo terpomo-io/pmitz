@@ -40,12 +40,8 @@ public class Subscription extends UserGrouping {
 		this.subscriptionId = subscriptionId;
 	}
 
-	public boolean isActive() {
-		return SubscriptionStatus.ACTIVE == status;
-	}
-
 	public boolean isExpired() {
-		return status == null || !status.isValid() || (status.isValid() && isExpirationDatePassed());
+		return isExpirationDatePassed();
 	}
 
 	public boolean isValid() {

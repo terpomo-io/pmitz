@@ -17,8 +17,6 @@
 package io.terpomo.pmitz.core;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -26,15 +24,17 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import io.terpomo.pmitz.core.limits.LimitRule;
+
 public class Product implements Serializable {
 
-	private String productId;
+	private final String productId;
 
-	private List<Feature> features = new ArrayList<>();
+	private List<Feature> features = List.of();
 
-	private Map<String, Feature> featuresById = new HashMap<>();
+	private Map<String, Feature> featuresById = Map.of();
 
-	private List<Plan> plans = new ArrayList<>();
+	private List<Plan> plans = List.of();
 
 	public Product(String productId) {
 
@@ -57,13 +57,24 @@ public class Product implements Serializable {
 		return plans;
 	}
 
+	public Optional<Plan> getPlan(String planId) {
+		return plans.stream().filter(plan -> plan.getPlanId().equals(planId)).findFirst();
+	}
+
+	public Optional<LimitRule> getGlobalLimit(String featureId, String limitRuleId) {
+		return getFeature(featureId)
+				.flatMap(feature -> feature.getLimits().stream()
+						.filter(limit -> limit.getId().equals(limitRuleId))
+						.findFirst());
+	}
+
 	public void setFeatures(List<Feature> features) {
-		this.features = features;
-		featuresById = features.stream().collect(Collectors.toMap(Feature::getFeatureId, Function.identity()));
+		this.features = List.copyOf(features);
+		featuresById = this.features.stream().collect(Collectors.toUnmodifiableMap(Feature::getFeatureId, Function.identity()));
 	}
 
 	public void setPlans(List<Plan> plans) {
-		this.plans = plans;
+		this.plans = List.copyOf(plans);
 	}
 
 	@Override

@@ -49,7 +49,7 @@ class FeatureUsageTrackerImplTests {
 
 	FeatureRef featureRef;
 
-	UserGrouping userGrouping = new IndividualUser("user001");
+	UserGrouping userGrouping = new Subscription("user001");
 
 	FeatureUsageTrackerImpl featureUsageTracker;
 
@@ -70,12 +70,25 @@ class FeatureUsageTrackerImplTests {
 
 	@Test
 	void givenFeatureAllowedWhenRecordFeatureUsageThenCallLimitVerifier() {
-		when(subscriptionVerifier.verifyEntitlement(featureRef, userGrouping)).thenReturn(SubscriptionVerifDetail.verificationOk());
+		var subscriptionVerifDetail = SubscriptionVerifDetail.verificationOk()
+				.withFetchedSubscription(new Subscription("user001"));
+		when(subscriptionVerifier.verifyEntitlement(featureRef, userGrouping)).thenReturn(subscriptionVerifDetail);
 
 		var additionalUnits = Collections.singletonMap("FILE_SIZE", 1000L);
 		featureUsageTracker.recordFeatureUsage(featureRef, userGrouping, additionalUnits);
 
 		verify(limitVerifier).recordFeatureUsage(featureRef, userGrouping, additionalUnits);
+	}
+
+	@Test
+	void givenNonSubscriptionUserGroupingWhenRecordFeatureUsageThenCallLimitVerifierWithOriginalUserGrouping() {
+		UserGrouping individualUser = new IndividualUser("user002");
+		when(subscriptionVerifier.verifyEntitlement(featureRef, individualUser)).thenReturn(SubscriptionVerifDetail.verificationOk());
+
+		var additionalUnits = Collections.singletonMap("FILE_SIZE", 1000L);
+		featureUsageTracker.recordFeatureUsage(featureRef, individualUser, additionalUnits);
+
+		verify(limitVerifier).recordFeatureUsage(same(featureRef), same(individualUser), same(additionalUnits));
 	}
 
 	@Test

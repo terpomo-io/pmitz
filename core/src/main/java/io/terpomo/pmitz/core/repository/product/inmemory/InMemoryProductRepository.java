@@ -18,6 +18,7 @@ package io.terpomo.pmitz.core.repository.product.inmemory;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -116,35 +117,6 @@ public class InMemoryProductRepository implements ProductRepository {
 	}
 
 	@Override
-	public Optional<Feature> getFeature(Product product, String featureId) {
-
-		validateProduct(product);
-		validateFeatureId(featureId);
-
-		return this.getProductById(product.getProductId())
-				.flatMap(p -> p.getFeatures().stream()
-						.filter(f -> f.getFeatureId().equals(featureId))
-						.findFirst());
-	}
-
-	@Override
-	public Optional<LimitRule> getGlobalLimit(Feature feature, String limitRuleId) {
-
-		validateFeature(feature);
-
-		return Optional.ofNullable(feature.getProduct())
-				.map(Product::getProductId)
-				.flatMap(productId -> Optional.ofNullable(this.products.get(productId)))
-				.flatMap(p -> p.getFeatures().stream()
-						.filter(feature::equals)
-						.findFirst())
-				.flatMap(f -> Optional.ofNullable(f.getLimits())
-						.flatMap(ll -> ll.stream()
-								.filter(l -> l.getId().equals(limitRuleId))
-								.findFirst()));
-	}
-
-	@Override
 	public void addFeature(Feature feature) {
 
 		validateFeature(feature);
@@ -160,7 +132,9 @@ public class InMemoryProductRepository implements ProductRepository {
 			throw new RepositoryException(String.format("Feature '%s' already exists", feature.getFeatureId()));
 		}
 
-		existingProduct.getFeatures().add(feature);
+		List<Feature> updatedFeatures = new ArrayList<>(existingProduct.getFeatures());
+		updatedFeatures.add(feature);
+		existingProduct.setFeatures(updatedFeatures);
 	}
 
 	@Override
@@ -184,7 +158,9 @@ public class InMemoryProductRepository implements ProductRepository {
 				throw new RepositoryException(String.format("Feature '%s' not found for product '%s'", feature.getFeatureId(), productId));
 			}
 
-			existingProduct.getFeatures().set(indexOpt.getAsInt(), feature);
+			List<Feature> updatedFeature = new ArrayList<>(existingProduct.getFeatures());
+			updatedFeature.set(indexOpt.getAsInt(), feature);
+			existingProduct.setFeatures(updatedFeature);
 
 			return existingProduct;
 		});
@@ -211,7 +187,9 @@ public class InMemoryProductRepository implements ProductRepository {
 				throw new RepositoryException(String.format("Feature '%s' not found for product '%s'", feature.getFeatureId(), productId));
 			}
 
-			existingProduct.getFeatures().remove(indexOpt.getAsInt());
+			List<Feature> updatedFeature = new ArrayList<>(existingProduct.getFeatures());
+			updatedFeature.remove(indexOpt.getAsInt());
+			existingProduct.setFeatures(updatedFeature);
 
 			return existingProduct;
 		});
@@ -220,11 +198,6 @@ public class InMemoryProductRepository implements ProductRepository {
 	@Override
 	public List<Plan> getPlans(Product product) {
 		return product.getPlans();
-	}
-
-	@Override
-	public Optional<Plan> getPlan(Product product, String planId) {
-		return product.getPlans().stream().filter(plan -> plan.getPlanId().equals(planId)).findFirst();
 	}
 
 	@Override
@@ -243,7 +216,9 @@ public class InMemoryProductRepository implements ProductRepository {
 			throw new RepositoryException(String.format("Plan '%s' already exists", plan.getPlanId()));
 		}
 
-		existingProduct.getPlans().add(plan);
+		List<Plan> updatedPlans = new ArrayList<>(existingProduct.getPlans());
+		updatedPlans.add(plan);
+		existingProduct.setPlans(updatedPlans);
 	}
 
 	@Override
@@ -267,7 +242,9 @@ public class InMemoryProductRepository implements ProductRepository {
 				throw new RepositoryException(String.format("Plan '%s' not found for product '%s'", plan.getPlanId(), productId));
 			}
 
-			existingProduct.getPlans().set(indexOpt.getAsInt(), plan);
+			List<Plan> updatedPlans = new ArrayList<>(existingProduct.getPlans());
+			updatedPlans.set(indexOpt.getAsInt(), plan);
+			existingProduct.setPlans(updatedPlans);
 
 			return existingProduct;
 		});
@@ -294,7 +271,9 @@ public class InMemoryProductRepository implements ProductRepository {
 				throw new RepositoryException(String.format("Plan '%s' not found for product '%s'", plan.getPlanId(), productId));
 			}
 
-			existingProduct.getPlans().remove(indexOpt.getAsInt());
+			List<Plan> updatedPlans = new ArrayList<>(existingProduct.getPlans());
+			updatedPlans.remove(indexOpt.getAsInt());
+			existingProduct.setPlans(updatedPlans);
 
 			return existingProduct;
 		});
@@ -328,15 +307,10 @@ public class InMemoryProductRepository implements ProductRepository {
 
 	private void linkProductFeatures(Product product) {
 		List<Feature> updatedFeatures = product.getFeatures().stream()
-				.map(f -> {
-					Feature newFeature = new Feature(product, f.getFeatureId());
-					newFeature.getLimits().addAll(f.getLimits());
-					return newFeature;
-				})
+				.map(f -> new Feature(product, f.getFeatureId(), f.getLimits()))
 				.toList();
 
-		product.getFeatures().clear();
-		product.getFeatures().addAll(updatedFeatures);
+		product.setFeatures(updatedFeatures);
 	}
 
 	private void linkProductPlans(Product product) {
@@ -350,8 +324,6 @@ public class InMemoryProductRepository implements ProductRepository {
 		});
 
 	}
-
-
 
 	private void validateProduct(Product product) {
 

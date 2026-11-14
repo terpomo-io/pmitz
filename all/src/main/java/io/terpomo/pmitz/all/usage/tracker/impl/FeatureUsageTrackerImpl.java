@@ -46,10 +46,14 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 
 	@Override
 	public void recordFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> requestedUnits) {
-		if (!subscriptionVerifier.verifyEntitlement(featureRef, userGrouping).isFeatureAllowed()) {
-			throw new FeatureNotAllowedException("Feature not allowed for userGrouping", featureRef, userGrouping);
+		var subscriptionVerificationDetail = subscriptionVerifier.verifyEntitlement(featureRef, userGrouping);
+		if (!subscriptionVerificationDetail.isFeatureAllowed()) {
+			throw new FeatureNotAllowedException("Feature not allowed for userGrouping. Reason : "
+					+ subscriptionVerificationDetail.getErrorCause(), featureRef, userGrouping);
 		}
-		limitVerifier.recordFeatureUsage(featureRef, userGrouping, requestedUnits);
+		UserGrouping limitVerificationSubject =
+				(userGrouping instanceof Subscription) ? subscriptionVerificationDetail.getFetchedSubscription().get() : userGrouping;
+		limitVerifier.recordFeatureUsage(featureRef, limitVerificationSubject, requestedUnits);
 	}
 
 	@Override

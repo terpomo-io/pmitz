@@ -31,7 +31,7 @@ public class Plan implements Serializable {
 
 	private final Product product;
 
-	private String planId;
+	private final String planId;
 
 	private String description;
 

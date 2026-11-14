@@ -24,6 +24,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.repository.product.ProductRepository;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
@@ -98,12 +99,6 @@ public class LimitVerifierImpl implements LimitVerifier {
 
 	}
 
-	private Feature resolveFeature(FeatureRef featureRef) {
-		return productRepository.getProductById(featureRef.productId())
-				.flatMap(product -> productRepository.getFeature(product, featureRef.featureId()))
-				.orElseThrow(() -> new IllegalArgumentException(
-						"Feature not found: " + featureRef.productId() + "/" + featureRef.featureId()));
-	}
 
 	private void recordOrReduce(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> units, boolean isRecord) {
 		var limitVerificationStrategiesMap = findVerificationStrategiesByLimit(featureRef, userGrouping);
@@ -133,9 +128,13 @@ public class LimitVerifierImpl implements LimitVerifier {
 	}
 
 	private Map<LimitRule, LimitVerificationStrategy> findVerificationStrategiesByLimit(FeatureRef featureRef, UserGrouping userGrouping) {
-		Feature feature = resolveFeature(featureRef);
+		Product product = productRepository.getProductById(featureRef.productId())
+				.orElseThrow(() -> new IllegalArgumentException("Product not found: " + featureRef.productId()));
+		Feature feature = product.getFeature(featureRef.featureId())
+				.orElseThrow(() -> new IllegalArgumentException(
+						"Feature not found: " + featureRef.productId() + "/" + featureRef.featureId()));
 		return feature.getLimitsIds().stream()
-				.map(limitId -> limitRuleResolver.resolveLimitRule(featureRef, limitId, userGrouping))
+				.map(limitId -> limitRuleResolver.resolveLimitRule(product, featureRef, limitId, userGrouping))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.collect(Collectors.toMap(Function.identity(), limitVerifierStrategyResolver::resolveLimitVerificationStrategy));
