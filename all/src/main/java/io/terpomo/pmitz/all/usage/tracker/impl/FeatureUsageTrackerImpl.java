@@ -28,6 +28,7 @@ import io.terpomo.pmitz.core.exception.FeatureNotAllowedException;
 import io.terpomo.pmitz.core.subjects.UserGrouping;
 import io.terpomo.pmitz.core.subscriptions.FeatureRef;
 import io.terpomo.pmitz.core.subscriptions.Subscription;
+import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifDetail;
 import io.terpomo.pmitz.core.subscriptions.SubscriptionVerifier;
 import io.terpomo.pmitz.limits.LimitVerifier;
 
@@ -46,11 +47,7 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 
 	@Override
 	public void recordFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> requestedUnits) {
-		var subscriptionVerificationDetail = subscriptionVerifier.verifyEntitlement(featureRef, userGrouping);
-		if (!subscriptionVerificationDetail.isFeatureAllowed()) {
-			throw new FeatureNotAllowedException("Feature not allowed for userGrouping. Reason : "
-					+ subscriptionVerificationDetail.getErrorCause(), featureRef, userGrouping);
-		}
+		var subscriptionVerificationDetail = verifySubscription(featureRef, userGrouping);
 		UserGrouping limitVerificationSubject =
 				(userGrouping instanceof Subscription) ? subscriptionVerificationDetail.getFetchedSubscription().get() : userGrouping;
 		limitVerifier.recordFeatureUsage(featureRef, limitVerificationSubject, requestedUnits);
@@ -58,7 +55,10 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 
 	@Override
 	public void reduceFeatureUsage(FeatureRef featureRef, UserGrouping userGrouping, Map<String, Long> reducedUnits) {
-		limitVerifier.reduceFeatureUsage(featureRef, userGrouping, reducedUnits);
+		var subscriptionVerificationDetail = verifySubscription(featureRef, userGrouping);
+		UserGrouping limitVerificationSubject =
+				(userGrouping instanceof Subscription) ? subscriptionVerificationDetail.getFetchedSubscription().get() : userGrouping;
+		limitVerifier.reduceFeatureUsage(featureRef, limitVerificationSubject, reducedUnits);
 	}
 
 	@Override
@@ -92,6 +92,15 @@ public class FeatureUsageTrackerImpl implements FeatureUsageTracker {
 		var anyLimitExceeded = remainingUnits.entrySet().stream().anyMatch(mapEntry -> mapEntry.getValue() < 0);
 
 		return new FeatureUsageInfo(anyLimitExceeded ? FeatureStatus.LIMIT_EXCEEDED : FeatureStatus.AVAILABLE, remainingUnits);
+	}
+
+	private SubscriptionVerifDetail verifySubscription(FeatureRef featureRef, UserGrouping userGrouping) {
+		var subscriptionVerificationDetail = subscriptionVerifier.verifyEntitlement(featureRef, userGrouping);
+		if (!subscriptionVerificationDetail.isFeatureAllowed()) {
+			throw new FeatureNotAllowedException("Feature not allowed for userGrouping. Reason : "
+					+ subscriptionVerificationDetail.getErrorCause(), featureRef, userGrouping);
+		}
+		return subscriptionVerificationDetail;
 	}
 
 }

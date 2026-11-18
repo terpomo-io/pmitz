@@ -92,11 +92,25 @@ class FeatureUsageTrackerImplTests {
 	}
 
 	@Test
-	void givenFeatureWhenReduceFeatureUsageThenCallLimitVerifier() {
+	void givenFeatureAndSubscriptionWhenReduceFeatureUsageThenCallLimitVerifier() {
+		var subscriptionVerifDetail = SubscriptionVerifDetail.verificationOk()
+				.withFetchedSubscription(new Subscription("user001"));
+		when(subscriptionVerifier.verifyEntitlement(featureRef, userGrouping)).thenReturn(subscriptionVerifDetail);
 		var reducedUnits = Collections.singletonMap("UPLOADED_FILES", 1L);
 		featureUsageTracker.reduceFeatureUsage(featureRef, userGrouping, reducedUnits);
 
 		verify(limitVerifier).reduceFeatureUsage(featureRef, userGrouping, reducedUnits);
+	}
+
+	@Test
+	void givenFeatureAndIndividualUserWhenReduceFeatureUsageThenCallLimitVerifier() {
+		IndividualUser individualUser = new IndividualUser("user002");
+
+		when(subscriptionVerifier.verifyEntitlement(featureRef, individualUser)).thenReturn(SubscriptionVerifDetail.verificationOk());
+		var reducedUnits = Collections.singletonMap("UPLOADED_FILES", 1L);
+		featureUsageTracker.reduceFeatureUsage(featureRef, individualUser, reducedUnits);
+
+		verify(limitVerifier).reduceFeatureUsage(featureRef, individualUser, reducedUnits);
 	}
 
 	@Test
