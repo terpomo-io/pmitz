@@ -22,7 +22,7 @@ import io.terpomo.pmitz.core.subscriptions.Subscription;
 
 public class DefaultSubscriptionFeatureManager implements SubscriptionFeatureManager {
 
-	private ProductRepository productRepository;
+	private final ProductRepository productRepository;
 
 	public DefaultSubscriptionFeatureManager(ProductRepository productRepository) {
 		this.productRepository = productRepository;
@@ -38,7 +38,7 @@ public class DefaultSubscriptionFeatureManager implements SubscriptionFeatureMan
 
 		var plan = subscription.getPlan(productId)
 				.flatMap(planId -> productRepository.getProductById(productId)
-						.flatMap(product -> productRepository.getPlan(product, planId)));
+						.flatMap(product -> product.getPlan(planId)));
 
 		return plan.isPresent() && plan.get().getIncludedFeature(featureRef.featureId()).isPresent();
 	}

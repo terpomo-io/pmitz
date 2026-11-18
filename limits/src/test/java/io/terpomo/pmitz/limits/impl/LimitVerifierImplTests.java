@@ -18,6 +18,7 @@ package io.terpomo.pmitz.limits.impl;
 
 import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -90,12 +91,11 @@ class LimitVerifierImplTests {
 	@BeforeEach
 	void init() {
 		product = new Product("FILE_SHARING");
-		feature = new Feature(product, "ADD_FILE");
-		feature.getLimits().add(limitRule);
+		feature = new Feature(product, "ADD_FILE", List.of(limitRule));
+		product.setFeatures(List.of(feature));
 		featureRef = new FeatureRef("FILE_SHARING", "ADD_FILE");
 
 		lenient().when(productRepository.getProductById("FILE_SHARING")).thenReturn(Optional.of(product));
-		lenient().when(productRepository.getFeature(product, "ADD_FILE")).thenReturn(Optional.of(feature));
 
 		limitVerifier = new LimitVerifierImpl(limitRuleResolver, limitVerificationStrategyResolver, usageRepo, productRepository);
 	}
@@ -231,7 +231,7 @@ class LimitVerifierImplTests {
 	}
 
 	private void initMocks() {
-		when(limitRuleResolver.resolveLimitRule(featureRef, "MAX_FILES", userGrouping))
+		when(limitRuleResolver.resolveLimitRule(product, featureRef, "MAX_FILES", userGrouping))
 				.thenReturn(Optional.of(limitRule));
 
 		when(limitVerificationStrategyResolver.resolveLimitVerificationStrategy(limitRule))

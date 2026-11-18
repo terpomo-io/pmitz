@@ -17,7 +17,6 @@
 package io.terpomo.pmitz.core;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,12 +28,17 @@ public class Feature implements Serializable {
 
 	private final Product product;
 
-	private final List<LimitRule> limits = new ArrayList<>();
+	private final List<LimitRule> limits;
 
 	public Feature(Product product, String featureId) {
+		this(product, featureId, List.of());
+	}
+
+	public Feature(Product product, String featureId, List<LimitRule> limits) {
 
 		this.product = product;
 		this.featureId = featureId;
+		this.limits = (limits != null) ? List.copyOf(limits) : List.of();
 	}
 
 	public String getFeatureId() {

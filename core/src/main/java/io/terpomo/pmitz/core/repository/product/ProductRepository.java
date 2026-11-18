@@ -22,7 +22,6 @@ import java.util.Optional;
 import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Plan;
 import io.terpomo.pmitz.core.Product;
-import io.terpomo.pmitz.core.limits.LimitRule;
 
 public interface ProductRepository {
 
@@ -36,10 +35,6 @@ public interface ProductRepository {
 
 	List<Feature> getFeatures(Product product);
 
-	Optional<Feature> getFeature(Product product, String featureId);
-
-	Optional<LimitRule> getGlobalLimit(Feature feature, String limitRuleId);
-
 	void addFeature(Feature feature);
 
 	void updateFeature(Feature feature);
@@ -47,8 +42,6 @@ public interface ProductRepository {
 	void removeFeature(Feature feature);
 
 	List<Plan> getPlans(Product product);
-
-	Optional<Plan> getPlan(Product product, String planId);
 
 	void addPlan(Plan plan);
 

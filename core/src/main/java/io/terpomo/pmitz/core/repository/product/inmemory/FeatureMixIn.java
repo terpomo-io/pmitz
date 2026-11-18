@@ -41,7 +41,8 @@ public class FeatureMixIn {
 	@JsonCreator
 	public FeatureMixIn(
 			@JsonProperty("product") Product product,
-			@JsonProperty("featureId") String featureId) {
+			@JsonProperty("featureId") String featureId,
+			@JsonProperty("limits") List<LimitRule> limits) {
 	}
 
 	@JsonIgnore

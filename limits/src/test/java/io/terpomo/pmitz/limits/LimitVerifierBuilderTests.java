@@ -54,8 +54,7 @@ class LimitVerifierBuilderTests {
 		var limitVerifierImpl = builder.build();
 		assertThat(limitVerifierImpl).isNotNull();
 
-		assertThat(limitVerifierImpl).extracting("limitRuleResolver").isInstanceOf(LimitRuleResolverImpl.class)
-				.extracting("productRepository").isSameAs(productRepo);
+		assertThat(limitVerifierImpl).extracting("limitRuleResolver").isInstanceOf(LimitRuleResolverImpl.class);
 		assertThat(limitVerifierImpl).extracting("limitRuleResolver")
 				.extracting("userLimitRepository").isInstanceOf(LimitRuleResolverImpl.NoOpUserLimitRepository.class);
 
@@ -74,8 +73,7 @@ class LimitVerifierBuilderTests {
 		var limitVerifierImpl = builder.build();
 		assertThat(limitVerifierImpl).isNotNull().isInstanceOf(LimitVerifierImpl.class);
 
-		assertThat(limitVerifierImpl).extracting("limitRuleResolver").isInstanceOf(LimitRuleResolverImpl.class)
-				.extracting("productRepository").isSameAs(productRepo);
+		assertThat(limitVerifierImpl).extracting("limitRuleResolver").isInstanceOf(LimitRuleResolverImpl.class);
 		assertThat(limitVerifierImpl).extracting("limitRuleResolver")
 				.extracting("userLimitRepository").isSameAs(userLimitRepository);
 
@@ -114,8 +112,7 @@ class LimitVerifierBuilderTests {
 		var limitVerifierImpl = builder.build();
 		assertThat(limitVerifierImpl).isNotNull().isInstanceOf(LimitVerifierImpl.class);
 
-		assertThat(limitVerifierImpl).extracting("limitRuleResolver").isInstanceOf(LimitRuleResolverImpl.class)
-				.extracting("productRepository").isSameAs(productRepo);
+		assertThat(limitVerifierImpl).extracting("limitRuleResolver").isInstanceOf(LimitRuleResolverImpl.class);
 		assertThat(limitVerifierImpl).extracting("limitRuleResolver")
 				.extracting("userLimitRepository").isInstanceOf(LimitRuleResolverImpl.NoOpUserLimitRepository.class);
 
@@ -137,8 +134,7 @@ class LimitVerifierBuilderTests {
 
 		assertThat(limitVerifierImpl).isNotNull().isInstanceOf(LimitVerifierImpl.class);
 
-		assertThat(limitVerifierImpl).extracting("limitRuleResolver").isInstanceOf(LimitRuleResolverImpl.class)
-				.extracting("productRepository").isSameAs(productRepo);
+		assertThat(limitVerifierImpl).extracting("limitRuleResolver").isInstanceOf(LimitRuleResolverImpl.class);
 		assertThat(limitVerifierImpl).extracting("limitRuleResolver")
 				.extracting("userLimitRepository").isInstanceOf(LimitRuleResolverImpl.NoOpUserLimitRepository.class);
 

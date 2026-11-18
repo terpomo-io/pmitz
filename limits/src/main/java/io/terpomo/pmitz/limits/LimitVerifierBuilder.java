@@ -85,13 +85,13 @@ public final class LimitVerifierBuilder {
 
 		@Override
 		public UsageRepositorySpec withUserLimitRepository(UserLimitRepository userLimitRepository) {
-			limitRuleResolver = new LimitRuleResolverImpl(productRepository, userLimitRepository);
+			limitRuleResolver = new LimitRuleResolverImpl(userLimitRepository);
 			return this;
 		}
 
 		@Override
 		public UsageRepositorySpec withDefaultLimitRuleResolver() {
-			limitRuleResolver = new LimitRuleResolverImpl(productRepository);
+			limitRuleResolver = new LimitRuleResolverImpl();
 			return this;
 		}
 

@@ -16,6 +16,7 @@
 
 package io.terpomo.pmitz.subscriptions;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -77,13 +78,15 @@ class DefaultSubscriptionFeatureManagerTests {
 		String planId = "planId";
 		FeatureRef featureRef = new FeatureRef(productId, featureId);
 		Product product = new Product(productId);
+		product.setPlans(List.of(plan));
+
+		when(plan.getPlanId()).thenReturn(planId);
+		when(plan.getIncludedFeature(featureId)).thenReturn(Optional.of(feature));
 
 		when(subscription.isProductAllowed(productId)).thenReturn(true);
 		when(subscription.getPlan(productId)).thenReturn(Optional.of(planId));
 
 		when(productRepository.getProductById(productId)).thenReturn(Optional.of(product));
-		when(productRepository.getPlan(product, planId)).thenReturn(Optional.of(plan));
-		when(plan.getIncludedFeature(featureId)).thenReturn(Optional.of(feature));
 
 		DefaultSubscriptionFeatureManager subscriptionFeatureManager = new DefaultSubscriptionFeatureManager(productRepository);
 		assertThat(subscriptionFeatureManager.isFeatureIncluded(subscription, featureRef)).isTrue();

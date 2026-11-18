@@ -34,7 +34,6 @@ import io.terpomo.pmitz.core.Feature;
 import io.terpomo.pmitz.core.Plan;
 import io.terpomo.pmitz.core.Product;
 import io.terpomo.pmitz.core.exception.RepositoryException;
-import io.terpomo.pmitz.core.limits.LimitRule;
 import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
 import io.terpomo.pmitz.core.limits.types.CountLimit;
 
@@ -146,13 +145,21 @@ class InMemoryProductRepositoryTests {
 	@Test
 	void addProduct_newProduct() {
 
+		List<String> includedFeatures = List.of("feature1", "feature2");
 		Product p1 = new Product("p1");
+		p1.setFeatures(List.of(new Feature(p1, "feature1"), new Feature(p1, "feature2")));
+		var plan1 = new Plan(p1, "plan1", List.of("feature1", "feature2"));
+		p1.setPlans(List.of(plan1));
 		this.repository.addProduct(p1);
 
 		Optional<Product> p = this.repository.getProductById("p1");
 
 		assertThat(p).isPresent();
-		assertThat(p.get().getProductId()).isEqualTo(p1.getProductId());
+		var fetchedProduct = p.get();
+		assertThat(fetchedProduct.getProductId()).isEqualTo(p1.getProductId());
+		assertThat(fetchedProduct.getFeatures()).hasSize(2)
+				.allMatch(f ->  includedFeatures.contains(f.getFeatureId()));
+
 	}
 
 	@Test
@@ -253,13 +260,15 @@ class InMemoryProductRepositoryTests {
 
 		Product p1 = new Product("p1");
 		this.repository.addProduct(p1);
-		Feature f1 = new Feature(p1, "f1");
 		CountLimit cl1 = new CountLimit("cl1", 10);
-		f1.getLimits().add(cl1);
+		Feature f1 = new Feature(p1, "f1", List.of(cl1));
 
 		this.repository.addFeature(f1);
 
-		Optional<Feature> f1p = this.repository.getFeature(p1, "f1");
+		Optional<Product> fetchedProduct = repository.getProductById("p1");
+
+		assertThat(fetchedProduct).isPresent();
+		Optional<Feature> f1p = fetchedProduct.get().getFeature("f1");
 
 		assertThat(f1p).isPresent().contains(f1);
 	}
@@ -276,35 +285,6 @@ class InMemoryProductRepositoryTests {
 		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
 				this.repository.addFeature(f1))
 				.withMessage("Feature 'f1' already exists");
-	}
-
-	@Test
-	void getFeature_invalidProduct() {
-
-		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
-				this.repository.getFeature(null, "f1"))
-				.withMessage("Product must not be 'null'");
-	}
-
-	@Test
-	void getFeature_invalidFeatureId() {
-
-		Product p1 = new Product("p1");
-
-		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
-				this.repository.getFeature(p1, null))
-				.withMessage("FeatureId must not be 'null'");
-	}
-
-	@Test
-	void getFeature_ProductNotFound() {
-
-		Product p1 = new Product("p1");
-		Feature f1 = new Feature(p1, "f1");
-
-		Optional<Feature> feature = this.repository.getFeature(p1, f1.getFeatureId());
-
-		assertThat(feature).isNotPresent();
 	}
 
 	@Test
@@ -388,18 +368,18 @@ class InMemoryProductRepositoryTests {
 		Product p1 = new Product("p1");
 		this.repository.addProduct(p1);
 
-		Feature f1 = new Feature(p1, "f1");
-		this.repository.addFeature(f1);
 		CountLimit l1 = new CountLimit("l1", 10);
-		f1.getLimits().add(l1);
+		Feature f1 = new Feature(p1, "f1", List.of(l1));
+		this.repository.addFeature(f1);
 
 		Feature f2 = new Feature(p1, "f2");
 		this.repository.addFeature(f2);
 
-
 		this.repository.updateFeature(f2);
 
-		Optional<Feature> f = this.repository.getFeature(f2.getProduct(), f2.getFeatureId());
+		Optional<Product> fetchedProduct = repository.getProductById("p1");
+		assertThat(fetchedProduct).isPresent();
+		Optional<Feature> f = fetchedProduct.get().getFeature(f2.getFeatureId());
 
 		assertThat(f).isPresent();
 		assertThat(f.get().getLimits()).isEmpty();
@@ -417,7 +397,9 @@ class InMemoryProductRepositoryTests {
 
 		this.repository.removeFeature(f1);
 
-		Optional<Feature> f = this.repository.getFeature(f1.getProduct(), f1.getFeatureId());
+		Optional<Product> fetchedProduct = repository.getProductById("p1");
+		assertThat(fetchedProduct).isPresent();
+		Optional<Feature> f = fetchedProduct.get().getFeature(f1.getFeatureId());
 
 		assertThat(f).isEmpty();
 
@@ -449,51 +431,6 @@ class InMemoryProductRepositoryTests {
 		assertThatExceptionOfType(RepositoryException.class).isThrownBy(() ->
 				this.repository.removeFeature(f1))
 				.withMessage("Feature 'f1' not found for product 'p1'");
-	}
-
-	@Test
-	void getGlobalLimit_emptyLimitList() {
-
-		Product p1 = new Product("p1");
-		this.repository.addProduct(p1);
-		Feature f1 = new Feature(p1, "f1");
-		this.repository.addFeature(f1);
-
-		Optional<LimitRule> limit = this.repository.getGlobalLimit(f1, "l1");
-
-		assertThat(limit).isNotPresent();
-	}
-
-	@Test
-	void getGlobalLimit_LimitNotFound() {
-
-		Product p1 = new Product("p1");
-		this.repository.addProduct(p1);
-		Feature f1 = new Feature(p1, "f1");
-		CountLimit l1 = new CountLimit("l1", 10);
-		f1.getLimits().add(l1);
-		this.repository.addFeature(f1);
-
-		Optional<LimitRule> limit = this.repository.getGlobalLimit(f1, "l2");
-
-		assertThat(limit).isEmpty();
-	}
-
-	@Test
-	void getGlobalLimit_LimitFound() {
-
-		Product p1 = new Product("p1");
-		this.repository.addProduct(p1);
-		Feature f1 = new Feature(p1, "f1");
-		CountLimit l1 = new CountLimit("l1", 10);
-		f1.getLimits().add(l1);
-		this.repository.addFeature(f1);
-
-		Optional<LimitRule> limit = this.repository.getGlobalLimit(f1, "l1");
-
-		assertThat(limit).isPresent();
-		assertThat(limit.get().getId()).isEqualTo("l1");
-		assertThat(limit.get().getValue()).isEqualTo(10);
 	}
 
 	@Test
@@ -574,24 +511,30 @@ class InMemoryProductRepositoryTests {
 			ioStream.close();
 		}
 
-		Product pictureHostingService = new Product("Picture hosting service");
+		Optional<Product> fetchedProduct = repository.getProductById("Picture hosting service");
+		assertThat(fetchedProduct).isPresent();
 
-		Optional<Feature> uploadingPicture = this.repository.getFeature(pictureHostingService, "Uploading pictures");
+		Product pictureHostingService = fetchedProduct.get();
+
+		Optional<Feature> uploadingPicture = pictureHostingService.getFeature("Uploading pictures");
 		assertThat(uploadingPicture).isPresent();
 		assertThat(uploadingPicture.get().getFeatureId()).isEqualTo("Uploading pictures");
 		assertThat(uploadingPicture.get().getProduct().getProductId()).isEqualTo("Picture hosting service");
 		assertThat(uploadingPicture.get().getLimits()).hasSize(1);
 
-		Optional<Feature> downloadingPicture = this.repository.getFeature(pictureHostingService, "Downloading pictures");
+		Optional<Feature> downloadingPicture = pictureHostingService.getFeature("Downloading pictures");
 		assertThat(downloadingPicture).isPresent();
 		assertThat(downloadingPicture.get().getFeatureId()).isEqualTo("Downloading pictures");
 		assertThat(downloadingPicture.get().getProduct().getProductId()).isEqualTo("Picture hosting service");
 		assertThat(downloadingPicture.get().getLimits()).hasSize(2);
 
 
-		Product library = new Product("Library");
+		Optional<Product> fetchedLibraryProduct = repository.getProductById("Library");
+		assertThat(fetchedLibraryProduct).isPresent();
 
-		Optional<Feature> reservingBooks = this.repository.getFeature(library, "Reserving books");
+		Product library = fetchedLibraryProduct.get();
+
+		Optional<Feature> reservingBooks = library.getFeature("Reserving books");
 		assertThat(reservingBooks).isPresent();
 		assertThat(reservingBooks.get().getFeatureId()).isEqualTo("Reserving books");
 		assertThat(reservingBooks.get().getProduct().getProductId()).isEqualTo("Library");
@@ -612,7 +555,7 @@ class InMemoryProductRepositoryTests {
 
 		Product pictureHostingService = repository.getProductById("Picture hosting service").orElseThrow();
 
-		Optional<Feature> uploadingPicture = this.repository.getFeature(pictureHostingService, "Uploading pictures");
+		Optional<Feature> uploadingPicture = pictureHostingService.getFeature("Uploading pictures");
 		assertThat(uploadingPicture).isPresent();
 		assertThat(uploadingPicture.get().getLimits().get(0)).isInstanceOf(CountLimit.class);
 		CountLimit maximumPictureSize = (CountLimit) uploadingPicture.get().getLimits().get(0);
@@ -620,7 +563,7 @@ class InMemoryProductRepositoryTests {
 		assertThat(maximumPictureSize.getValue()).isEqualTo(10);
 		assertThat(maximumPictureSize.getUnit()).isEqualTo("Go");
 
-		Optional<Feature> downloadingPicture = this.repository.getFeature(pictureHostingService, "Downloading pictures");
+		Optional<Feature> downloadingPicture = pictureHostingService.getFeature("Downloading pictures");
 		assertThat(downloadingPicture).isPresent();
 
 		assertThat(downloadingPicture.get().getLimits().get(0)).isInstanceOf(CountLimit.class);
@@ -739,7 +682,10 @@ class InMemoryProductRepositoryTests {
 
 		this.repository.addPlan(plan);
 
-		Optional<Plan> retrievedPlan = this.repository.getPlan(p1, "plan1");
+		Optional<Product> fetchedProduct = repository.getProductById("p1");
+		assertThat(fetchedProduct).isPresent();
+
+		Optional<Plan> retrievedPlan = fetchedProduct.get().getPlan("plan1");
 
 		assertThat(retrievedPlan).isPresent();
 		assertThat(retrievedPlan.get().getPlanId()).isEqualTo("plan1");
@@ -810,7 +756,10 @@ class InMemoryProductRepositoryTests {
 
 		this.repository.updatePlan(updatedPlan);
 
-		Optional<Plan> retrievedPlan = this.repository.getPlan(p1, "plan1");
+		Optional<Product> fetchedProduct = repository.getProductById("p1");
+		assertThat(fetchedProduct).isPresent();
+
+		Optional<Plan> retrievedPlan = fetchedProduct.get().getPlan("plan1");
 
 		assertThat(retrievedPlan).isPresent();
 		assertThat(retrievedPlan.get().getDescription()).isEqualTo("Updated description");
@@ -862,7 +811,10 @@ class InMemoryProductRepositoryTests {
 
 		this.repository.removePlan(plan1);
 
-		Optional<Plan> removedPlan = this.repository.getPlan(p1, "plan1");
+		Optional<Product> fetchedProduct = repository.getProductById("p1");
+		assertThat(fetchedProduct).isPresent();
+
+		Optional<Plan> removedPlan = fetchedProduct.get().getPlan("plan1");
 		assertThat(removedPlan).isEmpty();
 
 		List<Plan> remainingPlans = this.repository.getPlans(p1);
@@ -904,7 +856,10 @@ class InMemoryProductRepositoryTests {
 		Product p1 = new Product("p1");
 		this.repository.addProduct(p1);
 
-		Optional<Plan> plan = this.repository.getPlan(p1, "plan1");
+		Optional<Product> fetchedProduct = repository.getProductById("p1");
+		assertThat(fetchedProduct).isPresent();
+
+		Optional<Plan> plan = fetchedProduct.get().getPlan("plan1");
 
 		assertThat(plan).isEmpty();
 	}
@@ -920,7 +875,10 @@ class InMemoryProductRepositoryTests {
 		plan.setDescription("Test plan");
 		this.repository.addPlan(plan);
 
-		Optional<Plan> retrievedPlan = this.repository.getPlan(p1, "plan1");
+		Optional<Product> fetchedProduct = repository.getProductById("p1");
+		assertThat(fetchedProduct).isPresent();
+
+		Optional<Plan> retrievedPlan = fetchedProduct.get().getPlan("plan1");
 
 		assertThat(retrievedPlan).isPresent();
 		assertThat(retrievedPlan.get().getPlanId()).isEqualTo("plan1");
@@ -966,32 +924,24 @@ class InMemoryProductRepositoryTests {
 		Product pictureHostingService = new Product("Picture hosting service");
 		this.repository.addProduct(pictureHostingService);
 
-		Feature uploadingPicture = new Feature(pictureHostingService, "Uploading pictures");
-		this.repository.addFeature(uploadingPicture);
-
 		CountLimit maximumPictureSize = new CountLimit("Maximum picture size", 10);
 		maximumPictureSize.setUnit("Go");
-		uploadingPicture.getLimits().add(maximumPictureSize);
-
-		Feature downloadingPicture = new Feature(pictureHostingService, "Downloading pictures");
-		this.repository.addFeature(downloadingPicture);
+		Feature uploadingPicture = new Feature(pictureHostingService, "Uploading pictures", List.of(maximumPictureSize));
+		this.repository.addFeature(uploadingPicture);
 
 		maximumPictureSize = new CountLimit("Maximum picture size", 20);
 		maximumPictureSize.setUnit("Go");
-		downloadingPicture.getLimits().add(maximumPictureSize);
-
 		CalendarPeriodRateLimit maximumPicturesDownloadedByCalendarMonth = new CalendarPeriodRateLimit("max-photos-downloaded-by-calendar-month", 10, CalendarPeriodRateLimit.Periodicity.MONTH);
 		maximumPicturesDownloadedByCalendarMonth.setId("Maximum of pictures downloaded by calendar month");
-		downloadingPicture.getLimits().add(maximumPicturesDownloadedByCalendarMonth);
-
+		Feature downloadingPicture = new Feature(pictureHostingService, "Downloading pictures",
+				List.of(maximumPictureSize, maximumPicturesDownloadedByCalendarMonth));
+		this.repository.addFeature(downloadingPicture);
 
 		Product lendingBooks = new Product("Library");
 		this.repository.addProduct(lendingBooks);
 
-		Feature reservingBooks = new Feature(lendingBooks, "Reserving books");
-		this.repository.addFeature(reservingBooks);
-
 		CountLimit maximumBooksReserved = new CountLimit("Maximum books reserved", 5);
-		reservingBooks.getLimits().add(maximumBooksReserved);
+		Feature reservingBooks = new Feature(lendingBooks, "Reserving books", List.of(maximumBooksReserved));
+		this.repository.addFeature(reservingBooks);
 	}
 }
