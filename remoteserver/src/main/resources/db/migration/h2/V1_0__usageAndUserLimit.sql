@@ -16,6 +16,7 @@ CREATE TABLE dbo.user_limit (
     usage_id INT AUTO_INCREMENT,
     limit_id VARCHAR(255),
     feature_id VARCHAR(255),
+    product_id VARCHAR(255),
     user_group_id VARCHAR(255),
     limit_type VARCHAR(255),
     limit_value INT,

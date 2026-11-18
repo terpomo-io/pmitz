@@ -95,9 +95,9 @@ public class SQLServerJDBCUserLimitRepositoryIntegrationTests extends AbstractJD
 		String query = String.format(
 				"""
 						INSERT INTO %s.%s (
-							limit_id, feature_id, user_group_id, limit_type, limit_value,
+							limit_id, feature_id, product_id, user_group_id, limit_type, limit_value,
 							limit_unit, limit_interval, limit_duration
-						) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+						) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 						""",
 				CUSTOM_SCHEMA, TABLE_NAME);
 
@@ -112,12 +112,13 @@ public class SQLServerJDBCUserLimitRepositoryIntegrationTests extends AbstractJD
 			}
 			stmt.setString(1, limitRule.getId());
 			stmt.setString(2, featureRef.featureId());
-			stmt.setString(3, userGroup.getId());
-			stmt.setString(4, limitRule.getClass().getSimpleName());
-			stmt.setLong(5, limitRule.getValue());
-			stmt.setString(6, limitRule.getUnit());
-			stmt.setString(7, limitInterval);
-			stmt.setInt(8, limitDuration);
+			stmt.setString(3, featureRef.productId());
+			stmt.setString(4, userGroup.getId());
+			stmt.setString(5, limitRule.getClass().getSimpleName());
+			stmt.setLong(6, limitRule.getValue());
+			stmt.setString(7, limitRule.getUnit());
+			stmt.setString(8, limitInterval);
+			stmt.setInt(9, limitDuration);
 			stmt.executeUpdate();
 		}
 	}

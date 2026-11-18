@@ -189,6 +189,35 @@ class JDBCUserLimitRepositoryTests {
 	}
 
 	@Test
+	void findLimitRule_SameFeatureAndLimitIdInOtherProduct_NotFound() {
+
+		FeatureRef otherProductFeatureRef = new FeatureRef("Video hosting service", this.featureRef.featureId());
+
+		Optional<LimitRule> limitRule = this.repository.findLimitRule(otherProductFeatureRef,
+				"Maximum picture size", this.user);
+
+		assertThat(limitRule).isNotPresent();
+	}
+
+	@Test
+	void updateLimitRule_SameFeatureAndLimitIdInOtherProduct_KeptSeparate() {
+
+		FeatureRef otherProductFeatureRef = new FeatureRef("Video hosting service", this.featureRef.featureId());
+
+		this.repository.updateLimitRule(otherProductFeatureRef, new CountLimit("Maximum picture size", 99), this.user);
+
+		assertThat(this.repository.findLimitRule(otherProductFeatureRef, "Maximum picture size", this.user))
+				.get().extracting(LimitRule::getValue).isEqualTo(99L);
+		assertThat(this.repository.findLimitRule(this.featureRef, "Maximum picture size", this.user))
+				.get().extracting(LimitRule::getValue).isEqualTo(10L);
+
+		this.repository.deleteLimitRule(otherProductFeatureRef, "Maximum picture size", this.user);
+
+		assertThat(this.repository.findLimitRule(otherProductFeatureRef, "Maximum picture size", this.user)).isNotPresent();
+		assertThat(this.repository.findLimitRule(this.featureRef, "Maximum picture size", this.user)).isPresent();
+	}
+
+	@Test
 	void findLimitRule_SQLException() {
 
 		UserLimitRepository repositoryTest = new JDBCUserLimitRepository(new JdbcDataSource(), SCHEMA_NAME, "abc");
@@ -371,6 +400,7 @@ class JDBCUserLimitRepositoryTests {
 							usage_id integer AUTO_INCREMENT,
 							limit_id varchar NOT NULL,
 							feature_id varchar NOT NULL,
+							product_id varchar NOT NULL,
 							user_group_id varchar NOT NULL,
 							limit_type varchar NOT NULL,
 							limit_value integer,
@@ -385,7 +415,7 @@ class JDBCUserLimitRepositoryTests {
 		String addContraintQuery = String.format(
 				"""
 						ALTER TABLE %s.%s
-							ADD CONSTRAINT c_limit UNIQUE (limit_id,feature_id, user_group_id)
+							ADD CONSTRAINT c_limit UNIQUE (product_id, feature_id, limit_id, user_group_id)
 						""",
 				SCHEMA_NAME, TABLE_NAME);
 
@@ -417,9 +447,9 @@ class JDBCUserLimitRepositoryTests {
 		String query = String.format(
 				"""
 						INSERT INTO %s.%s (
-							limit_id, feature_id, user_group_id, limit_type, limit_value,
+							limit_id, feature_id, product_id, user_group_id, limit_type, limit_value,
 							limit_unit, limit_interval, limit_duration
-						) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+						) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 						""",
 				SCHEMA_NAME, TABLE_NAME);
 
@@ -434,12 +464,13 @@ class JDBCUserLimitRepositoryTests {
 			}
 			stmt.setString(1, limitRule.getId());
 			stmt.setString(2, featureRef.featureId());
-			stmt.setString(3, userGroup.getId());
-			stmt.setString(4, limitRule.getClass().getSimpleName());
-			stmt.setLong(5, limitRule.getValue());
-			stmt.setString(6, limitRule.getUnit());
-			stmt.setString(7, limitInterval);
-			stmt.setInt(8, limitDuration);
+			stmt.setString(3, featureRef.productId());
+			stmt.setString(4, userGroup.getId());
+			stmt.setString(5, limitRule.getClass().getSimpleName());
+			stmt.setLong(6, limitRule.getValue());
+			stmt.setString(7, limitRule.getUnit());
+			stmt.setString(8, limitInterval);
+			stmt.setInt(9, limitDuration);
 			stmt.executeUpdate();
 		}
 	}

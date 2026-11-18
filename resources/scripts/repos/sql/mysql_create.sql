@@ -28,16 +28,17 @@ CREATE TABLE IF NOT EXISTS your_schema.Usage (
 
 CREATE TABLE IF NOT EXISTS your_schema.user_usage_limit (
     usage_id INT AUTO_INCREMENT PRIMARY KEY,
-    limit_id VARCHAR(255) NOT NULL,
-    feature_id VARCHAR(255) NOT NULL,
-    user_group_id VARCHAR(255) NOT NULL,
+    limit_id VARCHAR(191) NOT NULL,
+    feature_id VARCHAR(191) NOT NULL,
+    product_id VARCHAR(191) NOT NULL,
+    user_group_id VARCHAR(191) NOT NULL,
     limit_type VARCHAR(255) NOT NULL,
     limit_value INT NOT NULL,
     limit_unit VARCHAR(255),
     limit_interval VARCHAR(255),
     limit_duration INT
 ) ENGINE=InnoDB;
-ALTER TABLE your_schema.user_usage_limit ADD CONSTRAINT c_limit UNIQUE (limit_id,feature_id,user_group_id);
+ALTER TABLE your_schema.user_usage_limit ADD CONSTRAINT c_limit UNIQUE (product_id, feature_id, limit_id, user_group_id);
 
 -- Subscription Tables
 

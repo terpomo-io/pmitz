@@ -37,6 +37,7 @@ BEGIN
         usage_id INT PRIMARY KEY IDENTITY(1,1),
         limit_id VARCHAR(255) NOT NULL,
         feature_id VARCHAR(255) NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
         user_group_id VARCHAR(255) NOT NULL,
         limit_type VARCHAR(255) NOT NULL,
         limit_value INT NOT NULL,
@@ -44,7 +45,7 @@ BEGIN
         limit_interval VARCHAR(255),
         limit_duration INT
     );
-    ALTER TABLE your_schema.user_usage_limit ADD CONSTRAINT c_limit UNIQUE (limit_id,feature_id, user_group_id);
+    ALTER TABLE your_schema.user_usage_limit ADD CONSTRAINT c_limit UNIQUE (product_id, feature_id, limit_id, user_group_id);
 END
 
 -- Subscription Tables

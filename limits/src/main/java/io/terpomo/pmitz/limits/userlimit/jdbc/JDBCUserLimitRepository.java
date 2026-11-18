@@ -57,7 +57,7 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 		String query = String.format(
 				"""
 				SELECT * FROM %s.%s \
-					WHERE limit_id = ? AND feature_id = ? AND user_group_id = ?
+				WHERE limit_id = ? AND feature_id = ? AND product_id = ? AND user_group_id = ?
 				""",
 				this.schemaName, this.tableName);
 
@@ -66,7 +66,8 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 
 			statement.setString(1, limitRuleId);
 			statement.setString(2, featureRef.featureId());
-			statement.setString(3, userGroup.getId());
+			statement.setString(3, featureRef.productId());
+			statement.setString(4, userGroup.getId());
 
 			try (ResultSet resultSet = statement.executeQuery()) {
 				if (resultSet.next()) {
@@ -91,9 +92,9 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 			String query = String.format(
 					"""
 					INSERT INTO %s.%s ( \
-						limit_id, feature_id, user_group_id, limit_type, \
-						limit_value, limit_unit, limit_interval, limit_duration \
-					) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+					limit_id, feature_id, product_id, user_group_id, limit_type, \
+					limit_value, limit_unit, limit_interval, limit_duration \
+					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 					""",
 					this.schemaName, this.tableName);
 
@@ -102,18 +103,19 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 
 				stmt.setString(1, limitRule.getId());
 				stmt.setString(2, featureRef.featureId());
-				stmt.setString(3, userGroup.getId());
-				stmt.setString(4, limitRule.getClass().getSimpleName());
-				stmt.setLong(5, limitRule.getValue());
-				stmt.setString(6, limitRule.getUnit());
+				stmt.setString(3, featureRef.productId());
+				stmt.setString(4, userGroup.getId());
+				stmt.setString(5, limitRule.getClass().getSimpleName());
+				stmt.setLong(6, limitRule.getValue());
+				stmt.setString(7, limitRule.getUnit());
 
 				if (limitRule instanceof CalendarPeriodRateLimit calendarPeriodRateLimit) {
-					stmt.setString(7, calendarPeriodRateLimit.getPeriodicity().name());
-					stmt.setInt(8, calendarPeriodRateLimit.getDuration());
+					stmt.setString(8, calendarPeriodRateLimit.getPeriodicity().name());
+					stmt.setInt(9, calendarPeriodRateLimit.getDuration());
 				}
 				else {
-					stmt.setString(7, null);
-					stmt.setInt(8, 0);
+					stmt.setString(8, null);
+					stmt.setInt(9, 0);
 				}
 
 				stmt.executeUpdate();
@@ -146,8 +148,8 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 			String query = String.format(
 					"""
 					UPDATE %s.%s \
-						SET limit_value = ?, limit_unit = ?, limit_interval = ?, limit_duration = ? \
-						WHERE limit_id = ? AND feature_id = ? AND user_group_id = ?
+					SET limit_value = ?, limit_unit = ?, limit_interval = ?, limit_duration = ? \
+					WHERE limit_id = ? AND feature_id = ? AND product_id = ? AND user_group_id = ?
 					""",
 					this.schemaName, this.tableName);
 
@@ -169,6 +171,7 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 
 				stmt.setString(idx++, limitRule.getId());
 				stmt.setString(idx++, featureRef.featureId());
+				stmt.setString(idx++, featureRef.productId());
 				stmt.setString(idx, userGroup.getId());
 
 				stmt.executeUpdate();
@@ -190,7 +193,7 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 			String query = String.format(
 					"""
 					DELETE FROM %s.%s \
-						WHERE limit_id = ? AND feature_id = ? AND user_group_id = ?
+					WHERE limit_id = ? AND feature_id = ? AND product_id = ? AND user_group_id = ?
 					""",
 					this.schemaName, this.tableName);
 
@@ -199,7 +202,8 @@ public class JDBCUserLimitRepository implements UserLimitRepository {
 
 				stmt.setString(1, limitRuleId);
 				stmt.setString(2, featureRef.featureId());
-				stmt.setString(3, userGroup.getId());
+				stmt.setString(3, featureRef.productId());
+				stmt.setString(4, userGroup.getId());
 
 				stmt.executeUpdate();
 			}
