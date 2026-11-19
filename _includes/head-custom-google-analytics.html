@@ -1,0 +1,13 @@
+{% comment %}
+  Overrides the GitHub Pages theme include, whose bundled version still loads the
+  retired Universal Analytics library (analytics.js). This loads GA4 (gtag.js).
+{% endcomment %}
+{% if site.google_analytics %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ site.google_analytics }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){window.dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ site.google_analytics }}');
+  </script>
+{% endif %}
