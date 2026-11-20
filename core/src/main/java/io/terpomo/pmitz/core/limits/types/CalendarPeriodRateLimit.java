@@ -18,7 +18,6 @@ package io.terpomo.pmitz.core.limits.types;
 
 import java.time.DayOfWeek;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Optional;
@@ -50,29 +49,17 @@ public class CalendarPeriodRateLimit extends RateLimit {
 		return Optional.of(adjustedDateTime);
 	}
 
+	/**
+	 * Returns the end of the calendar period that contains the reference date. The end is exclusive: it is the
+	 * start of the next period, so it is a whole date-time that any repository can store exactly.
+	 */
 	@Override
 	public Optional<ZonedDateTime> getWindowEnd(ZonedDateTime referenceDate) {
-		ZonedDateTime adjustedDateTime = switch (periodicity) {
-			case HOUR -> referenceDate.plusHours(1).truncatedTo(ChronoUnit.HOURS).minusNanos(1);
-			case DAY -> lastNanosecondOfDay(referenceDate);
-			case WEEK -> lastNanosecondOfDay(referenceDate.with(TemporalAdjusters.nextOrSame(getLastDayOfWeek())));
-			case MONTH -> lastNanosecondOfDay(referenceDate.with(TemporalAdjusters.lastDayOfMonth()));
-			case YEAR -> lastNanosecondOfDay(referenceDate.with(TemporalAdjusters.lastDayOfYear()));
-		};
-
-		return Optional.of(adjustedDateTime);
+		return getWindowStart(referenceDate).map(windowStart -> windowStart.plus(1, periodicity.getChronoUnit()));
 	}
 
 	protected DayOfWeek getFirstDayOfWeek() {
 		return DayOfWeek.MONDAY;
-	}
-
-	protected DayOfWeek getLastDayOfWeek() {
-		return DayOfWeek.SUNDAY;
-	}
-
-	private ZonedDateTime lastNanosecondOfDay(ZonedDateTime dateTime) {
-		return dateTime.with(ChronoField.NANO_OF_DAY, 1_000_000_000L * (60 * 60 * 24) - 1);
 	}
 
 	public enum Periodicity {

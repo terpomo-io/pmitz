@@ -74,11 +74,10 @@ public class LimitTrackingContext {
 
 	public List<UsageRecord> findUsageRecords(String limitId, ZonedDateTime startTime, ZonedDateTime endTime) {
 
-		// A record belongs to the requested window when it starts inside it. Its end is not compared with the
-		// window end, because a repository may store it with less precision than it was computed with.
+		// A record belongs to the requested window when it starts inside it. The window end is exclusive.
 		Predicate<UsageRecord> filterCondition = usageRecord -> limitId.equals(usageRecord.limitId())
-				&& (startTime == null || usageRecord.startTime() == null || usageRecord.startTime().isAfter(startTime) || usageRecord.startTime().isEqual(startTime))
-				&& (endTime == null || usageRecord.startTime() == null || !usageRecord.startTime().isAfter(endTime));
+				&& (startTime == null || usageRecord.startTime() == null || !usageRecord.startTime().isBefore(startTime))
+				&& (endTime == null || usageRecord.startTime() == null || usageRecord.startTime().isBefore(endTime));
 
 		return getCurrentUsageRecords().stream().filter(filterCondition).toList();
 	}

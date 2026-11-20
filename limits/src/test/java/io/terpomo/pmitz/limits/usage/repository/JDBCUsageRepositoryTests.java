@@ -182,7 +182,8 @@ class JDBCUsageRepositoryTests {
 
 		repository.updateUsageRecords(context);
 
-		testFilteringLogic(time.minusDays(60), time.minusDays(30), 2);
+		// The end of the search window is exclusive, so a record that starts exactly on it is not loaded.
+		testFilteringLogic(time.minusDays(60), time.minusDays(30), 1);
 		testFilteringLogic(time.minusDays(60), time.minusDays(10), 2);
 		testFilteringLogic(time.minusDays(61), time.minusDays(29), 2);
 	}
@@ -203,7 +204,7 @@ class JDBCUsageRepositoryTests {
 		List<UsageRecord> records = context.getCurrentUsageRecords();
 		assertThat(records).hasSize(expectedRecordCount);
 		for (UsageRecord record : records) {
-			assertThat(record.startTime()).isBetween(normalizedStartDate, normalizedEndDate);
+			assertThat(record.startTime()).isAfterOrEqualTo(normalizedStartDate).isBefore(normalizedEndDate);
 		}
 	}
 

@@ -25,15 +25,26 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.assertj.core.api.Fail;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
+import io.terpomo.pmitz.core.Feature;
+import io.terpomo.pmitz.core.Product;
+import io.terpomo.pmitz.core.exception.LimitExceededException;
+import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit;
+import io.terpomo.pmitz.core.limits.types.CalendarPeriodRateLimit.Periodicity;
+import io.terpomo.pmitz.core.repository.product.inmemory.InMemoryProductRepository;
 import io.terpomo.pmitz.core.subjects.IndividualUser;
 import io.terpomo.pmitz.core.subscriptions.FeatureRef;
+import io.terpomo.pmitz.limits.LimitVerifier;
+import io.terpomo.pmitz.limits.LimitVerifierBuilder;
 import io.terpomo.pmitz.limits.UsageRecord;
 import io.terpomo.pmitz.limits.usage.repository.LimitTrackingContext;
 import io.terpomo.pmitz.limits.usage.repository.RecordSearchCriteria;
@@ -279,6 +290,48 @@ public abstract class AbstractJDBCUsageRepositoryIntegrationTests {
 
 		List<UsageRecord> loadedRecords = context.getCurrentUsageRecords();
 		assertThat(loadedRecords).isEmpty();
+	}
+
+	@ParameterizedTest
+	@EnumSource(Periodicity.class)
+	void testCalendarLimitIsEnforcedAndItsWindowIsStoredExactly(Periodicity periodicity) {
+		String limitId = "exports-" + periodicity;
+		CalendarPeriodRateLimit calendarLimit = new CalendarPeriodRateLimit(limitId, 2, periodicity);
+		Product product = new Product("reports");
+		product.setFeatures(List.of(new Feature(product, "export", List.of(calendarLimit))));
+		InMemoryProductRepository productRepository = new InMemoryProductRepository();
+		productRepository.addProduct(product);
+		LimitVerifier limitVerifier = LimitVerifierBuilder.of(productRepository)
+				.withDefaultLimitRuleResolver()
+				.withJdbcUsageRepository(dataSource, CUSTOM_SCHEMA, getTableName())
+				.build();
+
+		FeatureRef featureRef = new FeatureRef("reports", "export");
+		IndividualUser user = new IndividualUser("user-" + periodicity);
+		Map<String, Long> oneUnit = Map.of(limitId, 1L);
+
+		ZonedDateTime before = ZonedDateTime.now();
+		limitVerifier.recordFeatureUsage(featureRef, user, oneUnit);
+		limitVerifier.recordFeatureUsage(featureRef, user, oneUnit);
+		ZonedDateTime after = ZonedDateTime.now();
+
+		assertThatExceptionOfType(LimitExceededException.class)
+				.isThrownBy(() -> limitVerifier.recordFeatureUsage(featureRef, user, oneUnit));
+		assertThat(limitVerifier.getLimitsRemainingUnits(featureRef, user)).containsEntry(limitId, 0L);
+
+		LimitTrackingContext loadContext = new LimitTrackingContext(featureRef, user,
+				List.of(new RecordSearchCriteria(limitId, null, null)));
+		repository.loadUsageData(loadContext);
+		assertThat(loadContext.getCurrentUsageRecords()).hasSize(1);
+
+		UsageRecord storedRecord = loadContext.getCurrentUsageRecords().get(0);
+		assertThat(storedRecord.units()).isEqualTo(2L);
+		assertThat(storedRecord.startTime().toInstant()).isIn(
+				calendarLimit.getWindowStart(before).orElseThrow().toInstant(),
+				calendarLimit.getWindowStart(after).orElseThrow().toInstant());
+		assertThat(storedRecord.endTime().toInstant()).isIn(
+				calendarLimit.getWindowEnd(before).orElseThrow().toInstant(),
+				calendarLimit.getWindowEnd(after).orElseThrow().toInstant());
 	}
 
 	@Test
