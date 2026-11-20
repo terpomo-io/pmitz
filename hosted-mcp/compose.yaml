@@ -1,0 +1,34 @@
+# Local stack for developing and testing the hosted MCP: the Pmitz server and its database.
+# The gateway itself runs with `npm start`; see README.md.
+services:
+  pmitz:
+    image: terpomo/pmitz-remoteserver:${PMITZ_IMAGE_TAG:-0.10.0}
+    ports:
+      - "127.0.0.1:${PMITZ_PORT:-18080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: postgresql
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pmitz
+      SPRING_DATASOURCE_USERNAME: pmitz
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      PMITZ_API_KEY: ${PMITZ_INTERNAL_KEY:?set PMITZ_INTERNAL_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-15432}:5432"
+    environment:
+      POSTGRES_DB: pmitz
+      POSTGRES_USER: pmitz
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pmitz -d pmitz"]
+      interval: 3s
+      timeout: 3s
+      retries: 20

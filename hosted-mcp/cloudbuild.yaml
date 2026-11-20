@@ -1,0 +1,8 @@
+# Builds the gateway image from the repository root:
+#   gcloud builds submit --config hosted-mcp/cloudbuild.yaml .
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ['build', '-f', 'hosted-mcp/Dockerfile', '-t', '$_IMAGE', '.']
+images: ['$_IMAGE']
+substitutions:
+  _IMAGE: us-central1-docker.pkg.dev/terpomo-pmitz-mcp/pmitz/hosted-mcp:0.1.0

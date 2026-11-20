@@ -1,0 +1,107 @@
+# Cloud Run service for the hosted MCP: the gateway, the Pmitz server it fronts, and the database proxy.
+# Deploy with: gcloud run services replace hosted-mcp/service.yaml --region us-central1
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: pmitz-mcp
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/invoker-iam-disabled: "true"
+spec:
+  template:
+    metadata:
+      annotations:
+        # One instance: the Pmitz catalog and the rate limits live in memory.
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "1"
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/startup-cpu-boost: "true"
+        run.googleapis.com/container-dependencies: '{"pmitz":["cloud-sql-proxy"],"gateway":["pmitz"]}'
+    spec:
+      serviceAccountName: pmitz-mcp-run@terpomo-pmitz-mcp.iam.gserviceaccount.com
+      containerConcurrency: 80
+      timeoutSeconds: 60
+      containers:
+        - name: gateway
+          image: us-central1-docker.pkg.dev/terpomo-pmitz-mcp/pmitz/hosted-mcp:0.1.0
+          ports:
+            - containerPort: 8090
+          env:
+            - name: PMITZ_INTERNAL_URL
+              value: http://127.0.0.1:8080
+            - name: PUBLIC_URL
+              value: https://pmitz-mcp.web.app
+            # The token OpenAI's plugin portal asks for to verify the domain. It is public by design.
+            - name: OPENAI_APPS_CHALLENGE
+              value: EOUEV4Qlrng-JHE-8x-kMcHADivmdqQ1wV_BLbg6erU
+            - name: PMITZ_INTERNAL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pmitz-internal-key
+                  key: latest
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: pmitz-database-url
+                  key: latest
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8090
+            periodSeconds: 3
+            failureThreshold: 20
+        - name: pmitz
+          image: us-central1-docker.pkg.dev/terpomo-pmitz-mcp/pmitz/pmitz-remoteserver:0.10.0-fixes
+          # A copy of docker.io/terpomo/pmitz-remoteserver:0.10.0; Cloud Run could not pull it from Docker Hub.
+          # Starts the server directly; the image's default command prints the API key to the log.
+          args: ["java", "-jar", "/app/app.jar"]
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: postgresql
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://127.0.0.1:5432/pmitz
+            - name: SPRING_DATASOURCE_USERNAME
+              value: pmitz
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pmitz-db-password
+                  key: latest
+            - name: PMITZ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pmitz-internal-key
+                  key: latest
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 48
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.28.0
+          args:
+            - --port=5432
+            - --health-check
+            - --http-address=0.0.0.0
+            - --http-port=9090
+            - terpomo-pmitz-mcp:us-central1:pmitz-instant
+          resources:
+            limits:
+              cpu: "1"
+              memory: 256Mi
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: 9090
+            periodSeconds: 3
+            failureThreshold: 20

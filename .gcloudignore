@@ -1,0 +1,7 @@
+# What `gcloud builds submit` leaves out when it uploads this repository.
+.git
+.gradle
+**/build
+**/node_modules
+**/.env
+#!include:.gitignore
