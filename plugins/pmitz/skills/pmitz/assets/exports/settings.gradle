@@ -1,0 +1,2 @@
+rootProject.name = 'pmitz-exports'
+include 'embedded', 'remote'

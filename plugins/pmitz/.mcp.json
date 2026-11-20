@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "pmitz-local": {
+      "command": "node",
+      "args": [
+        "./server/pmitz-mcp.mjs"
+      ],
+      "cwd": ".",
+      "env_vars": [
+        "PMITZ_BASE_URL",
+        "PMITZ_API_KEY",
+        "PMITZ_MCP_READ_ONLY"
+      ]
+    },
+    "pmitz-sandbox": {
+      "type": "http",
+      "url": "https://pmitz-mcp.web.app/mcp"
+    }
+  }
+}

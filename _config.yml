@@ -1,3 +1,8 @@
 # GitHub Pages site for https://terpomo-io.github.io/pmitz/
 # Google Analytics 4 (Pmitz property); the default Pages theme loads the tag.
 google_analytics: G-DJYWLFYLJD
+
+# Not part of the documentation site.
+exclude:
+  - plugins
+  - hosted-mcp

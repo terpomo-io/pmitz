@@ -1,0 +1,26 @@
+{
+  "name": "@terpomosoft/pmitz-mcp",
+  "version": "0.1.0",
+  "description": "Local MCP server for Pmitz: lets a coding assistant read and change your own Pmitz server.",
+  "keywords": ["mcp", "pmitz", "subscriptions", "entitlements", "usage-limits"],
+  "license": "Apache-2.0",
+  "author": "Terpomo Software (https://terpomosoft.com/)",
+  "homepage": "https://github.com/terpomo-io/pmitz/tree/main/plugins/pmitz#your-own-server-the-local-mcp-server",
+  "bugs": "https://github.com/terpomo-io/pmitz/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/terpomo-io/pmitz.git",
+    "directory": "plugins/pmitz/server"
+  },
+  "type": "module",
+  "bin": {
+    "pmitz-mcp": "pmitz-mcp.mjs"
+  },
+  "files": ["pmitz-mcp.mjs"],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

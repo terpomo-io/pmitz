@@ -1,0 +1,15 @@
+{
+  "name": "terpomo-pmitz",
+  "description": "Terpomo Software plugins for integrating Pmitz subscription plans, feature access and usage limits.",
+  "owner": {
+    "name": "Terpomo Software",
+    "email": "contact@terpomosoft.com"
+  },
+  "plugins": [
+    {
+      "name": "pmitz",
+      "source": "./plugins/pmitz",
+      "description": "Integrate Pmitz feature access and usage limits into an application."
+    }
+  ]
+}

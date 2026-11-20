@@ -1,0 +1,24 @@
+subprojects {
+    apply plugin: 'application'
+    repositories { mavenCentral() }
+    java { toolchain { languageVersion = JavaLanguageVersion.of(17) } }
+    def pmitzVersion = providers.environmentVariable('PMITZ_JAVA_VERSION').get()
+    dependencies {
+        implementation "io.terpomo.pmitz:pmitz-core:${pmitzVersion}"
+        if (project.name == 'embedded') {
+            implementation "io.terpomo.pmitz:pmitz-all:${pmitzVersion}"
+            implementation "io.terpomo.pmitz:pmitz-subscriptions:${pmitzVersion}"
+            implementation "io.terpomo.pmitz:pmitz-limits:${pmitzVersion}"
+            implementation 'com.h2database:h2:2.4.240'
+        } else {
+            implementation "io.terpomo.pmitz:pmitz-remoteclient:${pmitzVersion}"
+        }
+    }
+}
+project(':embedded') {
+    application { mainClass = 'EmbeddedExports' }
+    processResources { from(rootProject.file('product.json')) }
+}
+project(':remote') {
+    application { mainClass = 'RemoteExports' }
+}

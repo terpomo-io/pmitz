@@ -1,0 +1,12 @@
+{
+  "name": "terpomo-pmitz",
+  "interface": { "displayName": "Terpomo Pmitz" },
+  "plugins": [
+    {
+      "name": "pmitz",
+      "source": { "source": "local", "path": "./plugins/pmitz" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Developer Tools"
+    }
+  ]
+}

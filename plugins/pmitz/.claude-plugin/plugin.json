@@ -1,0 +1,73 @@
+{
+  "name": "pmitz",
+  "displayName": "Pmitz",
+  "version": "0.1.0",
+  "description": "Add subscription plans, feature access and usage limits to an application with Pmitz, on your own server or in a sandbox.",
+  "author": {
+    "name": "Terpomo Software",
+    "email": "contact@terpomosoft.com",
+    "url": "https://terpomosoft.com/"
+  },
+  "homepage": "https://terpomosoft.com/pmitz/",
+  "repository": "https://github.com/terpomo-io/pmitz",
+  "license": "Apache-2.0",
+  "keywords": [
+    "pmitz",
+    "subscriptions",
+    "entitlements",
+    "usage-limits",
+    "feature-gating",
+    "java",
+    "rest"
+  ],
+  "icon": "./assets/icon.png",
+  "documentationUrl": "https://github.com/terpomo-io/pmitz/blob/main/USERGUIDE.md",
+  "supportUrl": "https://terpomosoft.com/contact/",
+  "privacyPolicyUrl": "https://terpomosoft.com/privacy/",
+  "userConfig": {
+    "pmitz_base_url": {
+      "type": "string",
+      "title": "Pmitz server URL",
+      "description": "Base URL of your own Pmitz server, for example http://127.0.0.1:8080. Leave empty if you only use the skill or a sandbox.",
+      "required": false
+    },
+    "pmitz_api_key": {
+      "type": "string",
+      "title": "Pmitz API key",
+      "description": "API key of that Pmitz server. It is sent only to the server URL above.",
+      "sensitive": true,
+      "required": false
+    },
+    "pmitz_read_only": {
+      "type": "boolean",
+      "title": "Read-only mode",
+      "description": "Turn on to offer only the tools that read. Leave off to let the assistant also create products and subscriptions and change usage, after it asks you.",
+      "default": false,
+      "required": false
+    }
+  },
+  "mcpServers": {
+    "pmitz-local": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/server/pmitz-mcp.mjs"
+      ],
+      "env": {
+        "PMITZ_BASE_URL": "${user_config.pmitz_base_url}",
+        "PMITZ_API_KEY": "${user_config.pmitz_api_key}",
+        "PMITZ_MCP_READ_ONLY": "${user_config.pmitz_read_only}"
+      }
+    },
+    "pmitz-sandbox": {
+      "type": "http",
+      "url": "https://pmitz-mcp.web.app/mcp"
+    }
+  },
+  "network": {
+    "hosts": [
+      "127.0.0.1",
+      "localhost",
+      "pmitz-mcp.web.app"
+    ]
+  }
+}

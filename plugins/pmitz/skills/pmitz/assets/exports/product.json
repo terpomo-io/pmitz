@@ -1,0 +1,11 @@
+{
+  "productId": "reports",
+  "features": [{
+    "featureId": "export",
+    "limits": [{"type": "CountLimit", "id": "export-credits", "count": 2}]
+  }],
+  "plans": [
+    {"planId": "basic", "includedFeatures": ["export"]},
+    {"planId": "viewer", "includedFeatures": []}
+  ]
+}

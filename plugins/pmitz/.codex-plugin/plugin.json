@@ -1,0 +1,105 @@
+{
+  "name": "pmitz",
+  "version": "0.1.0",
+  "description": "Add subscription plans, feature access and usage limits to an application with Pmitz, on your own server or in a sandbox.",
+  "author": {
+    "name": "Terpomo Software",
+    "email": "contact@terpomosoft.com",
+    "url": "https://terpomosoft.com/"
+  },
+  "license": "Apache-2.0",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "requires_local_executor": true,
+  "interface": {
+    "displayName": "Pmitz",
+    "shortDescription": "Entitlements and usage limits",
+    "longDescription": "Adds Pmitz to an application so that subscription plans decide which features a customer can use and how much of each. The skill turns a product rule, such as five seats per workspace or ten exports a month, into a Pmitz catalog, connects the application's customers to Pmitz subscriptions, and enforces the rule in the code that performs the action. It covers embedded Java and the Pmitz REST API. With nothing to install, it can create a Pmitz sandbox in Terpomo's cloud: a real Pmitz server for development and testing, deleted after 72 hours and not for production.",
+    "developerName": "Terpomo Software",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Create a Pmitz sandbox",
+      "Define plans and limits",
+      "Check access and usage"
+    ],
+    "websiteURL": "https://terpomosoft.com/pmitz/",
+    "supportURL": "https://terpomosoft.com/contact/",
+    "privacyPolicyURL": "https://terpomosoft.com/privacy/",
+    "defaultPrompt": [
+      "Create a Pmitz sandbox with a Free plan of 3 exports and a Pro plan of 100.",
+      "Use Pmitz to give each workspace five seats and enforce it in my app."
+    ],
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png",
+    "termsOfServiceURL": "https://terpomosoft.com/terms/"
+  },
+  "homepage": "https://terpomosoft.com/pmitz/",
+  "repository": "https://github.com/terpomo-io/pmitz",
+  "keywords": [
+    "pmitz",
+    "subscriptions",
+    "entitlements",
+    "usage-limits",
+    "feature-gating",
+    "java",
+    "rest"
+  ],
+  "extensions": {
+    "com.openai": {
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Create a sandbox and define plans. Checks that the plugin creates a temporary Pmitz server and a product with two plans, and hands the sandbox over properly.",
+              "prompt": "Create a Pmitz sandbox with a Free plan of 3 exports and a Pro plan of 100.",
+              "tools_triggered": "pmitz_create_sandbox, pmitz_create_product",
+              "expected_behavior": "A new sandbox is created and a product is defined with a Free plan limited to 3 exports and a Pro plan limited to 100. The answer shows the sandbox key, says when the sandbox expires (72 hours after creation) and that it is for development and testing, not production."
+            },
+            {
+              "description": "Enforce a monthly usage limit. Checks that recorded usage counts against a plan's monthly quota and that Pmitz refuses usage above it.",
+              "prompt": "Create a Pmitz sandbox where the Free plan allows 3 exports a month. Record exports for one Free customer, one at a time, until Pmitz refuses. Then tell me what happened and what the customer has left.",
+              "tools_triggered": "pmitz_create_sandbox, pmitz_create_product, pmitz_create_subscription, pmitz_record_usage, pmitz_get_remaining_limits",
+              "expected_behavior": "Three exports are recorded and the fourth is refused because the monthly limit would be exceeded. The answer reports 0 exports remaining for the month, and shows the sandbox key and its expiry."
+            },
+            {
+              "description": "Check feature access by plan and by subscription status. Checks that a feature included only in one plan is refused on the other, and that a suspended subscription loses access.",
+              "prompt": "Create a Pmitz sandbox with a product that has reports on every plan and an audit log only on the Pro plan. Create one Free customer and one Pro customer, and check whether each may use the audit log. Then suspend the Pro customer and check again.",
+              "tools_triggered": "pmitz_create_sandbox, pmitz_create_product, pmitz_create_subscription, pmitz_verify_entitlement, pmitz_update_subscription_status",
+              "expected_behavior": "The Free customer is refused the audit log and the Pro customer is allowed. After the Pro subscription is suspended, the audit log is refused for that customer too. The answer shows the sandbox key and its expiry."
+            },
+            {
+              "description": "Preview a limit, then free usage. Checks the seat-limit flow: recording usage, previewing whether more fits without recording it, and reducing usage.",
+              "prompt": "Create a Pmitz sandbox where each workspace gets five seats. Add five members to one workspace, check whether a sixth would fit without adding it, then remove one member and check again.",
+              "tools_triggered": "pmitz_create_sandbox, pmitz_create_product, pmitz_create_subscription, pmitz_record_usage, pmitz_check_limits, pmitz_reduce_usage",
+              "expected_behavior": "Five seats are recorded. The check for a sixth seat reports that the limit would be exceeded and records nothing. After one seat is removed, the same check reports that a seat is available. The answer shows the sandbox key and its expiry."
+            },
+            {
+              "description": "Export the plans and read the sandbox status. Checks that the definitions created in a sandbox can be taken out to load into the developer's own Pmitz server.",
+              "prompt": "Create a Pmitz sandbox with a Free plan of 10 exports a month and a Pro plan of 1000. Then export the plans so I can load them into my own Pmitz server, and tell me how long the sandbox has left.",
+              "tools_triggered": "pmitz_create_sandbox, pmitz_create_product, pmitz_export_plans, pmitz_sandbox_status",
+              "expected_behavior": "The answer gives the product definition as JSON, inline or as a file, with the Free and Pro plans and their monthly export limits, explains that it can be sent to the products endpoint of another Pmitz server, and says when the sandbox expires. It shows the sandbox key."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Taking a payment. Pmitz decides what a plan allows; it does not charge cards or process payments. The plugin should not act, and the assistant should say that a payment provider is needed for this.",
+              "prompt": "Charge my customer's card $20 for this month's Pro plan."
+            },
+            {
+              "description": "A general question about sandboxes. The user asks what a sandbox is, not for one to be created. The plugin should not create a Pmitz sandbox; the assistant should just answer.",
+              "prompt": "Explain in two sentences what a sandbox environment is in software development."
+            },
+            {
+              "description": "Marketing copy about plans. The user wants pricing-page text, not plans defined in Pmitz. The plugin should not act; the assistant should just write the text.",
+              "prompt": "Write the text for a pricing page with a Free plan and a Pro plan for my note-taking app."
+            }
+          ]
+        },
+        "commerce": false
+      },
+      "publication": {
+        "release_notes": "Initial release. A skill for adding subscription plans, feature access and usage limits to an application with Pmitz, and a hosted MCP server that creates temporary Pmitz sandboxes to develop and test against, with nothing to install."
+      }
+    }
+  }
+}
