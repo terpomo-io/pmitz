@@ -204,4 +204,19 @@ class FeatureUsageTrackerImplTests {
 		assertThat(featureInfo.remainingUsageUnits()).containsEntry(limitId, 1L);
 	}
 
+	@Test
+	void givenFetchedSubscriptionWhenGetUsageInfoThenUseFetchedSubscriptionForLimits() {
+		String limitId = "ADD_USER";
+		var fetchedSubscription = new Subscription("sub001");
+		var verifDetail = SubscriptionVerifDetail.verificationOk().withFetchedSubscription(fetchedSubscription);
+		when(subscriptionVerifier.verifyEntitlement(featureRef, userGrouping)).thenReturn(verifDetail);
+		when(limitVerifier.getLimitsRemainingUnits(featureRef, fetchedSubscription)).thenReturn(Collections.singletonMap(limitId, 7L));
+
+		var featureInfo = featureUsageTracker.getUsageInfo(featureRef, userGrouping);
+
+		assertThat(featureInfo.featureStatus()).isEqualTo(FeatureStatus.AVAILABLE);
+		assertThat(featureInfo.remainingUsageUnits()).containsEntry(limitId, 7L);
+		verify(limitVerifier, never()).getLimitsRemainingUnits(featureRef, userGrouping);
+	}
+
 }

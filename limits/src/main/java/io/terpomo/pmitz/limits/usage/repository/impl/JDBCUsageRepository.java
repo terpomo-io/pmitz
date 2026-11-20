@@ -134,11 +134,11 @@ public class JDBCUsageRepository implements UsageRepository {
 				parameters.add(criteria.limitId());
 			}
 			if (criteria.windowStart() != null) {
-				conditions.add("(window_end >= ? OR window_end IS NULL)");
+				conditions.add("(window_end > ? OR window_end IS NULL)");
 				parameters.add(Timestamp.from(criteria.windowStart().toInstant()));
 			}
 			if (criteria.windowEnd() != null) {
-				conditions.add("(window_start <= ? OR window_start IS NULL)");
+				conditions.add("(window_start < ? OR window_start IS NULL)");
 				parameters.add(Timestamp.from(criteria.windowEnd().toInstant()));
 			}
 			if (!conditions.isEmpty()) {

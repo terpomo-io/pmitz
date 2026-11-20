@@ -86,60 +86,72 @@ class CalendarPeriodRateLimitTests {
 	}
 
 	@Test
-	void getWindowEndShouldReturnLastNanosecondInHourWhenPeriodicityIsHour() {
+	void getWindowEndShouldReturnStartOfNextHourWhenPeriodicityIsHour() {
 		CalendarPeriodRateLimit rateLimit = new CalendarPeriodRateLimit(limitId, 10, CalendarPeriodRateLimit.Periodicity.HOUR);
 
-		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 20, 10, 59, 59, 999_999_999, ZoneId.of("UTC"));
+		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 20, 11, 0, 0, 0, ZoneId.of("UTC"));
 
 		assertThat(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get())).isTrue();
 	}
 
 	@Test
-	void getWindowEndShouldReturnLastNanosecondInDayWhenPeriodicityIsDay() {
+	void getWindowEndShouldReturnStartOfNextDayWhenPeriodicityIsDay() {
 		CalendarPeriodRateLimit rateLimit = new CalendarPeriodRateLimit(limitId, 10, CalendarPeriodRateLimit.Periodicity.DAY);
 
-		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 20, 23, 59, 59, 999_999_999, ZoneId.of("UTC"));
+		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 21, 0, 0, 0, 0, ZoneId.of("UTC"));
 
 		assertThat(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get())).isTrue();
 	}
 
 	@Test
-	void getWindowEndShouldReturnLastNanosecondInLastDayOfWeekWhenPeriodicityIsWeek() {
+	void getWindowEndShouldReturnStartOfNextWeekWhenPeriodicityIsWeek() {
 		CalendarPeriodRateLimit rateLimit = new CalendarPeriodRateLimit(limitId, 10, CalendarPeriodRateLimit.Periodicity.WEEK);
 
-		//2024-02-20 falls on Tuesday, next last day of week (Sunday) is 2024-02-25
-		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 25, 23, 59, 59, 999_999_999, ZoneId.of("UTC"));
+		//2024-02-20 falls on Tuesday, the next week starts on Monday 2024-02-26
+		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 26, 0, 0, 0, 0, ZoneId.of("UTC"));
 
 		assertThat(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get())).isTrue();
 	}
 
 	@Test
-	void getWindowEndShouldReturnLastNanosecondInSameDayWhenPeriodicityIsWeekAndLastDayOfWeek() {
+	void getWindowEndShouldReturnStartOfNextWeekWhenPeriodicityIsWeekAndLastDayOfWeek() {
 		CalendarPeriodRateLimit rateLimit = new CalendarPeriodRateLimit(limitId, 10, CalendarPeriodRateLimit.Periodicity.WEEK);
 
 		var referenceDateOnSunday = referenceDate.plusDays(5); //2024-02-25
 
-		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 25, 23, 59, 59, 999_999_999, ZoneId.of("UTC"));
+		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 26, 0, 0, 0, 0, ZoneId.of("UTC"));
 
 		assertThat(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDateOnSunday).get())).isTrue();
 	}
 
 	@Test
-	void getWindowEndShouldReturnLastNanosecondInLastDayOfMonthWhenPeriodicityIsMonth() {
+	void getWindowEndShouldReturnStartOfNextMonthWhenPeriodicityIsMonth() {
 		CalendarPeriodRateLimit rateLimit = new CalendarPeriodRateLimit(limitId, 10, CalendarPeriodRateLimit.Periodicity.MONTH);
 
-		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 2, 29, 23, 59, 59, 999_999_999, ZoneId.of("UTC"));
+		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 3, 1, 0, 0, 0, 0, ZoneId.of("UTC"));
 
 		assertThat(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get())).isTrue();
 	}
 
 	@Test
-	void getWindowEndShouldReturnLastNanosecondInDecember31WhenPeriodicityIsYear() {
+	void getWindowEndShouldReturnStartOfNextYearWhenPeriodicityIsYear() {
 		CalendarPeriodRateLimit rateLimit = new CalendarPeriodRateLimit(limitId, 10, CalendarPeriodRateLimit.Periodicity.YEAR);
 
-		ZonedDateTime expectedEndTime = ZonedDateTime.of(2024, 12, 31, 23, 59, 59, 999_999_999, ZoneId.of("UTC"));
+		ZonedDateTime expectedEndTime = ZonedDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC"));
 
 		assertThat(expectedEndTime.isEqual(rateLimit.getWindowEnd(referenceDate).get())).isTrue();
+	}
+
+	@Test
+	void getWindowEndShouldBeTheWindowStartOfTheNextPeriod() {
+		for (CalendarPeriodRateLimit.Periodicity periodicity : CalendarPeriodRateLimit.Periodicity.values()) {
+			CalendarPeriodRateLimit rateLimit = new CalendarPeriodRateLimit(limitId, 10, periodicity);
+
+			ZonedDateTime windowEnd = rateLimit.getWindowEnd(referenceDate).get();
+
+			assertThat(rateLimit.getWindowStart(windowEnd)).contains(windowEnd);
+			assertThat(rateLimit.getWindowStart(windowEnd.minusNanos(1))).isEqualTo(rateLimit.getWindowStart(referenceDate));
+		}
 	}
 
 }
