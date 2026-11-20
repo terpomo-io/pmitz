@@ -76,6 +76,32 @@ class LimitTrackingContextTests {
 		assertThat(filteredRecords).hasSize(4);
 	}
 
+	@Test
+	void findUsageRecordsShouldFindRecordWhoseEndWasRoundedUpByTheRepository() {
+		ZonedDateTime windowStart = ZonedDateTime.parse("2026-11-01T00:00:00Z");
+		ZonedDateTime windowEnd = ZonedDateTime.parse("2026-11-30T23:59:59.999999999Z");
+		ZonedDateTime storedEnd = ZonedDateTime.parse("2026-12-01T00:00:00Z");
+
+		LimitTrackingContext context = new LimitTrackingContext(featureRef, new IndividualUser("user002"), Collections.emptyList());
+		context.addCurrentUsageRecords(List.of(new UsageRecord(limitId, windowStart, storedEnd, 1L, null)));
+
+		assertThat(context.findUsageRecords(limitId, windowStart, windowEnd)).hasSize(1);
+	}
+
+	@Test
+	void findUsageRecordsShouldIgnoreRecordsOfOtherWindows() {
+		ZonedDateTime windowStart = ZonedDateTime.parse("2026-11-01T00:00:00Z");
+		ZonedDateTime windowEnd = ZonedDateTime.parse("2026-11-30T23:59:59.999999999Z");
+
+		UsageRecord previousWindow = new UsageRecord(limitId, windowStart.minusMonths(1), windowStart, 2L, null);
+		UsageRecord nextWindow = new UsageRecord(limitId, windowStart.plusMonths(1), windowStart.plusMonths(2), 2L, null);
+
+		LimitTrackingContext context = new LimitTrackingContext(featureRef, new IndividualUser("user002"), Collections.emptyList());
+		context.addCurrentUsageRecords(List.of(previousWindow, nextWindow));
+
+		assertThat(context.findUsageRecords(limitId, windowStart, windowEnd)).isEmpty();
+	}
+
 	private List<UsageRecord> getCurrentUsageRecords(ZonedDateTime startTime, ZonedDateTime endTime) {
 		UsageRecord usageRecord1 = new UsageRecord(limitId, null, null, 3L, null);
 		UsageRecord usageRecord2 = new UsageRecord(limitId, null, null, 2L, null);
